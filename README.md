@@ -2,7 +2,18 @@
 
 Multi-tenant (RLS) school management system.
 
-**Stack:** Spring Boot 3 / Java 21 / PostgreSQL 15 / Spring Security JWT / Redis / MinIO / JasperReports / Angular 18 + Material + ngx-translate / Flyway / Docker Compose.
+**Stack:** Spring Boot 3 / Java 21 / PostgreSQL 15 / Spring Security JWT / Redis / MinIO / JasperReports / Angular 19 + Material + ngx-translate / Flyway / Docker Compose.
+
+## Documentation
+
+| Topic          | File                                   |
+|----------------|----------------------------------------|
+| Backend setup  | `docs/README-BACKEND.md`               |
+| Frontend setup | `docs/README-FRONTEND.md`              |
+| UI flow        | `docs/UI-FLOW.md`                      |
+| Docker setup   | `docs/DOCKER-SETUP.md`                 |
+| DB scripts     | `db/01_create_tables.sql`, `db/02_insert_records.sql` |
+| Run scripts    | `scripts/run-linux.sh`, `scripts/run-windows.bat` |
 
 ## Modules
 
@@ -38,17 +49,20 @@ Requirements: JDK 21, Maven 3.9+, Node 20+, PostgreSQL 15, Redis 7.
 createdb schoolms
 
 # backend (dev profile)
-cd backend && ./mvnw spring-boot:run
+cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 # frontend
 cd frontend && npm install && npm start
 ```
 
+Or use the bundled run scripts (`scripts/run-linux.sh` / `scripts/run-windows.bat`)
+to start both together.
+
 Environment variables are provided via `application-dev.yml`/`application-prod.yml`; no secrets are hardcoded.
 
 ## Default accounts
 
-Seeded by Flyway (`V3__seed_super_admin.sql`); credentials in `application-dev.yml`.
+Seeded by Flyway (`V3__seed_demo_data.sql`). All accounts use the password `Admin@123`:
 
 ## Architecture notes
 
