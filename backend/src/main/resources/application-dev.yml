@@ -1,0 +1,22 @@
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    redis:
+      host: localhost
+  flyway:
+    url: jdbc:postgresql://localhost:5432/schoolms
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-key-please-change-in-production-0123456789}
+  minio:
+    endpoint: http://localhost:9000
+
+logging:
+  level:
+    com.schoolms: DEBUG
+    org.hibernate.SQL: DEBUG

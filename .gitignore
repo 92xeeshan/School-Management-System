@@ -156,6 +156,9 @@
 **/.flutter-plugins
 **/.flutter-plugins-dependencies
 
+# Runtime artifacts
+**/dump.rdb
+
 # Compressed files
 *.zip
 *.rar

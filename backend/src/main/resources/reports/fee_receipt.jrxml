@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="fee_receipt" pageWidth="595" pageHeight="842" columnWidth="555"
+              leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20"
+              uuid="00000000-0000-0000-0000-0000000000f1">
+
+    <property name="net.sf.jasperreports.export.pdf.force.linebreak.policy" value="true"/>
+    <style name="base" isDefault="true" fontName="Helvetica" fontSize="10" pdfFontName="Helvetica"/>
+    <style name="title" fontName="Helvetica" fontSize="20" isBold="true" pdfFontName="Helvetica-Bold"/>
+    <style name="label" fontName="Helvetica" fontSize="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+    <style name="value" fontName="Helvetica" fontSize="10" pdfFontName="Helvetica"/>
+    <style name="sectionHeader" fontName="Helvetica" fontSize="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+
+    <parameter name="schoolName" class="java.lang.String"/>
+    <parameter name="schoolAddress" class="java.lang.String"/>
+    <parameter name="receiptNo" class="java.lang.String"/>
+    <parameter name="paidAt" class="java.lang.String"/>
+    <parameter name="studentName" class="java.lang.String"/>
+    <parameter name="admissionNo" class="java.lang.String"/>
+    <parameter name="className" class="java.lang.String"/>
+    <parameter name="categoryName" class="java.lang.String"/>
+    <parameter name="amount" class="java.lang.String"/>
+    <parameter name="paymentMethod" class="java.lang.String"/>
+    <parameter name="referenceNo" class="java.lang.String"/>
+    <parameter name="remarks" class="java.lang.String"/>
+
+    <title>
+        <band height="70">
+            <staticText>
+                <reportElement x="0" y="0" width="555" height="30"/>
+                <textElement textAlignment="Center"/>
+                <text><![CDATA[$P{schoolName}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="30" width="555" height="20"/>
+                <textElement textAlignment="Center"/>
+                <text><![CDATA[$P{schoolAddress}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="50" width="555" height="20"/>
+                <textElement textAlignment="Center">
+                    <font size="14" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Fee Payment Receipt]]></text>
+            </staticText>
+        </band>
+    </title>
+
+    <detail>
+        <band height="260">
+            <staticText>
+                <reportElement x="0" y="0" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Receipt No]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="0" width="395" height="18"/>
+                <text><![CDATA[$P{receiptNo}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="18" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Date]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="18" width="395" height="18"/>
+                <text><![CDATA[$P{paidAt}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="48" width="555" height="18"/>
+                <textElement><font size="12" isBold="true"/></textElement>
+                <text><![CDATA[Student Details]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="66" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Name]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="66" width="395" height="18"/>
+                <text><![CDATA[$P{studentName}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="84" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Admission No]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="84" width="395" height="18"/>
+                <text><![CDATA[$P{admissionNo}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="102" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Class]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="102" width="395" height="18"/>
+                <text><![CDATA[$P{className}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="132" width="555" height="18"/>
+                <textElement><font size="12" isBold="true"/></textElement>
+                <text><![CDATA[Payment Details]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="150" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Category]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="150" width="395" height="18"/>
+                <text><![CDATA[$P{categoryName}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="168" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Amount Paid]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="168" width="395" height="18"/>
+                <text><![CDATA[$P{amount}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="186" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Payment Method]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="186" width="395" height="18"/>
+                <text><![CDATA[$P{paymentMethod}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="204" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Reference No]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="204" width="395" height="18"/>
+                <text><![CDATA[$P{referenceNo}]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="222" width="160" height="18"/>
+                <textElement><font isBold="true"/></textElement>
+                <text><![CDATA[Remarks]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="160" y="222" width="395" height="18"/>
+                <text><![CDATA[$P{remarks}]]></text>
+            </staticText>
+        </band>
+    </detail>
+</jasperReport>
