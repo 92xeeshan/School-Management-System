@@ -1,0 +1,79 @@
+spring:
+  application:
+    name: schoolms-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/schoolms}
+    username: ${SPRING_DATASOURCE_USERNAME:app_rls}
+    password: ${SPRING_DATASOURCE_PASSWORD:app_rls}
+    hikari:
+      maximum-pool-size: 10
+      connection-init-sql: "SELECT 1"
+  flyway:
+    enabled: true
+    # Migrations run as the schema owner so tables/grants are applied
+    # while the runtime datasource uses the RLS-enforced role (app_rls).
+    url: ${SPRING_FLYWAY_URL:${spring.datasource.url}}
+    user: ${SPRING_FLYWAY_USER:schoolms}
+    password: ${SPRING_FLYWAY_PASSWORD:schoolms}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 2s
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+    always-use-message-format: true
+    default-locale: en
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+server:
+  port: 8080
+  error:
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-please-32char-min}
+    access-token-ttl-minutes: 15
+    refresh-token-ttl-days: 30
+    issuer: schoolms
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket: ${MINIO_BUCKET:schoolms}
+  security:
+    cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:42000,https://*.monkeycode-ai.live}
+
+logging:
+  level:
+    org.springframework.security: INFO
+    com.schoolms: DEBUG
