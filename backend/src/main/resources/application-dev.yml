@@ -6,9 +6,7 @@ spring:
         format_sql: true
   data:
     redis:
-      host: localhost
-  flyway:
-    url: jdbc:postgresql://localhost:5432/schoolms
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
 
 app:
   jwt:

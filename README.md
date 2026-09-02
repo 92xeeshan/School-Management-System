@@ -60,6 +60,8 @@ to start both together.
 
 Environment variables are provided via `application-dev.yml`/`application-prod.yml`; no secrets are hardcoded.
 
+To point the app at an external PostgreSQL instance (M2), copy `.env.example` to `.env` and set `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` (or `SPRING_DATASOURCE_URL`). Apply schema with `scripts/apply-db.sh` or let Flyway run on backend startup.
+
 ## Default accounts
 
 Seeded by Flyway (`V3__seed_demo_data.sql`). All accounts use the password `Admin@123`:

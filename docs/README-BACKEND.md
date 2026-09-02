@@ -56,6 +56,12 @@ On **Windows** you can run the same SQL from `psql` (add
 
 > No other setup is needed: Flyway creates every table, indexes, RLS
 > policies, grants and demo seed data automatically on first startup.
+>
+> To use an external database (M2), set `POSTGRES_HOST`, `POSTGRES_PORT`,
+> `POSTGRES_DB`, `POSTGRES_USER` and `POSTGRES_PASSWORD` in `.env` (see
+> `.env.example`). Optional overrides: `SPRING_DATASOURCE_URL` and
+> `SPRING_FLYWAY_URL`. Then run `scripts/apply-db.sh` or start the backend
+> so Flyway migrates.
 
 ### 2.2 Redis (Windows and Linux)
 
@@ -79,11 +85,17 @@ override the defaults:
 
 | Variable                       | Default                              | Description                          |
 |--------------------------------|--------------------------------------|--------------------------------------|
-| `SPRING_DATASOURCE_URL`        | `jdbc:postgresql://localhost:5432/schoolms` | JDBC URL                    |
+| `SPRING_DATASOURCE_URL`        | `jdbc:postgresql://localhost:5432/schoolms` | JDBC URL (set this to the M2 host to use M2 DB) |
 | `SPRING_DATASOURCE_USERNAME`   | `app_rls`                            | Runtime DB role                     |
 | `SPRING_DATASOURCE_PASSWORD`   | `app_rls`                            | Runtime DB password                 |
+| `SPRING_FLYWAY_URL`            | same as datasource URL               | Flyway JDBC URL                     |
 | `SPRING_FLYWAY_USER`           | `schoolms`                           | Migration DB role                   |
 | `SPRING_FLYWAY_PASSWORD`       | `schoolms`                           | Migration DB password               |
+| `POSTGRES_HOST`                | `localhost`                          | Host used by `db/` SQL scripts      |
+| `POSTGRES_PORT`                | `5432`                               | Port used by `db/` SQL scripts      |
+| `POSTGRES_DB`                  | `schoolms`                           | Database name                       |
+| `POSTGRES_USER`                | `schoolms`                           | Schema-owner role for SQL scripts   |
+| `POSTGRES_PASSWORD`            | `schoolms`                           | Schema-owner password               |
 | `SPRING_DATA_REDIS_HOST`       | `localhost`                          | Redis host                          |
 | `JWT_SECRET`                   | dev-only placeholder (see yml)       | JWT signing secret (32+ chars)      |
 | `MINIO_ENDPOINT`               | `http://localhost:9000`              | MinIO endpoint                      |
