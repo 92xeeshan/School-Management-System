@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { LOCALE_META, SupportedLocale, SUPPORTED_LOCALES } from './i18n.config';
 
 const STORAGE_KEY = 'schoolms.locale';
@@ -11,7 +11,11 @@ export class LocaleService {
   readonly locale$ = this.localeSubject.asObservable();
 
   constructor(private translate: TranslateService) {
-    this.apply(this.localeSubject.value);
+    this.translate.setDefaultLang('en');
+  }
+
+  init(): Promise<unknown> {
+    return this.apply(this.localeSubject.value);
   }
 
   setLocale(locale: SupportedLocale): void {
@@ -20,19 +24,19 @@ export class LocaleService {
     }
     localStorage.setItem(STORAGE_KEY, locale);
     this.localeSubject.next(locale);
-    this.apply(locale);
+    void this.apply(locale);
   }
 
   get current(): SupportedLocale {
     return this.localeSubject.value;
   }
 
-  private apply(locale: SupportedLocale): void {
-    this.translate.use(locale);
+  private apply(locale: SupportedLocale): Promise<unknown> {
     const meta = LOCALE_META[locale];
     document.documentElement.lang = locale;
     document.documentElement.dir = meta.dir;
     document.documentElement.classList.toggle('rtl', meta.dir === 'rtl');
+    return firstValueFrom(this.translate.use(locale)).catch(() => undefined);
   }
 
   private storedLocale(): SupportedLocale {
