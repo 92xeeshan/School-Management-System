@@ -12,7 +12,7 @@ export const LOCALE_META: Record<SupportedLocale, { label: string; dir: 'ltr' | 
 };
 
 export function createTranslateLoader(http: HttpClient): TranslateHttpLoader {
-  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
+  return new TranslateHttpLoader(http, '/assets/i18n/', '.json');
 }
 
 export const translateConfig: TranslateModuleConfig = {
