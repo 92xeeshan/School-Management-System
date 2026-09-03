@@ -2,7 +2,7 @@ spring:
   application:
     name: schoolms-backend
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/schoolms}
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:schoolms}}"
     username: ${SPRING_DATASOURCE_USERNAME:app_rls}
     password: ${SPRING_DATASOURCE_PASSWORD:app_rls}
     hikari:
@@ -13,8 +13,8 @@ spring:
     # Migrations run as the schema owner so tables/grants are applied
     # while the runtime datasource uses the RLS-enforced role (app_rls).
     url: ${SPRING_FLYWAY_URL:${spring.datasource.url}}
-    user: ${SPRING_FLYWAY_USER:schoolms}
-    password: ${SPRING_FLYWAY_PASSWORD:schoolms}
+    user: ${SPRING_FLYWAY_USER:${POSTGRES_USER:schoolms}}
+    password: ${SPRING_FLYWAY_PASSWORD:${POSTGRES_PASSWORD:schoolms}}
   jpa:
     hibernate:
       ddl-auto: none

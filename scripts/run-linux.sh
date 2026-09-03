@@ -36,8 +36,10 @@ for cmd in java mvn node npm psql; do
     fi
 done
 
-if ! (pg_isready -q 2>/dev/null || true); then
-    echo "[run] WARNING: PostgreSQL does not seem to be running on localhost:5432."
+PGHOST="${POSTGRES_HOST:-localhost}"
+PGPORT="${POSTGRES_PORT:-5432}"
+if ! pg_isready -h "$PGHOST" -p "$PGPORT" -q 2>/dev/null; then
+    echo "[run] WARNING: PostgreSQL does not seem to be running on ${PGHOST}:${PGPORT}."
     echo "[run] The backend will still start, but login will fail until the DB is up."
 fi
 
