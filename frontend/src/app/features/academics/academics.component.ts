@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -172,7 +172,7 @@ export class AcademicsComponent implements OnInit {
     code: new FormControl(''),
   });
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.loadReal();
@@ -203,11 +203,13 @@ export class AcademicsComponent implements OnInit {
       next: () => {
         this.saving = false;
         this.showModal = false;
+        this.cdr.markForCheck();
         this.loadReal();
       },
       error: () => {
         this.saving = false;
         this.showModal = false;
+        this.cdr.markForCheck();
         alert('Class added (demo mode — backend not reachable)');
       },
     });
@@ -236,12 +238,15 @@ export class AcademicsComponent implements OnInit {
 
     for (const klass of classes) {
       this.http.get<ApiResponse<BackendSection[]>>('/api/sections', { params: { classId: klass.id } }).subscribe({
-        next: (res) =>
-          (klass.sections = res.data.map((s) => ({ id: s.id, name: s.name, capacity: s.capacity }))),
+        next: (res) => {
+          klass.sections = res.data.map((s) => ({ id: s.id, name: s.name, capacity: s.capacity }));
+          this.cdr.markForCheck();
+        },
         error: () => undefined,
       });
     }
     this.classes = [...classes];
+    this.cdr.markForCheck();
   }
 
   private loadDemo(): void {
@@ -258,5 +263,6 @@ export class AcademicsComponent implements OnInit {
         { id: 's5', name: 'B', capacity: 40 },
       ], subjects: ['English', 'Mathematics', 'Science', 'Social Studies', 'Computer Science'] },
     ];
+    this.cdr.markForCheck();
   }
 }

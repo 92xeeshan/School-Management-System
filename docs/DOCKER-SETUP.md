@@ -8,9 +8,9 @@ lightweight, isolated "mini-computer" that runs the same way on any machine.
 
 For this project Docker gives three big benefits:
 
-1. **No manual installation.** PostgreSQL, Redis, MinIO, the backend and
+1. **No manual installation.** PostgreSQL, MinIO, the backend and
    the frontend are started with a single command. You do not have to
-   install Java, Node.js, PostgreSQL or Redis on your own computer.
+   install Java, Node.js or PostgreSQL on your own computer.
 2. **Everything in one place.** The whole system (database + backend +
    frontend + file storage) is defined in one file,
    `docker-compose.yml`, and starts together in the correct order.
@@ -26,7 +26,6 @@ application without configuring anything yourself.
 | Container             | Image              | What it runs                 | Port |
 |-----------------------|--------------------|------------------------------|------|
 | `schoolms-postgres`   | `postgres:15-alpine` | Database                   | 5432 |
-| `schoolms-redis`      | `redis:7-alpine`   | Session / permission cache   | 6379 |
 | `schoolms-minio`      | `minio/minio`      | File storage (PDFs, photos)  | 9000 + 9001 (console) |
 | `schoolms-backend`    | built from `backend/Dockerfile` | Spring Boot REST API | 8080 |
 | `schoolms-frontend`   | built from `frontend/Dockerfile` | Angular app served by nginx | 4200 |
@@ -98,11 +97,11 @@ docker compose up --build
 
 What happens:
 
-1. Docker downloads the base images (`postgres`, `redis`, `minio`,
+1. Docker downloads the base images (`postgres`, `minio`,
    `node`, `nginx`, `maven`, ...). This happens only the first time.
 2. It builds the backend image (Maven compiles the Spring Boot JAR) and the
    frontend image (npm builds the Angular app).
-3. It starts the containers in order: PostgreSQL and Redis first (health
+3. It starts the containers in order: PostgreSQL first (health
    check), then MinIO, then the backend, then the frontend.
 4. On first startup the backend runs the Flyway migrations, which create
    all tables and seed the demo accounts automatically.

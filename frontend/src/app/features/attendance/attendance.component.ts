@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -187,7 +187,7 @@ export class AttendanceComponent implements OnInit {
   rows: AttendanceRow[] = [];
   saving = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   get sectionsForSelectedClass(): Section[] {
     const classId = this.classControl.value;
@@ -240,6 +240,7 @@ export class AttendanceComponent implements OnInit {
     this.http.get<ApiResponse<AcademicYear[]>>('/api/academic-years').subscribe({
       next: (res) => {
         this.academicYears = res.data;
+        this.cdr.markForCheck();
       },
       error: () => this.loadDemoMeta(),
     });
@@ -250,6 +251,7 @@ export class AttendanceComponent implements OnInit {
         this.http.get<ApiResponse<Array<{ id: string; name: string }>>>('/api/classes').subscribe({
           next: (classesRes) => {
             this.classes = classesRes.data;
+            this.cdr.markForCheck();
             const first = this.classes[0];
             if (first) {
               this.classControl.setValue(first.id, { emitEvent: false });
@@ -283,7 +285,10 @@ export class AttendanceComponent implements OnInit {
         { params: { sectionId, academicYearId, date: date ?? '' } }
       )
       .subscribe({
-        next: (res) => this.applyExistingRecords(res.data),
+        next: (res) => {
+          this.applyExistingRecords(res.data);
+          this.cdr.markForCheck();
+        },
         error: () => undefined,
       });
   }
@@ -322,6 +327,7 @@ export class AttendanceComponent implements OnInit {
             admissionNo: s.admissionNo,
             status: 'PRESENT',
           }));
+          this.cdr.markForCheck();
         },
         error: () => this.loadDemoRows(sectionId),
       });
@@ -344,10 +350,12 @@ export class AttendanceComponent implements OnInit {
     this.http.post<ApiResponse<unknown>>('/api/attendance/mark', payload).subscribe({
       next: () => {
         this.saving = false;
+        this.cdr.markForCheck();
         alert('Attendance saved');
       },
       error: () => {
         this.saving = false;
+        this.cdr.markForCheck();
         alert('Attendance saved (demo mode — backend not reachable)');
       },
     });
@@ -367,6 +375,7 @@ export class AttendanceComponent implements OnInit {
       { id: 's4', classId: 'c3', className: 'VIII', name: 'A', capacity: 40 },
     ];
     this.classControl.setValue('c1', { emitEvent: false });
+    this.cdr.markForCheck();
     this.onClassChange();
   }
 
@@ -387,5 +396,6 @@ export class AttendanceComponent implements OnInit {
       admissionNo: s.admissionNo,
       status: index % 5 === 3 ? 'ABSENT' : 'PRESENT',
     }));
+    this.cdr.markForCheck();
   }
 }

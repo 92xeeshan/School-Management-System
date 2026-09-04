@@ -7,12 +7,12 @@ REM     Double-click scripts\run-windows.bat
 REM     or run it from a Command Prompt.
 REM
 REM Requirements (see docs\README-BACKEND.md and docs\README-FRONTEND.md):
-REM     JDK 21, Maven 3.9+, Node.js 20+, PostgreSQL 15, Redis 7
-REM     PostgreSQL and Redis must already be running.
+REM     JDK 21, Maven 3.9+, Node.js 20+, PostgreSQL 15
+REM     PostgreSQL must already be running.
 REM =====================================================================
 setlocal
 
-REM Load optional .env file (database/redis credentials etc.)
+REM Load optional .env file (database credentials etc.)
 if exist "%~dp0..\.env" (
     echo [run] Loading .env
     for /f "usebackq tokens=1,* delims==" %%a in ("%~dp0..\.env") do set "%%a=%%b"

@@ -1,9 +1,6 @@
 spring:
   jpa:
     show-sql: false
-  data:
-    redis:
-      host: ${SPRING_DATA_REDIS_HOST:redis}
   flyway:
     url: ${SPRING_FLYWAY_URL:jdbc:postgresql://postgres:5432/schoolms}
 
