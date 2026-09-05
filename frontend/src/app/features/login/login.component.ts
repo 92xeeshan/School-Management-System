@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -106,7 +106,8 @@ export class LoginComponent implements OnInit {
     readonly localeService: LocaleService,
     private auth: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -121,10 +122,12 @@ export class LoginComponent implements OnInit {
     }
     this.submitting = true;
     this.errorMessage = '';
+    this.cdr.markForCheck();
     const { username, password } = this.form.value;
     this.auth.login(username ?? '', password ?? '').subscribe({
       next: () => {
         this.submitting = false;
+        this.cdr.markForCheck();
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
         this.router.navigate([returnUrl ?? '/dashboard']);
       },
@@ -132,6 +135,7 @@ export class LoginComponent implements OnInit {
         this.submitting = false;
         this.errorMessage =
           error.status === 401 ? 'login.invalidCredentials' : 'login.serverError';
+        this.cdr.markForCheck();
       },
     });
   }

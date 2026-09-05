@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
@@ -125,7 +125,7 @@ export class DashboardComponent implements OnInit {
   stats: DashboardStats | null = null;
   notices: Notice[] = [];
 
-  constructor(private http: HttpClient, private auth: AuthService) {}
+  constructor(private http: HttpClient, private auth: AuthService, private cdr: ChangeDetectorRef) {}
 
   get displayName(): string {
     return this.auth.currentUser?.displayName ?? this.auth.currentUser?.username ?? '';
@@ -140,16 +140,19 @@ export class DashboardComponent implements OnInit {
           presentToday: res.data.presentToday,
           feesCollected: Number(res.data.feesCollected ?? 0),
         };
+        this.cdr.markForCheck();
       },
       error: () => this.loadDemoStats(),
     });
     this.http.get<ApiResponse<BackendNotice[]>>('/api/notices/published').subscribe({
-      next: (res) =>
-        (this.notices = res.data.map((n) => ({
+      next: (res) => {
+        this.notices = res.data.map((n) => ({
           id: n.id,
           title: n.title,
           publishedOn: n.publishAt ? new Date(n.publishAt).toLocaleDateString() : '',
-        }))),
+        }));
+        this.cdr.markForCheck();
+      },
       error: () => this.loadDemoNotices(),
     });
   }
@@ -160,6 +163,7 @@ export class DashboardComponent implements OnInit {
 
   private loadDemoStats(): void {
     this.stats = { totalStudents: 423, totalTeachers: 28, presentToday: 391, feesCollected: 18450 };
+    this.cdr.markForCheck();
   }
 
   private loadDemoNotices(): void {
@@ -168,5 +172,6 @@ export class DashboardComponent implements OnInit {
       { id: 'n2', title: 'PTA meeting scheduled', publishedOn: '2026-07-25' },
       { id: 'n3', title: 'Annual sports day registration', publishedOn: '2026-07-20' },
     ];
+    this.cdr.markForCheck();
   }
 }

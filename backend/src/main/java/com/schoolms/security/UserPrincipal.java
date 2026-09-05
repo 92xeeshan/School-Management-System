@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Authenticated principal. Roles come from the JWT; authorities (permissions)
- * are resolved from the role_permission matrix and cached in Redis.
+ * are resolved from the role_permission matrix and cached in Caffeine.
  */
 public record UserPrincipal(
         UUID id,

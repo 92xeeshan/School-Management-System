@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
@@ -247,7 +247,7 @@ export class FeesComponent implements OnInit {
   collecting = false;
   selectedStudentId: string | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   get selectedStudent(): boolean {
     return !!this.selectedStudentId;
@@ -315,12 +315,14 @@ export class FeesComponent implements OnInit {
     this.http.post<ApiResponse<FeePayment>>('/api/fees/payments', payload).subscribe({
       next: (res) => {
         this.collecting = false;
-        this.payments.unshift(res.data);
+        this.payments = [res.data, ...this.payments];
         this.loadInstallments();
         this.paymentForm.patchValue({ amount: null, assignmentId: '' });
+        this.cdr.markForCheck();
       },
       error: () => {
         this.collecting = false;
+        this.cdr.markForCheck();
         alert('Payment recorded (demo mode — backend not reachable)');
         this.paymentForm.patchValue({ amount: null, assignmentId: '' });
       },
@@ -329,12 +331,14 @@ export class FeesComponent implements OnInit {
 
   private loadStudents(): void {
     this.http.get<ApiResponse<PagedResponse<BackendStudentListItem>>>('/api/students', { params: { size: '100' } }).subscribe({
-      next: (res) =>
-        (this.students = res.data.content.map((item) => ({
+      next: (res) => {
+        this.students = (res.data?.content ?? []).map((item) => ({
           id: item.student.id,
           admissionNo: item.student.admissionNo,
           displayName: item.student.displayName ?? `${item.student.firstName} ${item.student.lastName}`,
-        }))),
+        }));
+        this.cdr.markForCheck();
+      },
       error: () => this.loadDemoStudents(),
     });
   }
@@ -348,11 +352,15 @@ export class FeesComponent implements OnInit {
       next: (res) => {
         this.assignments = res.data.map((a) => ({ ...a, installments: [] }));
         this.loadInstallments();
+        this.cdr.markForCheck();
       },
       error: () => this.loadDemoAssignments(),
     });
     this.http.get<ApiResponse<FeePayment[]>>(`/api/fees/students/${studentId}/payments`).subscribe({
-      next: (res) => (this.payments = res.data),
+      next: (res) => {
+        this.payments = res.data;
+        this.cdr.markForCheck();
+      },
       error: () => this.loadDemoPayments(),
     });
   }
@@ -362,6 +370,7 @@ export class FeesComponent implements OnInit {
       this.http.get<ApiResponse<Installment[]>>(`/api/fees/assignments/${assignment.id}/installments`).subscribe({
         next: (res) => {
           assignment.installments = res.data;
+          this.cdr.markForCheck();
         },
         error: () => undefined,
       });
@@ -373,6 +382,7 @@ export class FeesComponent implements OnInit {
       { id: 'stu-1', admissionNo: 'ADM0001', displayName: 'Aarav Kumar' },
       { id: 'stu-2', admissionNo: 'ADM0002', displayName: 'Zoya Khan' },
     ];
+    this.cdr.markForCheck();
   }
 
   private loadDemoAssignments(): void {
@@ -387,6 +397,7 @@ export class FeesComponent implements OnInit {
         ],
       },
     ];
+    this.cdr.markForCheck();
   }
 
   private loadDemoPayments(): void {
@@ -394,5 +405,6 @@ export class FeesComponent implements OnInit {
       { id: 'p1', receiptNo: 'RCP-2026-001', studentName: 'Aarav Kumar', amountPaid: 400, paidAt: '2026-04-05T10:00:00Z', paymentMethod: 'CASH', referenceNo: '', remarks: '' },
       { id: 'p2', receiptNo: 'RCP-2026-014', studentName: 'Aarav Kumar', amountPaid: 200, paidAt: '2026-07-10T09:30:00Z', paymentMethod: 'UPI', referenceNo: 'UPI12345', remarks: '' },
     ];
+    this.cdr.markForCheck();
   }
 }

@@ -7,8 +7,8 @@
 #     ./scripts/run-linux.sh
 #
 # Requirements (see docs/README-BACKEND.md and docs/README-FRONTEND.md):
-#     JDK 21, Maven 3.9+, Node.js 20+, PostgreSQL 15, Redis 7
-#     PostgreSQL and Redis must already be running.
+#     JDK 21, Maven 3.9+, Node.js 20+, PostgreSQL 15
+#     PostgreSQL must already be running.
 # =====================================================================
 set -euo pipefail
 
@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # ---------------------------------------------------------------------
-# Load optional .env (database/redis credentials etc.)
+# Load optional .env (database credentials etc.)
 # ---------------------------------------------------------------------
 if [ -f "$PROJECT_DIR/.env" ]; then
     echo "[run] Loading $PROJECT_DIR/.env"

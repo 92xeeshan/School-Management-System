@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -154,11 +154,14 @@ export class NoticesComponent implements OnInit {
 
   notices: Notice[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.http.get<ApiResponse<BackendNotice[]>>('/api/notices').subscribe({
-      next: (res) => (this.notices = res.data.map(toNotice)),
+      next: (res) => {
+        this.notices = res.data.map(toNotice);
+        this.cdr.markForCheck();
+      },
       error: () => this.loadDemo(),
     });
   }
@@ -178,7 +181,10 @@ export class NoticesComponent implements OnInit {
       status,
     };
     this.http.post<ApiResponse<BackendNotice>>('/api/notices', payload).subscribe({
-      next: (res) => this.notices.unshift(toNotice(res.data)),
+      next: (res) => {
+        this.notices = [toNotice(res.data), ...this.notices];
+        this.cdr.markForCheck();
+      },
       error: () => {
         const notice: Notice = {
           id: `n${Date.now()}`,
@@ -189,7 +195,8 @@ export class NoticesComponent implements OnInit {
           publishedOn: status === 'PUBLISHED' ? new Date().toISOString().slice(0, 10) : null,
           expiresOn: this.form.value.expiresOn || null,
         };
-        this.notices.unshift(notice);
+        this.notices = [notice, ...this.notices];
+        this.cdr.markForCheck();
       },
     });
     this.form.reset({ audience: 'EVERYONE', status: 'PUBLISHED' });
@@ -201,5 +208,6 @@ export class NoticesComponent implements OnInit {
       { id: 'n2', title: 'PTA meeting scheduled', content: 'Parent-teacher meeting on Friday at 10 AM.', audience: 'PARENTS', status: 'PUBLISHED', publishedOn: '2026-07-25', expiresOn: null },
       { id: 'n3', title: 'Staff workshop draft', content: 'Upcoming teacher training details.', audience: 'TEACHERS', status: 'DRAFT', publishedOn: null, expiresOn: null },
     ];
+    this.cdr.markForCheck();
   }
 }

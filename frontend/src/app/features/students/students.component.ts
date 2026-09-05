@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+import { finalize } from 'rxjs';
 import { ApiResponse, PagedResponse } from '../../core/models/api.model';
 
 interface Student {
@@ -154,7 +155,7 @@ interface AcademicYear {
               </div>
             </div>
             <div class="form-actions">
-              <button class="btn" type="button" (click)="closeModal()">{{ 'common.cancel' | translate }}</button>
+              <button class="btn" type="button" (click)="closeModal(true)">{{ 'common.cancel' | translate }}</button>
               <button class="btn btn-primary" type="submit" [disabled]="form.invalid || saving">
                 {{ saving ? ('common.loading' | translate) : ('common.save' | translate) }}
               </button>
@@ -224,7 +225,7 @@ export class StudentsComponent implements OnInit {
     sectionId: new FormControl(''),
   });
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   get sectionsForClass(): SectionOption[] {
     const classId = this.form.value.classId;
@@ -238,10 +239,10 @@ export class StudentsComponent implements OnInit {
     }
     return this.students.filter(
       (s) =>
-        s.firstName.toLowerCase().includes(q) ||
-        s.lastName.toLowerCase().includes(q) ||
-        s.admissionNo.toLowerCase().includes(q) ||
-        s.className.toLowerCase().includes(q)
+        (s.firstName ?? '').toLowerCase().includes(q) ||
+        (s.lastName ?? '').toLowerCase().includes(q) ||
+        (s.admissionNo ?? '').toLowerCase().includes(q) ||
+        (s.className ?? '').toLowerCase().includes(q)
     );
   }
 
@@ -252,13 +253,18 @@ export class StudentsComponent implements OnInit {
 
   openAddModal(): void {
     this.showModal = true;
+    this.saving = false;
     this.form.reset({ gender: 'MALE', admissionDate: new Date().toISOString().slice(0, 10) });
+    this.cdr.markForCheck();
   }
 
-  closeModal(): void {
-    if (!this.saving) {
-      this.showModal = false;
+  closeModal(force = false): void {
+    if (this.saving && !force) {
+      return;
     }
+    this.saving = false;
+    this.showModal = false;
+    this.cdr.markForCheck();
   }
 
   onClassSelect(): void {
@@ -270,6 +276,7 @@ export class StudentsComponent implements OnInit {
       return;
     }
     this.saving = true;
+    this.cdr.markForCheck();
     const { admissionNo, firstName, lastName, dateOfBirth, gender, admissionDate } = this.form.value;
     const body = {
       admissionNo,
@@ -280,65 +287,78 @@ export class StudentsComponent implements OnInit {
       admissionDate: admissionDate || null,
     };
     this.http.post<ApiResponse<{ id: string }>>('/api/students', body).subscribe({
-      next: (res) => {
-        this.enroll(res.data.id, () => {
-          this.saving = false;
-          this.showModal = false;
-          this.load();
-        });
-      },
+      next: (res) => this.enroll(res.data.id),
       error: () => {
         this.saving = false;
-        this.showModal = false;
-        alert('Student added (demo mode — backend not reachable)');
+        this.cdr.markForCheck();
+        alert('Could not save student. Please try again.');
       },
     });
   }
 
-  private enroll(studentId: string, onDone: () => void): void {
+  private enroll(studentId: string): void {
     const classId = this.form.value.classId;
     const sectionId = this.form.value.sectionId;
     const academicYearId = this.academicYears.find((y) => y.current)?.id ?? this.academicYears[0]?.id;
+    const finish = (): void => {
+      this.saving = false;
+      this.showModal = false;
+      this.load();
+      this.cdr.markForCheck();
+    };
     if (!classId || !sectionId || !academicYearId) {
-      onDone();
+      finish();
       return;
     }
     this.http
       .post<ApiResponse<unknown>>(`/api/students/${studentId}/enroll`, { classId, sectionId, academicYearId })
-      .subscribe({ next: onDone, error: onDone });
+      .pipe(finalize(finish))
+      .subscribe({ next: () => undefined, error: () => undefined });
   }
 
   private load(): void {
     this.http.get<ApiResponse<PagedResponse<BackendStudentListItem>>>('/api/students', { params: { size: '100' } }).subscribe({
-      next: (res) =>
-        (this.students = res.data.content.map((item) => ({
+      next: (res) => {
+        const items = res.data?.content ?? [];
+        this.students = items.map((item) => ({
           id: item.student.id,
-          admissionNo: item.student.admissionNo,
-          firstName: item.student.firstName,
-          lastName: item.student.lastName,
-          className: item.className,
-          section: item.sectionName,
-          rollNumber: item.rollNumber,
-          gender: item.student.gender,
+          admissionNo: item.student.admissionNo ?? '',
+          firstName: item.student.firstName ?? '',
+          lastName: item.student.lastName ?? '',
+          className: item.className ?? '',
+          section: item.sectionName ?? '',
+          rollNumber: item.rollNumber ?? 0,
+          gender: item.student.gender ?? '',
           phone: '',
           guardianName: '',
-          status: item.student.status,
-        }))),
+          status: item.student.status ?? '',
+        }));
+        this.cdr.markForCheck();
+      },
       error: () => this.loadDemo(),
     });
   }
 
   private loadMeta(): void {
     this.http.get<ApiResponse<AcademicYear[]>>('/api/academic-years').subscribe({
-      next: (res) => (this.academicYears = res.data),
+      next: (res) => {
+        this.academicYears = res.data ?? [];
+        this.cdr.markForCheck();
+      },
       error: () => undefined,
     });
     this.http.get<ApiResponse<ClassOption[]>>('/api/classes').subscribe({
-      next: (res) => (this.classes = res.data),
+      next: (res) => {
+        this.classes = res.data ?? [];
+        this.cdr.markForCheck();
+      },
       error: () => undefined,
     });
     this.http.get<ApiResponse<SectionOption[]>>('/api/sections').subscribe({
-      next: (res) => (this.sections = res.data),
+      next: (res) => {
+        this.sections = res.data ?? [];
+        this.cdr.markForCheck();
+      },
       error: () => undefined,
     });
   }
@@ -351,5 +371,6 @@ export class StudentsComponent implements OnInit {
       { id: 's4', admissionNo: 'ADM-2026-004', firstName: 'Kabir', lastName: 'Singh', className: 'VII', section: 'A', rollNumber: 1, gender: 'MALE', phone: '+91 90123 45678', guardianName: 'Gurmeet Singh', status: 'ACTIVE' },
       { id: 's5', admissionNo: 'ADM-2026-005', firstName: 'Meera', lastName: 'Nair', className: 'VII', section: 'A', rollNumber: 2, gender: 'FEMALE', phone: '+91 93456 78901', guardianName: 'Suresh Nair', status: 'INACTIVE' },
     ];
+    this.cdr.markForCheck();
   }
 }

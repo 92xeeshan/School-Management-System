@@ -5,7 +5,7 @@ multi-tenant data isolation via PostgreSQL Row-Level Security, attendance,
 fees, notices and academics modules.
 
 **Stack:** Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA,
-PostgreSQL 15, Redis 7, Flyway, MinIO (optional), JasperReports, OpenAPI/Swagger.
+PostgreSQL 15, Caffeine cache, Flyway, MinIO (optional), JasperReports, OpenAPI/Swagger.
 
 ---
 
@@ -16,7 +16,6 @@ PostgreSQL 15, Redis 7, Flyway, MinIO (optional), JasperReports, OpenAPI/Swagger
 | JDK             | 21 (LTS)  | Run/build the Spring Boot app            | https://adoptium.net (Temurin 21)                   |
 | Maven           | 3.9+      | Build tool                               | https://maven.apache.org/download.cgi               |
 | PostgreSQL      | 15        | Main database                            | https://www.postgresql.org/download/                |
-| Redis           | 7         | Permission cache, session support        | https://redis.io/download                           |
 | MinIO           | Latest    | File storage (optional, fees/notices PDFs and attachments) | https://min.io/download                    |
 | Git             | Latest    | Clone the repository                     | https://git-scm.com/downloads                       |
 
@@ -63,13 +62,10 @@ On **Windows** you can run the same SQL from `psql` (add
 > `SPRING_FLYWAY_URL`. Then run `scripts/apply-db.sh` or start the backend
 > so Flyway migrates.
 
-### 2.2 Redis (Windows and Linux)
+### 2.2 Permission cache (Caffeine)
 
-Start Redis on the default port `6379` with no password:
-
-- **Linux/macOS:** `redis-server` (or the distro service)
-- **Windows:** use the official Memurai/Redis Windows build, or run Redis
-  inside the Docker container described in `docs/DOCKER-SETUP.md`.
+Authorities from `role_permission` are cached in-process with Caffeine
+(5-minute TTL). Redis is not required.
 
 ### 2.3 MinIO (optional, Windows and Linux)
 
@@ -96,7 +92,6 @@ override the defaults:
 | `POSTGRES_DB`                  | `schoolms`                           | Database name                       |
 | `POSTGRES_USER`                | `schoolms`                           | Schema-owner role for SQL scripts   |
 | `POSTGRES_PASSWORD`            | `schoolms`                           | Schema-owner password               |
-| `SPRING_DATA_REDIS_HOST`       | `localhost`                          | Redis host                          |
 | `JWT_SECRET`                   | dev-only placeholder (see yml)       | JWT signing secret (32+ chars)      |
 | `MINIO_ENDPOINT`               | `http://localhost:9000`              | MinIO endpoint                      |
 | `CORS_ALLOWED_ORIGINS`         | `http://localhost:4200,...`          | Comma-separated allowed origins     |
@@ -114,7 +109,6 @@ How to set variables:
 ### 3.1 Prerequisites ready?
 
 - PostgreSQL is running and the roles/database from section 2.1 exist.
-- Redis is running on `localhost:6379`.
 
 ### 3.2 Run in dev mode (recommended)
 
@@ -184,6 +178,5 @@ Seeded by Flyway. Password for every account is `Admin@123`:
 |----------------------------------|-----------------------------------------------------|
 | Flyway migration fails with `role "app_rls" does not exist` | Create the roles from section 2.1 |
 | `Connection refused ... 5432`    | PostgreSQL is not running / wrong port              |
-| `Connection refused ... 6379`    | Redis is not running                                |
 | Login returns 403                | Add your frontend origin to `CORS_ALLOWED_ORIGINS`  |
 | 401 on a working session         | Access token expired; the UI auto-refreshes it      |

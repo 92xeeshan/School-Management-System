@@ -2,7 +2,7 @@
 
 Multi-tenant (RLS) school management system.
 
-**Stack:** Spring Boot 3 / Java 21 / PostgreSQL 15 / Spring Security JWT / Redis / MinIO / JasperReports / Angular 19 + Material + ngx-translate / Flyway / Docker Compose.
+**Stack:** Spring Boot 3 / Java 21 / PostgreSQL 15 / Spring Security JWT / Caffeine / MinIO / JasperReports / Angular 19 + Material + ngx-translate / Flyway / Docker Compose.
 
 ## Documentation
 
@@ -42,7 +42,7 @@ docker compose up --build
 
 ## Running without Docker
 
-Requirements: JDK 21, Maven 3.9+, Node 20+, PostgreSQL 15, Redis 7.
+Requirements: JDK 21, Maven 3.9+, Node 20+, PostgreSQL 15.
 
 ```bash
 # database
@@ -69,5 +69,5 @@ Seeded by Flyway (`V3__seed_demo_data.sql`). All accounts use the password `Admi
 ## Architecture notes
 
 - Shared-DB multi-tenancy with a `school_id` discriminator on every tenant table and PostgreSQL Row-Level Security policies enforced at the database layer.
-- JWT access token (short-lived) + DB-backed refresh token. Authorities are resolved from the `role_permission` table and cached in Redis.
+- JWT access token (short-lived) + DB-backed refresh token. Authorities are resolved from the `role_permission` table and cached in Caffeine.
 - Backend and frontend messages are localized (Spring MessageSource / ngx-translate) for en/hi/ur.
