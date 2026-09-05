@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
-import { ApiResponse } from '../../core/models/api.model';
+import { ApiError, ApiResponse } from '../../core/models/api.model';
 
 interface SchoolClass {
   id: string;
@@ -16,12 +16,15 @@ interface SchoolSection {
   id: string;
   name: string;
   capacity: number;
+  classTeacherName: string;
 }
 
 interface BackendClass {
   id: string;
   name: string;
   code: string;
+  sections?: BackendSection[];
+  subjects?: BackendSubject[];
 }
 
 interface BackendSection {
@@ -30,12 +33,22 @@ interface BackendSection {
   className: string;
   name: string;
   capacity: number;
+  classTeacherId?: string | null;
+  classTeacherName?: string | null;
 }
 
 interface BackendSubject {
   id: string;
   name: string;
   code: string;
+}
+
+interface BackendTeacher {
+  id: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  status: string;
 }
 
 @Component({
@@ -60,6 +73,7 @@ interface BackendSubject {
               <tr>
                 <th>{{ 'academics.className' | translate }}</th>
                 <th>{{ 'academics.sections' | translate }}</th>
+                <th>{{ 'academics.classTeacher' | translate }}</th>
                 <th>{{ 'academics.subjects' | translate }}</th>
               </tr>
             </thead>
@@ -79,15 +93,26 @@ interface BackendSubject {
                     </div>
                   </td>
                   <td>
+                    <div class="teacher-list">
+                      @for (section of klass.sections; track section.id) {
+                        <div>{{ section.name }}: {{ section.classTeacherName || '—' }}</div>
+                      } @empty {
+                        <span class="muted">—</span>
+                      }
+                    </div>
+                  </td>
+                  <td>
                     <div class="subject-tags">
                       @for (subject of klass.subjects; track subject) {
                         <span class="tag">{{ subject }}</span>
+                      } @empty {
+                        <span class="muted">—</span>
                       }
                     </div>
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="3" class="center">{{ 'common.noData' | translate }}</td></tr>
+                <tr><td colspan="4" class="center">{{ 'common.noData' | translate }}</td></tr>
               }
             </tbody>
           </table>
@@ -99,15 +124,49 @@ interface BackendSubject {
       <div class="modal-backdrop" (click)="closeModal()">
         <div class="modal" (click)="$event.stopPropagation()">
           <h2>{{ 'academics.addClass' | translate }}</h2>
+          @if (formError) {
+            <p class="form-error">{{ formError }}</p>
+          }
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="form-grid">
               <div class="field">
                 <label>{{ 'academics.className' | translate }} *</label>
-                <input type="text" formControlName="name" placeholder="IX" />
+                <input type="text" formControlName="name" placeholder="Class 8" (input)="onClassNameChange()" />
               </div>
               <div class="field">
                 <label>Code</label>
-                <input type="text" formControlName="code" placeholder="IX" />
+                <input type="text" formControlName="code" placeholder="C8" />
+              </div>
+              <div class="field">
+                <label>{{ 'academics.sections' | translate }} *</label>
+                <select formControlName="sectionName">
+                  <option value="" disabled>{{ 'academics.selectSection' | translate }}</option>
+                  @for (section of availableSections; track section) {
+                    <option [value]="section">{{ section }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field">
+                <label>{{ 'academics.capacity' | translate }}</label>
+                <input type="number" formControlName="capacity" min="1" />
+              </div>
+              <div class="field">
+                <label>{{ 'academics.subjects' | translate }} *</label>
+                <select formControlName="subjectId">
+                  <option value="" disabled>{{ 'academics.selectSubject' | translate }}</option>
+                  @for (subject of subjects; track subject.id) {
+                    <option [value]="subject.id">{{ subject.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field">
+                <label>{{ 'academics.classTeacher' | translate }} *</label>
+                <select formControlName="classTeacherId">
+                  <option value="" disabled>{{ 'academics.selectTeacher' | translate }}</option>
+                  @for (teacher of teachers; track teacher.id) {
+                    <option [value]="teacher.id">{{ teacherLabel(teacher) }}</option>
+                  }
+                </select>
               </div>
             </div>
             <div class="form-actions">
@@ -139,6 +198,7 @@ interface BackendSubject {
     }
     .subject-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .tag { padding: 3px 10px; border-radius: 6px; background: var(--color-bg); border: 1px solid var(--color-border); font-size: .82rem; }
+    .teacher-list { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; }
 
     .modal-backdrop {
       position: fixed; inset: 0; z-index: 100;
@@ -148,45 +208,84 @@ interface BackendSubject {
     }
     .modal {
       background: #fff; border-radius: var(--radius);
-      padding: 24px; width: 440px; max-width: 100%;
+      padding: 24px; width: 560px; max-width: 100%;
       box-shadow: 0 20px 50px rgba(0,0,0,.25);
     }
     .modal h2 { margin: 0 0 18px; font-size: 1.2rem; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field label { font-weight: 500; font-size: .85rem; color: var(--color-muted); }
-    input {
+    input, select {
       padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit;
     }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .form-error { margin: 0 0 14px; color: #b91c1c; font-size: .9rem; }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AcademicsComponent implements OnInit {
   classes: SchoolClass[] = [];
+  subjects: BackendSubject[] = [];
+  teachers: BackendTeacher[] = [];
+  readonly sectionOptions = ['A', 'B', 'C'];
   showModal = false;
   saving = false;
+  formError = '';
 
   readonly form = new FormGroup({
     name: new FormControl('', Validators.required),
     code: new FormControl(''),
+    sectionName: new FormControl('', Validators.required),
+    capacity: new FormControl(40),
+    subjectId: new FormControl('', Validators.required),
+    classTeacherId: new FormControl('', Validators.required),
   });
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.loadReal();
+    this.load();
+  }
+
+  teacherLabel(teacher: BackendTeacher): string {
+    return teacher.displayName || [teacher.firstName, teacher.lastName].filter(Boolean).join(' ');
+  }
+
+  get availableSections(): string[] {
+    const name = (this.form.value.name || '').trim().toLowerCase();
+    const existing = this.classes.find((klass) => klass.name.toLowerCase() === name);
+    if (!existing) {
+      return this.sectionOptions;
+    }
+    const used = new Set(existing.sections.map((section) => section.name.toUpperCase()));
+    return this.sectionOptions.filter((section) => !used.has(section));
+  }
+
+  onClassNameChange(): void {
+    const selected = this.form.value.sectionName;
+    if (selected && !this.availableSections.includes(selected)) {
+      this.form.patchValue({ sectionName: '' });
+    }
+    this.cdr.markForCheck();
   }
 
   openAddModal(): void {
     this.showModal = true;
-    this.form.reset();
+    this.saving = false;
+    this.formError = '';
+    this.form.reset({ name: '', code: '', sectionName: '', capacity: 40, subjectId: '', classTeacherId: '' });
+    this.loadLookups();
+    this.cdr.markForCheck();
   }
 
   closeModal(): void {
-    if (!this.saving) {
-      this.showModal = false;
+    if (this.saving) {
+      return;
     }
+    this.showModal = false;
+    this.formError = '';
+    this.cdr.markForCheck();
   }
 
   onSubmit(): void {
@@ -194,73 +293,83 @@ export class AcademicsComponent implements OnInit {
       return;
     }
     this.saving = true;
+    this.formError = '';
+    this.cdr.markForCheck();
     const body = {
       name: this.form.value.name,
       code: this.form.value.code || this.form.value.name,
       sortOrder: 0,
+      sectionName: this.form.value.sectionName,
+      capacity: this.form.value.capacity || 40,
+      subjectIds: this.form.value.subjectId ? [this.form.value.subjectId] : [],
+      classTeacherId: this.form.value.classTeacherId,
     };
     this.http.post<ApiResponse<unknown>>('/api/classes', body).subscribe({
       next: () => {
         this.saving = false;
         this.showModal = false;
         this.cdr.markForCheck();
-        this.loadReal();
+        this.load();
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.saving = false;
-        this.showModal = false;
+        const apiError = err.error as ApiError | undefined;
+        this.formError = apiError?.message || 'Could not save class. Please try again.';
         this.cdr.markForCheck();
-        alert('Class added (demo mode — backend not reachable)');
       },
     });
   }
 
-  private loadReal(): void {
+  private load(): void {
     this.http.get<ApiResponse<BackendClass[]>>('/api/classes').subscribe({
       next: (res) => {
-        const classes = res.data.map((c) => ({ id: c.id, name: c.name, code: c.code, sections: [], subjects: [] }));
-        this.loadSectionsAndSubjects(classes);
+        this.classes = (res.data ?? []).map((klass) => ({
+          id: klass.id,
+          name: klass.name,
+          code: klass.code,
+          sections: (klass.sections ?? []).map((section) => ({
+            id: section.id,
+            name: section.name,
+            capacity: section.capacity,
+            classTeacherName: section.classTeacherName ?? '',
+          })),
+          subjects: (klass.subjects ?? []).map((subject) => subject.name),
+        }));
+        this.cdr.markForCheck();
       },
       error: () => this.loadDemo(),
     });
   }
 
-  private loadSectionsAndSubjects(classes: SchoolClass[]): void {
+  private loadLookups(): void {
     this.http.get<ApiResponse<BackendSubject[]>>('/api/subjects').subscribe({
-      next: (subjectsRes) => {
-        const subjectNames = subjectsRes.data.map((s) => s.name);
-        for (const klass of classes) {
-          klass.subjects = subjectNames;
-        }
+      next: (res) => {
+        this.subjects = res.data ?? [];
+        this.cdr.markForCheck();
       },
       error: () => undefined,
     });
-
-    for (const klass of classes) {
-      this.http.get<ApiResponse<BackendSection[]>>('/api/sections', { params: { classId: klass.id } }).subscribe({
-        next: (res) => {
-          klass.sections = res.data.map((s) => ({ id: s.id, name: s.name, capacity: s.capacity }));
-          this.cdr.markForCheck();
-        },
-        error: () => undefined,
-      });
-    }
-    this.classes = [...classes];
-    this.cdr.markForCheck();
+    this.http.get<ApiResponse<BackendTeacher[]>>('/api/teachers').subscribe({
+      next: (res) => {
+        this.teachers = (res.data ?? []).filter((teacher) => teacher.status !== 'INACTIVE');
+        this.cdr.markForCheck();
+      },
+      error: () => undefined,
+    });
   }
 
   private loadDemo(): void {
     this.classes = [
       { id: 'c1', name: 'VI', code: 'VI', sections: [
-        { id: 's1', name: 'A', capacity: 40 },
-        { id: 's2', name: 'B', capacity: 40 },
+        { id: 's1', name: 'A', capacity: 40, classTeacherName: 'Asha Sharma' },
+        { id: 's2', name: 'B', capacity: 40, classTeacherName: '—' },
       ], subjects: ['English', 'Hindi', 'Mathematics', 'Science', 'Social Studies'] },
       { id: 'c2', name: 'VII', code: 'VII', sections: [
-        { id: 's3', name: 'A', capacity: 40 },
+        { id: 's3', name: 'A', capacity: 40, classTeacherName: 'Asha Sharma' },
       ], subjects: ['English', 'Hindi', 'Mathematics', 'Science', 'Social Studies', 'Urdu'] },
       { id: 'c3', name: 'VIII', code: 'VIII', sections: [
-        { id: 's4', name: 'A', capacity: 40 },
-        { id: 's5', name: 'B', capacity: 40 },
+        { id: 's4', name: 'A', capacity: 40, classTeacherName: '—' },
+        { id: 's5', name: 'B', capacity: 40, classTeacherName: '—' },
       ], subjects: ['English', 'Mathematics', 'Science', 'Social Studies', 'Computer Science'] },
     ];
     this.cdr.markForCheck();

@@ -127,8 +127,16 @@ public class StudentService {
         }
         academicYearRepository.findByIdAndSchoolId(request.academicYearId(), schoolId)
                 .orElseThrow(() -> ResourceNotFoundException.of("academic_year", request.academicYearId()));
-        if (enrollmentRepository.existsByStudentIdAndAcademicYearId(studentId, request.academicYearId())) {
-            throw new BusinessException("enrollment.exists");
+        Optional<StudentEnrollment> existing = enrollmentRepository
+                .findByStudentIdAndAcademicYearId(studentId, request.academicYearId());
+        if (existing.isPresent()) {
+            StudentEnrollment enrollment = existing.get();
+            enrollment.setSectionId(request.sectionId());
+            if (request.rollNumber() != null) {
+                enrollment.setRollNumber(request.rollNumber());
+            }
+            enrollment.setStatus("ACTIVE");
+            return enrollmentRepository.save(enrollment);
         }
         StudentEnrollment enrollment = new StudentEnrollment();
         enrollment.setSchoolId(schoolId);

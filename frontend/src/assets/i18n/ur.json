@@ -56,6 +56,8 @@
     "title": "طلباء",
     "subtitle": "طلباء کے ریکارڈ کا انتظام کریں",
     "addStudent": "طالب علم شامل کریں",
+    "editStudent": "طالب علم میں ترمیم",
+    "deleteConfirm": "{{name}} کو غیر فعال کریں؟ وہ غیر فعال نشان زد ہو جائیں گے۔",
     "studentId": "داخلہ نمبر",
     "name": "نام",
     "className": "کلاس",
@@ -80,7 +82,12 @@
     "room": "کمرہ",
     "addClass": "کلاس شامل کریں",
     "addSection": "سیکشن شامل کریں",
-    "addSubject": "مضمون شامل کریں"
+    "addSubject": "مضمون شامل کریں",
+    "selectSection": "سیکشن منتخب کریں",
+    "selectSubject": "مضمون منتخب کریں",
+    "selectTeacher": "کلاس ٹیچر منتخب کریں",
+    "duplicateSection": "اس کلاس میں وہ سیکشن پہلے سے موجود ہے۔",
+    "capacity": "گنجائش"
   },
   "attendance": {
     "title": "حاضری",

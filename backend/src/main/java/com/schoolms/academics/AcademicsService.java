@@ -18,8 +18,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,6 +38,7 @@ public class AcademicsService {
     private final TeacherProfileRepository teacherRepository;
     private final TeacherSubjectRepository teacherSubjectRepository;
     private final TeacherSectionRepository teacherSectionRepository;
+    private final ClassSubjectRepository classSubjectRepository;
 
     // ---- Academic years -------------------------------------------------
     @Transactional(readOnly = true)
@@ -63,22 +68,63 @@ public class AcademicsService {
     // ---- Classes ----------------------------------------------------------
     @Transactional(readOnly = true)
     public List<ClassDto> listClasses() {
-        return classRepository.findBySchoolIdOrderBySortOrderAsc(SecurityUtils.currentSchoolId())
-                .stream().map(ClassDto::from).toList();
+        UUID schoolId = SecurityUtils.currentSchoolId();
+        List<SchoolClass> classes = classRepository.findBySchoolIdOrderBySortOrderAsc(schoolId);
+        Map<UUID, List<Section>> sectionsByClass = sectionRepository.findBySchoolIdOrderByNameAsc(schoolId)
+                .stream().collect(Collectors.groupingBy(Section::getClassId));
+        Map<UUID, List<SubjectDto>> subjectsByClass = subjectsByClass(schoolId);
+        Map<UUID, TeacherProfile> teachers = teacherRepository.findBySchoolIdOrderByFirstNameAsc(schoolId)
+                .stream().collect(Collectors.toMap(TeacherProfile::getId, t -> t));
+        Map<UUID, UUID> classTeacherBySection = classTeacherIdsBySection(schoolId);
+        return classes.stream().map(schoolClass -> {
+            List<SectionDto> sections = sectionsByClass.getOrDefault(schoolClass.getId(), List.of()).stream()
+                    .map(section -> toSectionDto(section, schoolClass.getName(), classTeacherBySection, teachers))
+                    .toList();
+            List<SubjectDto> subjects = subjectsByClass.getOrDefault(schoolClass.getId(), List.of());
+            return new ClassDto(schoolClass.getId(), schoolClass.getName(), schoolClass.getCode(),
+                    schoolClass.getSortOrder(), sections, subjects);
+        }).toList();
     }
 
     @Transactional
     public ClassDto createClass(ClassRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        if (classRepository.existsBySchoolIdAndName(schoolId, request.name())) {
-            throw new BusinessException("error.conflict");
+        String className = request.name().trim();
+        String sectionName = normalizeSectionName(request.sectionName());
+        Optional<SchoolClass> existing = classRepository.findBySchoolIdAndName(schoolId, className);
+        SchoolClass schoolClass;
+        if (existing.isPresent()) {
+            schoolClass = existing.get();
+            if (sectionName == null) {
+                throw new BusinessException("class.section_required");
+            }
+            if (sectionRepository.existsByClassIdAndName(schoolClass.getId(), sectionName)) {
+                throw new BusinessException("section.exists");
+            }
+        } else {
+            schoolClass = new SchoolClass();
+            schoolClass.setSchoolId(schoolId);
+            schoolClass.setName(className);
+            schoolClass.setCode(request.code() == null || request.code().isBlank() ? className : request.code().trim());
+            schoolClass.setSortOrder(request.sortOrder() == null ? 0 : request.sortOrder());
+            schoolClass = classRepository.save(schoolClass);
         }
-        SchoolClass schoolClass = new SchoolClass();
-        schoolClass.setSchoolId(schoolId);
-        schoolClass.setName(request.name());
-        schoolClass.setCode(request.code());
-        schoolClass.setSortOrder(request.sortOrder() == null ? 0 : request.sortOrder());
-        return ClassDto.from(classRepository.save(schoolClass));
+
+        if (sectionName != null) {
+            if (sectionRepository.existsByClassIdAndName(schoolClass.getId(), sectionName)) {
+                throw new BusinessException("section.exists");
+            }
+            Section section = new Section();
+            section.setSchoolId(schoolId);
+            section.setClassId(schoolClass.getId());
+            section.setName(sectionName);
+            section.setCapacity(request.capacity() == null ? 40 : request.capacity());
+            section = sectionRepository.save(section);
+            assignClassTeacher(schoolId, section.getId(), request.classTeacherId());
+        }
+
+        assignSubjects(schoolId, schoolClass.getId(), request.subjectIds());
+        return toClassDto(schoolClass, schoolId);
     }
 
     // ---- Sections -----------------------------------------------------------
@@ -90,8 +136,12 @@ public class AcademicsService {
         List<Section> sections = classId == null
                 ? sectionRepository.findBySchoolIdOrderByNameAsc(schoolId)
                 : sectionRepository.findBySchoolIdAndClassIdOrderByNameAsc(schoolId, classId);
+        Map<UUID, TeacherProfile> teachers = teacherRepository.findBySchoolIdOrderByFirstNameAsc(schoolId)
+                .stream().collect(Collectors.toMap(TeacherProfile::getId, t -> t));
+        Map<UUID, UUID> classTeacherBySection = classTeacherIdsBySection(schoolId);
         return sections.stream()
-                .map(section -> SectionDto.from(section, classNames.get(section.getClassId())))
+                .map(section -> toSectionDto(section, classNames.get(section.getClassId()),
+                        classTeacherBySection, teachers))
                 .toList();
     }
 
@@ -109,7 +159,9 @@ public class AcademicsService {
         section.setName(request.name());
         section.setCapacity(request.capacity() == null ? 40 : request.capacity());
         section = sectionRepository.save(section);
-        return SectionDto.from(section, schoolClass.getName());
+        return toSectionDto(section, schoolClass.getName(), classTeacherIdsBySection(schoolId),
+                teacherRepository.findBySchoolIdOrderByFirstNameAsc(schoolId)
+                        .stream().collect(Collectors.toMap(TeacherProfile::getId, t -> t)));
     }
 
     // ---- Subjects ------------------------------------------------------------
@@ -225,6 +277,106 @@ public class AcademicsService {
     private UUID currentYearId(UUID schoolId) {
         return academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)
                 .map(AcademicYear::getId).orElse(null);
+    }
+
+    private ClassDto toClassDto(SchoolClass schoolClass, UUID schoolId) {
+        Map<UUID, TeacherProfile> teachers = teacherRepository.findBySchoolIdOrderByFirstNameAsc(schoolId)
+                .stream().collect(Collectors.toMap(TeacherProfile::getId, t -> t));
+        Map<UUID, UUID> classTeacherBySection = classTeacherIdsBySection(schoolId);
+        List<SectionDto> sections = sectionRepository
+                .findBySchoolIdAndClassIdOrderByNameAsc(schoolId, schoolClass.getId()).stream()
+                .map(section -> toSectionDto(section, schoolClass.getName(), classTeacherBySection, teachers))
+                .toList();
+        List<SubjectDto> subjects = subjectsByClass(schoolId).getOrDefault(schoolClass.getId(), List.of());
+        return new ClassDto(schoolClass.getId(), schoolClass.getName(), schoolClass.getCode(),
+                schoolClass.getSortOrder(), sections, subjects);
+    }
+
+    private SectionDto toSectionDto(Section section, String className,
+                                    Map<UUID, UUID> classTeacherBySection,
+                                    Map<UUID, TeacherProfile> teachers) {
+        UUID teacherId = classTeacherBySection.get(section.getId());
+        TeacherProfile teacher = teacherId == null ? null : teachers.get(teacherId);
+        return new SectionDto(section.getId(), section.getClassId(), className,
+                section.getName(), section.getCapacity(), teacherId,
+                teacher == null ? null : teacher.getDisplayName());
+    }
+
+    private Map<UUID, List<SubjectDto>> subjectsByClass(UUID schoolId) {
+        Map<UUID, Subject> subjects = subjectRepository.findBySchoolIdOrderByNameAsc(schoolId)
+                .stream().collect(Collectors.toMap(Subject::getId, s -> s));
+        Map<UUID, List<SubjectDto>> result = new HashMap<>();
+        for (ClassSubject link : classSubjectRepository.findBySchoolId(schoolId)) {
+            Subject subject = subjects.get(link.getSubjectId());
+            if (subject == null) {
+                continue;
+            }
+            result.computeIfAbsent(link.getClassId(), key -> new ArrayList<>()).add(SubjectDto.from(subject));
+        }
+        return result;
+    }
+
+    private Map<UUID, UUID> classTeacherIdsBySection(UUID schoolId) {
+        Map<UUID, UUID> result = new HashMap<>();
+        for (TeacherSection assignment : teacherSectionRepository.findBySchoolId(schoolId)) {
+            if (assignment.isClassTeacher()) {
+                result.putIfAbsent(assignment.getSectionId(), assignment.getTeacherId());
+            }
+        }
+        return result;
+    }
+
+    private void assignSubjects(UUID schoolId, UUID classId, List<UUID> subjectIds) {
+        if (subjectIds == null) {
+            return;
+        }
+        Set<UUID> unique = subjectIds.stream().filter(id -> id != null).collect(Collectors.toSet());
+        for (UUID subjectId : unique) {
+            subjectRepository.findByIdAndSchoolId(subjectId, schoolId)
+                    .orElseThrow(() -> ResourceNotFoundException.of("subject", subjectId));
+            if (!classSubjectRepository.existsByClassIdAndSubjectId(classId, subjectId)) {
+                ClassSubject link = new ClassSubject();
+                link.setSchoolId(schoolId);
+                link.setClassId(classId);
+                link.setSubjectId(subjectId);
+                classSubjectRepository.save(link);
+            }
+        }
+    }
+
+    private void assignClassTeacher(UUID schoolId, UUID sectionId, UUID teacherId) {
+        if (teacherId == null) {
+            return;
+        }
+        teacherRepository.findByIdAndSchoolId(teacherId, schoolId)
+                .orElseThrow(() -> ResourceNotFoundException.of("teacher", teacherId));
+        UUID yearId = currentYearId(schoolId);
+        if (yearId == null) {
+            throw new BusinessException("academic_year.not_found");
+        }
+        Optional<TeacherSection> existing = teacherSectionRepository
+                .findByTeacherIdAndSectionIdAndAcademicYearId(teacherId, sectionId, yearId);
+        TeacherSection assignment = existing.orElseGet(() -> {
+            TeacherSection created = new TeacherSection();
+            created.setSchoolId(schoolId);
+            created.setTeacherId(teacherId);
+            created.setSectionId(sectionId);
+            created.setAcademicYearId(yearId);
+            return created;
+        });
+        assignment.setClassTeacher(true);
+        teacherSectionRepository.save(assignment);
+    }
+
+    private String normalizeSectionName(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String name = value.trim().toUpperCase();
+        if (!Set.of("A", "B", "C").contains(name)) {
+            throw new BusinessException("section.invalid");
+        }
+        return name;
     }
 
     private SubjectType parseSubjectType(String value) {
