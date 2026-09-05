@@ -122,7 +122,7 @@ class StudentServiceTest {
     }
 
     @Test
-    void enrollRejectsDuplicateEnrollment() {
+    void enrollUpdatesExistingEnrollmentSection() {
         UUID studentId = UUID.randomUUID();
         UUID classId = UUID.randomUUID();
         UUID sectionId = UUID.randomUUID();
@@ -138,11 +138,22 @@ class StudentServiceTest {
         when(sectionRepository.findByIdAndSchoolId(sectionId, schoolId)).thenReturn(Optional.of(section));
         when(academicYearRepository.findByIdAndSchoolId(yearId, schoolId))
                 .thenReturn(Optional.of(new com.schoolms.academics.AcademicYear()));
-        when(enrollmentRepository.existsByStudentIdAndAcademicYearId(studentId, yearId)).thenReturn(true);
 
-        EnrollRequest request = new EnrollRequest(classId, sectionId, yearId, 1);
+        StudentEnrollment existing = new StudentEnrollment();
+        existing.setStudentId(studentId);
+        existing.setAcademicYearId(yearId);
+        existing.setSectionId(UUID.randomUUID());
+        existing.setRollNumber(4);
+        when(enrollmentRepository.findByStudentIdAndAcademicYearId(studentId, yearId))
+                .thenReturn(Optional.of(existing));
+        when(enrollmentRepository.save(any(StudentEnrollment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertThrows(BusinessException.class, () -> studentService.enroll(studentId, request));
+        EnrollRequest request = new EnrollRequest(classId, sectionId, yearId, null);
+        StudentEnrollment saved = studentService.enroll(studentId, request);
+
+        assertEquals(sectionId, saved.getSectionId());
+        assertEquals(4, saved.getRollNumber());
+        verify(enrollmentRepository).save(existing);
     }
 
     @Test

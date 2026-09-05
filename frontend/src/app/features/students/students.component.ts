@@ -19,6 +19,17 @@ interface Student {
   status: string;
 }
 
+interface BackendStudent {
+  id: string;
+  admissionNo: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string | null;
+  gender: string;
+  admissionDate: string | null;
+  status: string;
+}
+
 interface BackendStudentListItem {
   student: {
     id: string;
@@ -79,6 +90,7 @@ interface AcademicYear {
                 <th>{{ 'students.rollNumber' | translate }}</th>
                 <th>{{ 'students.gender' | translate }}</th>
                 <th>{{ 'common.status' | translate }}</th>
+                <th>{{ 'common.actions' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -91,9 +103,19 @@ interface AcademicYear {
                   <td>{{ student.rollNumber }}</td>
                   <td>{{ student.gender }}</td>
                   <td><span class="badge" [class.badge-success]="student.status === 'ACTIVE'" [class.badge-muted]="student.status !== 'ACTIVE'">{{ student.status }}</span></td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="btn btn-sm" type="button" (click)="openEditModal(student)">{{ 'common.edit' | translate }}</button>
+                      @if (student.status === 'ACTIVE') {
+                        <button class="btn btn-sm btn-danger" type="button" [disabled]="deletingId === student.id" (click)="askDelete(student)">
+                          {{ deletingId === student.id ? ('common.loading' | translate) : ('common.delete' | translate) }}
+                        </button>
+                      }
+                    </div>
+                  </td>
                 </tr>
               } @empty {
-                <tr><td colspan="7" class="center">{{ 'common.noData' | translate }}</td></tr>
+                <tr><td colspan="8" class="center">{{ 'common.noData' | translate }}</td></tr>
               }
             </tbody>
           </table>
@@ -104,7 +126,7 @@ interface AcademicYear {
     @if (showModal) {
       <div class="modal-backdrop" (click)="closeModal()">
         <div class="modal" (click)="$event.stopPropagation()">
-          <h2>{{ 'students.addStudent' | translate }}</h2>
+          <h2>{{ editingId ? ('students.editStudent' | translate) : ('students.addStudent' | translate) }}</h2>
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="form-grid">
               <div class="field">
@@ -164,6 +186,21 @@ interface AcademicYear {
         </div>
       </div>
     }
+
+    @if (pendingDelete) {
+      <div class="modal-backdrop" (click)="cancelDelete()">
+        <div class="modal modal-sm" (click)="$event.stopPropagation()">
+          <h2>{{ 'common.delete' | translate }}</h2>
+          <p class="confirm-text">{{ 'students.deleteConfirm' | translate:{ name: pendingDelete.firstName + ' ' + pendingDelete.lastName } }}</p>
+          <div class="form-actions">
+            <button class="btn" type="button" [disabled]="!!deletingId" (click)="cancelDelete()">{{ 'common.cancel' | translate }}</button>
+            <button class="btn btn-danger" type="button" [disabled]="!!deletingId" (click)="confirmDelete()">
+              {{ deletingId ? ('common.loading' | translate) : ('common.delete' | translate) }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -201,6 +238,12 @@ interface AcademicYear {
       padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit;
     }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-sm { padding: 5px 10px; font-size: .82rem; }
+    .btn-danger { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+    .btn-danger:hover { background: #991b1b; color: #fff; border-color: #991b1b; }
+    .modal-sm { width: 420px; }
+    .confirm-text { margin: 0 0 8px; color: var(--color-muted); line-height: 1.45; }
     @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -210,6 +253,9 @@ export class StudentsComponent implements OnInit {
   filter = '';
   showModal = false;
   saving = false;
+  editingId: string | null = null;
+  pendingDelete: Student | null = null;
+  deletingId: string | null = null;
   classes: ClassOption[] = [];
   sections: SectionOption[] = [];
   academicYears: AcademicYear[] = [];
@@ -252,10 +298,46 @@ export class StudentsComponent implements OnInit {
   }
 
   openAddModal(): void {
+    this.editingId = null;
     this.showModal = true;
     this.saving = false;
-    this.form.reset({ gender: 'MALE', admissionDate: new Date().toISOString().slice(0, 10) });
+    this.form.reset({ gender: 'MALE', admissionDate: new Date().toISOString().slice(0, 10), classId: '', sectionId: '' });
     this.cdr.markForCheck();
+  }
+
+  openEditModal(student: Student): void {
+    this.editingId = student.id;
+    this.saving = false;
+    this.showModal = true;
+    this.form.reset({
+      admissionNo: student.admissionNo,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      dateOfBirth: '',
+      gender: student.gender || 'MALE',
+      admissionDate: '',
+      classId: this.classIdForName(student.className),
+      sectionId: this.sectionIdFor(student.className, student.section),
+    });
+    this.cdr.markForCheck();
+    this.http.get<ApiResponse<BackendStudent>>(`/api/students/${student.id}`).subscribe({
+      next: (res) => {
+        if (this.editingId !== student.id) {
+          return;
+        }
+        const data = res.data;
+        this.form.patchValue({
+          admissionNo: data.admissionNo ?? student.admissionNo,
+          firstName: data.firstName ?? student.firstName,
+          lastName: data.lastName ?? student.lastName,
+          dateOfBirth: data.dateOfBirth ?? '',
+          gender: data.gender ?? student.gender ?? 'MALE',
+          admissionDate: data.admissionDate ?? '',
+        });
+        this.cdr.markForCheck();
+      },
+      error: () => undefined,
+    });
   }
 
   closeModal(force = false): void {
@@ -264,7 +346,43 @@ export class StudentsComponent implements OnInit {
     }
     this.saving = false;
     this.showModal = false;
+    this.editingId = null;
     this.cdr.markForCheck();
+  }
+
+  askDelete(student: Student): void {
+    this.pendingDelete = student;
+    this.cdr.markForCheck();
+  }
+
+  cancelDelete(): void {
+    if (this.deletingId) {
+      return;
+    }
+    this.pendingDelete = null;
+    this.cdr.markForCheck();
+  }
+
+  confirmDelete(): void {
+    const student = this.pendingDelete;
+    if (!student) {
+      return;
+    }
+    this.deletingId = student.id;
+    this.cdr.markForCheck();
+    this.http.patch<ApiResponse<void>>(`/api/students/${student.id}/deactivate`, {}).subscribe({
+      next: () => {
+        this.deletingId = null;
+        this.pendingDelete = null;
+        this.load();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.deletingId = null;
+        this.cdr.markForCheck();
+        alert('Could not delete student. Please try again.');
+      },
+    });
   }
 
   onClassSelect(): void {
@@ -286,6 +404,18 @@ export class StudentsComponent implements OnInit {
       gender,
       admissionDate: admissionDate || null,
     };
+    if (this.editingId) {
+      const studentId = this.editingId;
+      this.http.put<ApiResponse<unknown>>(`/api/students/${studentId}`, body).subscribe({
+        next: () => this.enroll(studentId),
+        error: () => {
+          this.saving = false;
+          this.cdr.markForCheck();
+          alert('Could not update student. Please try again.');
+        },
+      });
+      return;
+    }
     this.http.post<ApiResponse<{ id: string }>>('/api/students', body).subscribe({
       next: (res) => this.enroll(res.data.id),
       error: () => {
@@ -296,6 +426,15 @@ export class StudentsComponent implements OnInit {
     });
   }
 
+  private classIdForName(className: string): string {
+    return this.classes.find((c) => c.name === className)?.id ?? '';
+  }
+
+  private sectionIdFor(className: string, sectionName: string): string {
+    const classId = this.classIdForName(className);
+    return this.sections.find((s) => s.classId === classId && s.name === sectionName)?.id ?? '';
+  }
+
   private enroll(studentId: string): void {
     const classId = this.form.value.classId;
     const sectionId = this.form.value.sectionId;
@@ -303,6 +442,7 @@ export class StudentsComponent implements OnInit {
     const finish = (): void => {
       this.saving = false;
       this.showModal = false;
+      this.editingId = null;
       this.load();
       this.cdr.markForCheck();
     };
@@ -313,7 +453,10 @@ export class StudentsComponent implements OnInit {
     this.http
       .post<ApiResponse<unknown>>(`/api/students/${studentId}/enroll`, { classId, sectionId, academicYearId })
       .pipe(finalize(finish))
-      .subscribe({ next: () => undefined, error: () => undefined });
+      .subscribe({
+        next: () => undefined,
+        error: () => alert('Could not update class or section. Please try again.'),
+      });
   }
 
   private load(): void {

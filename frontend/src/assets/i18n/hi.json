@@ -56,6 +56,8 @@
     "title": "छात्र",
     "subtitle": "छात्र रिकॉर्ड प्रबंधित करें",
     "addStudent": "छात्र जोड़ें",
+    "editStudent": "छात्र संपादित करें",
+    "deleteConfirm": "{{name}} को निष्क्रिय करें? वे निष्क्रिय चिह्नित हो जाएंगे।",
     "studentId": "प्रवेश संख्या",
     "name": "नाम",
     "className": "कक्षा",
@@ -80,7 +82,12 @@
     "room": "कक्ष",
     "addClass": "कक्षा जोड़ें",
     "addSection": "सेक्शन जोड़ें",
-    "addSubject": "विषय जोड़ें"
+    "addSubject": "विषय जोड़ें",
+    "selectSection": "सेक्शन चुनें",
+    "selectSubject": "विषय चुनें",
+    "selectTeacher": "कक्षा अध्यापक चुनें",
+    "duplicateSection": "इस कक्षा में वह सेक्शन पहले से है।",
+    "capacity": "क्षमता"
   },
   "attendance": {
     "title": "उपस्थिति",

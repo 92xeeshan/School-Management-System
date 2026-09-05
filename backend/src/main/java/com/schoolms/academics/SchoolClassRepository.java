@@ -12,5 +12,7 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
 
     Optional<SchoolClass> findByIdAndSchoolId(UUID id, UUID schoolId);
 
+    Optional<SchoolClass> findBySchoolIdAndName(UUID schoolId, String name);
+
     boolean existsBySchoolIdAndName(UUID schoolId, String name);
 }

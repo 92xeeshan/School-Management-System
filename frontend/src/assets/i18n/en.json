@@ -56,6 +56,8 @@
     "title": "Students",
     "subtitle": "Manage student records",
     "addStudent": "Add Student",
+    "editStudent": "Edit Student",
+    "deleteConfirm": "Deactivate {{name}}? They will be marked inactive.",
     "studentId": "Admission No.",
     "name": "Name",
     "className": "Class",
@@ -80,7 +82,12 @@
     "room": "Room",
     "addClass": "Add Class",
     "addSection": "Add Section",
-    "addSubject": "Add Subject"
+    "addSubject": "Add Subject",
+    "selectSection": "Select section",
+    "selectSubject": "Select subject",
+    "selectTeacher": "Select class teacher",
+    "duplicateSection": "This class already has that section.",
+    "capacity": "Capacity"
   },
   "attendance": {
     "title": "Attendance",

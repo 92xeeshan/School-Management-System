@@ -39,6 +39,8 @@ class AcademicsServiceTest {
     private TeacherSubjectRepository teacherSubjectRepository;
     @Mock
     private TeacherSectionRepository teacherSectionRepository;
+    @Mock
+    private ClassSubjectRepository classSubjectRepository;
 
     private AcademicsService academicsService;
 
@@ -46,7 +48,7 @@ class AcademicsServiceTest {
     void setUp() {
         academicsService = new AcademicsService(academicYearRepository, classRepository,
                 sectionRepository, subjectRepository, teacherRepository,
-                teacherSubjectRepository, teacherSectionRepository);
+                teacherSubjectRepository, teacherSectionRepository, classSubjectRepository);
         TestSecurity.loginAsAdmin();
     }
 
@@ -57,8 +59,6 @@ class AcademicsServiceTest {
 
     @Test
     void createClassPersistsWithSortOrder() {
-        when(classRepository.existsBySchoolIdAndName(TestSecurity.SCHOOL_ID, "Class 7"))
-                .thenReturn(false);
         when(classRepository.save(any(SchoolClass.class))).thenAnswer(invocation -> {
             SchoolClass c = invocation.getArgument(0);
             if (c.getId() == null) {
@@ -67,7 +67,16 @@ class AcademicsServiceTest {
             return c;
         });
 
-        var dto = academicsService.createClass(new ClassRequest("Class 7", "C7", 7));
+        when(classRepository.findBySchoolIdAndName(TestSecurity.SCHOOL_ID, "Class 7"))
+                .thenReturn(java.util.Optional.empty());
+        when(sectionRepository.findBySchoolIdAndClassIdOrderByNameAsc(any(), any()))
+                .thenReturn(java.util.List.of());
+        when(classSubjectRepository.findBySchoolId(TestSecurity.SCHOOL_ID)).thenReturn(java.util.List.of());
+        when(teacherRepository.findBySchoolIdOrderByFirstNameAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of());
+        when(teacherSectionRepository.findBySchoolId(TestSecurity.SCHOOL_ID)).thenReturn(java.util.List.of());
+
+        var dto = academicsService.createClass(new ClassRequest("Class 7", "C7", 7, null, null, null, null));
 
         assertEquals("Class 7", dto.name());
         assertEquals(7, dto.sortOrder());
@@ -75,13 +84,17 @@ class AcademicsServiceTest {
     }
 
     @Test
-    void createClassRejectsDuplicateName() {
-        when(classRepository.existsBySchoolIdAndName(TestSecurity.SCHOOL_ID, "Class 5"))
-                .thenReturn(true);
+    void createClassRejectsDuplicateSection() {
+        SchoolClass existing = new SchoolClass();
+        existing.setId(UUID.randomUUID());
+        existing.setName("Class 5");
+        when(classRepository.findBySchoolIdAndName(TestSecurity.SCHOOL_ID, "Class 5"))
+                .thenReturn(java.util.Optional.of(existing));
+        when(sectionRepository.existsByClassIdAndName(existing.getId(), "A")).thenReturn(true);
 
         assertThrows(BusinessException.class,
-                () -> academicsService.createClass(new ClassRequest("Class 5", "C5", 5)));
-        verify(classRepository, never()).save(any());
+                () -> academicsService.createClass(new ClassRequest("Class 5", "C5", 5, "A", 40, null, null)));
+        verify(sectionRepository, never()).save(any());
     }
 
     @Test
