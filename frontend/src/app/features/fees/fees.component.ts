@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { NgClass } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiResponse, PagedResponse } from '../../core/models/api.model';
+import { AuthService } from '../../core/auth/auth.service';
 
 interface StudentOption {
   id: string;
@@ -97,6 +98,7 @@ const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
           </div>
         </div>
 
+        @if (canCollect) {
         <div class="card">
           <h3 class="card-title">{{ 'fees.collectFee' | translate }}</h3>
           <form [formGroup]="paymentForm" (ngSubmit)="onCollect()">
@@ -131,6 +133,7 @@ const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
             </div>
           </form>
         </div>
+        }
 
         <div class="card">
           <h3 class="card-title">{{ 'fees.installments' | translate }}</h3>
@@ -247,7 +250,11 @@ export class FeesComponent implements OnInit {
   collecting = false;
   selectedStudentId: string | null = null;
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private auth: AuthService) {}
+
+  get canCollect(): boolean {
+    return this.auth.hasPermission('FEE_PAYMENT_RECORD');
+  }
 
   get selectedStudent(): boolean {
     return !!this.selectedStudentId;
@@ -323,8 +330,7 @@ export class FeesComponent implements OnInit {
       error: () => {
         this.collecting = false;
         this.cdr.markForCheck();
-        alert('Payment recorded (demo mode — backend not reachable)');
-        this.paymentForm.patchValue({ amount: null, assignmentId: '' });
+        alert('Could not record payment. Please try again.');
       },
     });
   }
@@ -339,7 +345,10 @@ export class FeesComponent implements OnInit {
         }));
         this.cdr.markForCheck();
       },
-      error: () => this.loadDemoStudents(),
+      error: () => {
+        this.students = [];
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -354,14 +363,20 @@ export class FeesComponent implements OnInit {
         this.loadInstallments();
         this.cdr.markForCheck();
       },
-      error: () => this.loadDemoAssignments(),
+      error: () => {
+        this.assignments = [];
+        this.cdr.markForCheck();
+      },
     });
     this.http.get<ApiResponse<FeePayment[]>>(`/api/fees/students/${studentId}/payments`).subscribe({
       next: (res) => {
         this.payments = res.data;
         this.cdr.markForCheck();
       },
-      error: () => this.loadDemoPayments(),
+      error: () => {
+        this.payments = [];
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -375,36 +390,5 @@ export class FeesComponent implements OnInit {
         error: () => undefined,
       });
     }
-  }
-
-  private loadDemoStudents(): void {
-    this.students = [
-      { id: 'stu-1', admissionNo: 'ADM0001', displayName: 'Aarav Kumar' },
-      { id: 'stu-2', admissionNo: 'ADM0002', displayName: 'Zoya Khan' },
-    ];
-    this.cdr.markForCheck();
-  }
-
-  private loadDemoAssignments(): void {
-    this.assignments = [
-      {
-        id: 'asg-demo-1', studentId: this.selectedStudentId!, studentName: 'Aarav Kumar', admissionNo: 'ADM0001',
-        feeStructureName: 'Annual Tuition Fee', amount: 1200, frequency: 'QUARTERLY', discountAmount: 0, status: 'ACTIVE',
-        installments: [
-          { id: 'i1', studentFeeAssignmentId: 'asg-demo-1', dueDate: '2026-04-30', amountDue: 400, amountPaid: 400, status: 'PAID', balance: 0 },
-          { id: 'i2', studentFeeAssignmentId: 'asg-demo-1', dueDate: '2026-07-31', amountDue: 400, amountPaid: 200, status: 'PARTIAL', balance: 200 },
-          { id: 'i3', studentFeeAssignmentId: 'asg-demo-1', dueDate: '2026-10-31', amountDue: 400, amountPaid: 0, status: 'PENDING', balance: 400 },
-        ],
-      },
-    ];
-    this.cdr.markForCheck();
-  }
-
-  private loadDemoPayments(): void {
-    this.payments = [
-      { id: 'p1', receiptNo: 'RCP-2026-001', studentName: 'Aarav Kumar', amountPaid: 400, paidAt: '2026-04-05T10:00:00Z', paymentMethod: 'CASH', referenceNo: '', remarks: '' },
-      { id: 'p2', receiptNo: 'RCP-2026-014', studentName: 'Aarav Kumar', amountPaid: 200, paidAt: '2026-07-10T09:30:00Z', paymentMethod: 'UPI', referenceNo: 'UPI12345', remarks: '' },
-    ];
-    this.cdr.markForCheck();
   }
 }

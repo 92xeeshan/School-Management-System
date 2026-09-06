@@ -107,7 +107,7 @@ public class AcademicsService {
             schoolClass.setName(className);
             schoolClass.setCode(request.code() == null || request.code().isBlank() ? className : request.code().trim());
             schoolClass.setSortOrder(request.sortOrder() == null ? 0 : request.sortOrder());
-            schoolClass = classRepository.save(schoolClass);
+            schoolClass = classRepository.saveAndFlush(schoolClass);
         }
 
         if (sectionName != null) {
@@ -119,7 +119,7 @@ public class AcademicsService {
             section.setClassId(schoolClass.getId());
             section.setName(sectionName);
             section.setCapacity(request.capacity() == null ? 40 : request.capacity());
-            section = sectionRepository.save(section);
+            section = sectionRepository.saveAndFlush(section);
             assignClassTeacher(schoolId, section.getId(), request.classTeacherId());
         }
 
@@ -287,7 +287,7 @@ public class AcademicsService {
                 .findBySchoolIdAndClassIdOrderByNameAsc(schoolId, schoolClass.getId()).stream()
                 .map(section -> toSectionDto(section, schoolClass.getName(), classTeacherBySection, teachers))
                 .toList();
-        List<SubjectDto> subjects = subjectsByClass(schoolId).getOrDefault(schoolClass.getId(), List.of());
+        List<SubjectDto> subjects = subjectsForClass(schoolId, schoolClass.getId());
         return new ClassDto(schoolClass.getId(), schoolClass.getName(), schoolClass.getCode(),
                 schoolClass.getSortOrder(), sections, subjects);
     }
@@ -339,7 +339,7 @@ public class AcademicsService {
                 link.setSchoolId(schoolId);
                 link.setClassId(classId);
                 link.setSubjectId(subjectId);
-                classSubjectRepository.save(link);
+                classSubjectRepository.saveAndFlush(link);
             }
         }
     }
@@ -365,7 +365,20 @@ public class AcademicsService {
             return created;
         });
         assignment.setClassTeacher(true);
-        teacherSectionRepository.save(assignment);
+        teacherSectionRepository.saveAndFlush(assignment);
+    }
+
+    private List<SubjectDto> subjectsForClass(UUID schoolId, UUID classId) {
+        Map<UUID, Subject> subjects = subjectRepository.findBySchoolIdOrderByNameAsc(schoolId)
+                .stream().collect(Collectors.toMap(Subject::getId, s -> s));
+        List<SubjectDto> result = new ArrayList<>();
+        for (ClassSubject link : classSubjectRepository.findByClassIdAndSchoolId(classId, schoolId)) {
+            Subject subject = subjects.get(link.getSubjectId());
+            if (subject != null) {
+                result.add(SubjectDto.from(subject));
+            }
+        }
+        return result;
     }
 
     private String normalizeSectionName(String value) {

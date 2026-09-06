@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, tap, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { HttpErrorResponse } from '@angular/common/http';
 import { AuthResponse, AuthUser, LoginRequest, RefreshRequest } from './auth.model';
 import { ApiResponse } from '../models/api.model';
 
@@ -27,18 +26,16 @@ export class AuthService {
     }
   }
 
+  hasRole(role: string): boolean {
+    return this.userSubject.value?.roles?.includes(role) ?? false;
+  }
+
   login(username: string, password: string): Observable<AuthResponse> {
     const body: LoginRequest = { username, password };
     return this.http.post<ApiResponse<AuthResponse>>('/api/auth/login', body).pipe(
       map((res) => {
         this.setSession(res.data);
         return res.data;
-      }),
-      catchError((error: HttpErrorResponse) => {
-        if (error.status !== 401 && error.status !== 400) {
-          return of(this.demoSession(username));
-        }
-        return throwError(() => error);
       })
     );
   }
@@ -112,35 +109,34 @@ export class AuthService {
     return this.readSession()?.refreshToken ?? null;
   }
 
-  private demoSession(username: string): AuthResponse {
-    const user: AuthUser = {
-      id: 'demo-user-1',
-      schoolId: 'demo-school-1',
-      username: username || 'admin',
-      email: 'admin@schoolms.local',
-      firstName: 'Demo',
-      lastName: 'Admin',
-      displayName: 'Demo Admin',
-      locale: 'en',
-      roles: ['ADMIN'],
-      permissions: ['DASHBOARD_VIEW', 'STUDENT_READ', 'STUDENT_CREATE', 'STUDENT_UPDATE', 'CLASS_READ', 'SECTION_READ', 'ATTENDANCE_READ', 'ATTENDANCE_MARK', 'FEE_READ', 'FEE_COLLECT', 'NOTICE_READ', 'NOTICE_CREATE'],
-    };
-    const response: AuthResponse = {
-      accessToken: 'demo-access-token',
-      refreshToken: 'demo-refresh-token',
-      expiresInSeconds: 86400,
-      user,
-    };
-    this.setSession(response);
-    return response;
-  }
-
   private readSession(): StoredSession | null {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as StoredSession) : null;
+      if (!raw) {
+        return null;
+      }
+      const session = JSON.parse(raw) as StoredSession;
+      if (!this.isUsableSession(session)) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+      return session;
     } catch {
+      localStorage.removeItem(STORAGE_KEY);
       return null;
     }
+  }
+
+  private isUsableSession(session: StoredSession | null): boolean {
+    if (!session?.accessToken || !session.user) {
+      return false;
+    }
+    if (session.expiresAt <= Date.now()) {
+      return false;
+    }
+    if (session.accessToken === 'demo-access-token') {
+      return false;
+    }
+    return session.accessToken.split('.').length === 3;
   }
 }

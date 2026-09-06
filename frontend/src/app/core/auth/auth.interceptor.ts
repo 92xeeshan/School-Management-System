@@ -11,7 +11,7 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(private auth: AuthService, private router: Router) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    if (!req.url.includes('/api/') || req.url.includes('/api/auth/')) {
+    if (!req.url.includes('/api/') || req.url.includes('/api/auth/login') || req.url.includes('/api/auth/refresh')) {
       return next.handle(req);
     }
 

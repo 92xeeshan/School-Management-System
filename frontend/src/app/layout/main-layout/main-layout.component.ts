@@ -12,6 +12,7 @@ interface NavItem {
   route: string;
   labelKey: string;
   icon: string;
+  permissions: string[];
 }
 
 @Component({
@@ -25,7 +26,7 @@ interface NavItem {
           <span class="brand-name">{{ 'app.name' | translate }}</span>
         </div>
         <nav class="nav">
-          @for (item of navItems; track item.route) {
+          @for (item of visibleNavItems; track item.route) {
             <a class="nav-link"
                [routerLink]="item.route"
                routerLinkActive="active"
@@ -133,13 +134,17 @@ interface NavItem {
 })
 export class MainLayoutComponent {
   readonly navItems: NavItem[] = [
-    { route: '/dashboard', labelKey: 'nav.dashboard', icon: '📊' },
-    { route: '/students', labelKey: 'nav.students', icon: '👩‍🎓' },
-    { route: '/academics', labelKey: 'nav.academics', icon: '📚' },
-    { route: '/attendance', labelKey: 'nav.attendance', icon: '✅' },
-    { route: '/fees', labelKey: 'nav.fees', icon: '💳' },
-    { route: '/notices', labelKey: 'nav.notices', icon: '📢' },
+    { route: '/dashboard', labelKey: 'nav.dashboard', icon: '📊', permissions: ['DASHBOARD_VIEW'] },
+    { route: '/students', labelKey: 'nav.students', icon: '👩‍🎓', permissions: ['STUDENT_READ'] },
+    { route: '/academics', labelKey: 'nav.academics', icon: '📚', permissions: ['CLASS_READ'] },
+    { route: '/attendance', labelKey: 'nav.attendance', icon: '✅', permissions: ['ATTENDANCE_READ', 'ATTENDANCE_MARK'] },
+    { route: '/fees', labelKey: 'nav.fees', icon: '💳', permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW'] },
+    { route: '/notices', labelKey: 'nav.notices', icon: '📢', permissions: ['NOTICE_READ'] },
   ];
+
+  get visibleNavItems(): NavItem[] {
+    return this.navItems.filter((item) => this.auth.hasAnyPermission(item.permissions));
+  }
 
   readonly supportedLocales = SUPPORTED_LOCALES;
   readonly localeMeta = LOCALE_META;

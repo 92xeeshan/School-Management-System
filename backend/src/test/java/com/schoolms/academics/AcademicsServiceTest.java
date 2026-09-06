@@ -59,7 +59,7 @@ class AcademicsServiceTest {
 
     @Test
     void createClassPersistsWithSortOrder() {
-        when(classRepository.save(any(SchoolClass.class))).thenAnswer(invocation -> {
+        when(classRepository.saveAndFlush(any(SchoolClass.class))).thenAnswer(invocation -> {
             SchoolClass c = invocation.getArgument(0);
             if (c.getId() == null) {
                 c.setId(UUID.randomUUID());
@@ -71,7 +71,7 @@ class AcademicsServiceTest {
                 .thenReturn(java.util.Optional.empty());
         when(sectionRepository.findBySchoolIdAndClassIdOrderByNameAsc(any(), any()))
                 .thenReturn(java.util.List.of());
-        when(classSubjectRepository.findBySchoolId(TestSecurity.SCHOOL_ID)).thenReturn(java.util.List.of());
+        when(classSubjectRepository.findByClassIdAndSchoolId(any(), any())).thenReturn(java.util.List.of());
         when(teacherRepository.findBySchoolIdOrderByFirstNameAsc(TestSecurity.SCHOOL_ID))
                 .thenReturn(java.util.List.of());
         when(teacherSectionRepository.findBySchoolId(TestSecurity.SCHOOL_ID)).thenReturn(java.util.List.of());
@@ -80,7 +80,85 @@ class AcademicsServiceTest {
 
         assertEquals("Class 7", dto.name());
         assertEquals(7, dto.sortOrder());
-        verify(classRepository).save(any(SchoolClass.class));
+        verify(classRepository).saveAndFlush(any(SchoolClass.class));
+    }
+
+    @Test
+    void createClassReturnsSectionTeacherAndSubjects() {
+        UUID classId = UUID.randomUUID();
+        UUID sectionId = UUID.randomUUID();
+        UUID teacherId = UUID.randomUUID();
+        UUID subjectId = UUID.randomUUID();
+        UUID yearId = UUID.randomUUID();
+
+        when(classRepository.findBySchoolIdAndName(TestSecurity.SCHOOL_ID, "Class 8"))
+                .thenReturn(java.util.Optional.empty());
+        when(classRepository.saveAndFlush(any(SchoolClass.class))).thenAnswer(invocation -> {
+            SchoolClass c = invocation.getArgument(0);
+            c.setId(classId);
+            return c;
+        });
+        when(sectionRepository.existsByClassIdAndName(classId, "A")).thenReturn(false);
+        when(sectionRepository.saveAndFlush(any(Section.class))).thenAnswer(invocation -> {
+            Section section = invocation.getArgument(0);
+            section.setId(sectionId);
+            return section;
+        });
+        TeacherProfile teacher = new TeacherProfile();
+        teacher.setId(teacherId);
+        teacher.setFirstName("Asha");
+        teacher.setLastName("Sharma");
+        when(teacherRepository.findByIdAndSchoolId(teacherId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(teacher));
+        AcademicYear year = new AcademicYear();
+        year.setId(yearId);
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(year));
+        when(teacherSectionRepository.findByTeacherIdAndSectionIdAndAcademicYearId(teacherId, sectionId, yearId))
+                .thenReturn(java.util.Optional.empty());
+        when(teacherSectionRepository.saveAndFlush(any(TeacherSection.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Subject math = new Subject();
+        math.setId(subjectId);
+        math.setName("Mathematics");
+        math.setCode("MATH");
+        when(subjectRepository.findByIdAndSchoolId(subjectId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(math));
+        when(classSubjectRepository.existsByClassIdAndSubjectId(classId, subjectId)).thenReturn(false);
+        when(classSubjectRepository.saveAndFlush(any(ClassSubject.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(teacherRepository.findBySchoolIdOrderByFirstNameAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(teacher));
+        TeacherSection assignment = new TeacherSection();
+        assignment.setSectionId(sectionId);
+        assignment.setTeacherId(teacherId);
+        assignment.setClassTeacher(true);
+        when(teacherSectionRepository.findBySchoolId(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(assignment));
+        Section savedSection = new Section();
+        savedSection.setId(sectionId);
+        savedSection.setClassId(classId);
+        savedSection.setName("A");
+        savedSection.setCapacity(40);
+        when(sectionRepository.findBySchoolIdAndClassIdOrderByNameAsc(TestSecurity.SCHOOL_ID, classId))
+                .thenReturn(java.util.List.of(savedSection));
+        when(subjectRepository.findBySchoolIdOrderByNameAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(math));
+        ClassSubject link = new ClassSubject();
+        link.setClassId(classId);
+        link.setSubjectId(subjectId);
+        when(classSubjectRepository.findByClassIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(link));
+
+        var dto = academicsService.createClass(new ClassRequest(
+                "Class 8", "C8", 8, "A", 40, java.util.List.of(subjectId), teacherId));
+
+        assertEquals("Class 8", dto.name());
+        assertEquals(1, dto.sections().size());
+        assertEquals("A", dto.sections().get(0).name());
+        assertEquals("Asha Sharma", dto.sections().get(0).classTeacherName());
+        assertEquals(1, dto.subjects().size());
+        assertEquals("Mathematics", dto.subjects().get(0).name());
     }
 
     @Test

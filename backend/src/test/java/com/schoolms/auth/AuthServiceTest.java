@@ -2,7 +2,7 @@ package com.schoolms.auth;
 
 import com.schoolms.auth.dto.AuthResponse;
 import com.schoolms.auth.dto.LoginRequest;
-import com.schoolms.common.exception.BusinessException;
+import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.enums.UserStatus;
 import com.schoolms.config.JwtProperties;
 import com.schoolms.security.JwtService;
@@ -95,7 +95,7 @@ class AuthServiceTest {
         when(userRepository.findAuthUser("admin")).thenReturn(Optional.of(authUser));
         when(passwordEncoder.matches("wrong", "hash")).thenReturn(false);
 
-        assertThrows(BusinessException.class,
+        assertThrows(AuthException.class,
                 () -> authService.login(new LoginRequest("admin", "wrong")));
     }
 
@@ -106,7 +106,7 @@ class AuthServiceTest {
         when(userRepository.findAuthUser("admin")).thenReturn(Optional.of(authUser));
         when(passwordEncoder.matches("Admin@123", "hash")).thenReturn(true);
 
-        assertThrows(BusinessException.class,
+        assertThrows(AuthException.class,
                 () -> authService.login(new LoginRequest("admin", "Admin@123")));
     }
 
@@ -114,7 +114,7 @@ class AuthServiceTest {
     void loginWithUnknownUserRejects() {
         when(userRepository.findAuthUser("nobody")).thenReturn(Optional.empty());
 
-        assertThrows(BusinessException.class,
+        assertThrows(AuthException.class,
                 () -> authService.login(new LoginRequest("nobody", "Admin@123")));
     }
 

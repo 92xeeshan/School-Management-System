@@ -29,6 +29,7 @@
     "password": "پاس ورڈ",
     "submit": "سائن ان",
     "invalidCredentials": "غلط صارف نام یا پاس ورڈ",
+    "inactiveAccount": "یہ اکاؤنٹ غیر فعال یا لاک ہے۔",
     "serverError": "سرور تک رسائی ممکن نہیں۔ براہ کرم دوبارہ کوشش کریں۔",
     "welcomeBack": "خوش آمدید، جاری رکھنے کے لیے سائن ان کریں۔"
   },
@@ -85,6 +86,7 @@
     "addSubject": "مضمون شامل کریں",
     "selectSection": "سیکشن منتخب کریں",
     "selectSubject": "مضمون منتخب کریں",
+    "selectSubjects": "ایک یا زیادہ مضامین منتخب کریں",
     "selectTeacher": "کلاس ٹیچر منتخب کریں",
     "duplicateSection": "اس کلاس میں وہ سیکشن پہلے سے موجود ہے۔",
     "capacity": "گنجائش"
