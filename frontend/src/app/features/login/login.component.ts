@@ -116,6 +116,17 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  private loginErrorKey(error: HttpErrorResponse): string {
+    const code = (error.error && error.error.code) as string | undefined;
+    if (error.status === 401 || code === 'auth.bad_credentials') {
+      return 'login.invalidCredentials';
+    }
+    if (error.status === 403 || code === 'auth.user_inactive') {
+      return 'login.inactiveAccount';
+    }
+    return 'login.serverError';
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       return;
@@ -133,8 +144,7 @@ export class LoginComponent implements OnInit {
       },
       error: (error: HttpErrorResponse) => {
         this.submitting = false;
-        this.errorMessage =
-          error.status === 401 ? 'login.invalidCredentials' : 'login.serverError';
+        this.errorMessage = this.loginErrorKey(error);
         this.cdr.markForCheck();
       },
     });

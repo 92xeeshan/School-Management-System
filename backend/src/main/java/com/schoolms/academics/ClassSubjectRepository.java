@@ -9,5 +9,7 @@ public interface ClassSubjectRepository extends JpaRepository<ClassSubject, UUID
 
     List<ClassSubject> findBySchoolId(UUID schoolId);
 
+    List<ClassSubject> findByClassIdAndSchoolId(UUID classId, UUID schoolId);
+
     boolean existsByClassIdAndSubjectId(UUID classId, UUID subjectId);
 }

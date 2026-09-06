@@ -5,6 +5,7 @@ import com.schoolms.auth.dto.AuthUserDto;
 import com.schoolms.auth.dto.AuthUserViewDto;
 import com.schoolms.auth.dto.LoginRequest;
 import com.schoolms.auth.dto.RefreshRequest;
+import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.enums.UserStatus;
 import com.schoolms.config.JwtProperties;
@@ -41,13 +42,13 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         AuthUserViewDto authUser = userRepository.findAuthUser(request.username())
                 .map(AuthUserViewDto::from)
-                .orElseThrow(() -> new BusinessException("auth.bad_credentials"));
+                .orElseThrow(AuthException::badCredentials);
 
         if (!passwordEncoder.matches(request.password(), authUser.passwordHash())) {
-            throw new BusinessException("auth.bad_credentials");
+            throw AuthException.badCredentials();
         }
         if (authUser.status() != UserStatus.ACTIVE) {
-            throw new BusinessException("auth.user_inactive");
+            throw AuthException.inactive();
         }
         return issueTokens(authUser.id(), authUser.schoolId(), authUser.username(), authUser.locale());
     }

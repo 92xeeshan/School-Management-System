@@ -142,7 +142,10 @@ export class DashboardComponent implements OnInit {
         };
         this.cdr.markForCheck();
       },
-      error: () => this.loadDemoStats(),
+      error: () => {
+        this.stats = null;
+        this.cdr.markForCheck();
+      },
     });
     this.http.get<ApiResponse<BackendNotice[]>>('/api/notices/published').subscribe({
       next: (res) => {
@@ -153,25 +156,14 @@ export class DashboardComponent implements OnInit {
         }));
         this.cdr.markForCheck();
       },
-      error: () => this.loadDemoNotices(),
+      error: () => {
+        this.notices = [];
+        this.cdr.markForCheck();
+      },
     });
   }
 
   formatMoney(value: number): string {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-  }
-
-  private loadDemoStats(): void {
-    this.stats = { totalStudents: 423, totalTeachers: 28, presentToday: 391, feesCollected: 18450 };
-    this.cdr.markForCheck();
-  }
-
-  private loadDemoNotices(): void {
-    this.notices = [
-      { id: 'n1', title: 'School reopens on Monday', publishedOn: '2026-07-28' },
-      { id: 'n2', title: 'PTA meeting scheduled', publishedOn: '2026-07-25' },
-      { id: 'n3', title: 'Annual sports day registration', publishedOn: '2026-07-20' },
-    ];
-    this.cdr.markForCheck();
   }
 }

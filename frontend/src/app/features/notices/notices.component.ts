@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiResponse } from '../../core/models/api.model';
+import { AuthService } from '../../core/auth/auth.service';
 
 interface Notice {
   id: string;
@@ -48,6 +49,7 @@ function toNotice(n: BackendNotice): Notice {
         </div>
       </div>
 
+      @if (canCreate) {
       <div class="card composer">
         <h3 class="card-title">{{ 'notices.addNotice' | translate }}</h3>
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -85,6 +87,7 @@ function toNotice(n: BackendNotice): Notice {
           </div>
         </form>
       </div>
+      }
 
       <div class="card">
         <div class="table-wrap">
@@ -154,7 +157,11 @@ export class NoticesComponent implements OnInit {
 
   notices: Notice[] = [];
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private auth: AuthService) {}
+
+  get canCreate(): boolean {
+    return this.auth.hasPermission('NOTICE_CREATE');
+  }
 
   ngOnInit(): void {
     this.http.get<ApiResponse<BackendNotice[]>>('/api/notices').subscribe({
@@ -162,7 +169,10 @@ export class NoticesComponent implements OnInit {
         this.notices = res.data.map(toNotice);
         this.cdr.markForCheck();
       },
-      error: () => this.loadDemo(),
+      error: () => {
+        this.notices = [];
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -186,28 +196,10 @@ export class NoticesComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        const notice: Notice = {
-          id: `n${Date.now()}`,
-          title: payload.title,
-          content: payload.body,
-          audience: payload.visibilityScope,
-          status,
-          publishedOn: status === 'PUBLISHED' ? new Date().toISOString().slice(0, 10) : null,
-          expiresOn: this.form.value.expiresOn || null,
-        };
-        this.notices = [notice, ...this.notices];
         this.cdr.markForCheck();
+        alert('Could not save notice. Please try again.');
       },
     });
     this.form.reset({ audience: 'EVERYONE', status: 'PUBLISHED' });
-  }
-
-  private loadDemo(): void {
-    this.notices = [
-      { id: 'n1', title: 'School reopens on Monday', content: 'All students must report at 8 AM.', audience: 'EVERYONE', status: 'PUBLISHED', publishedOn: '2026-07-28', expiresOn: '2026-08-01' },
-      { id: 'n2', title: 'PTA meeting scheduled', content: 'Parent-teacher meeting on Friday at 10 AM.', audience: 'PARENTS', status: 'PUBLISHED', publishedOn: '2026-07-25', expiresOn: null },
-      { id: 'n3', title: 'Staff workshop draft', content: 'Upcoming teacher training details.', audience: 'TEACHERS', status: 'DRAFT', publishedOn: null, expiresOn: null },
-    ];
-    this.cdr.markForCheck();
   }
 }

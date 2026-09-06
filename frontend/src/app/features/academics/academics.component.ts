@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
+import { AuthService } from '../../core/auth/auth.service';
 
 interface SchoolClass {
   id: string;
@@ -17,6 +18,16 @@ interface SchoolSection {
   name: string;
   capacity: number;
   classTeacherName: string;
+}
+
+interface ClassRow {
+  rowId: string;
+  className: string;
+  classCode: string;
+  sectionName: string;
+  capacity: number | null;
+  classTeacherName: string;
+  subjects: string[];
 }
 
 interface BackendClass {
@@ -61,9 +72,11 @@ interface BackendTeacher {
           <h1>{{ 'academics.title' | translate }}</h1>
           <p class="muted">{{ 'academics.subtitle' | translate }}</p>
         </div>
-        <div class="header-actions">
-          <button class="btn btn-primary" (click)="openAddModal()">{{ 'academics.addClass' | translate }}</button>
-        </div>
+        @if (canCreate) {
+          <div class="header-actions">
+            <button class="btn btn-primary" (click)="openAddModal()">{{ 'academics.addClass' | translate }}</button>
+          </div>
+        }
       </div>
 
       <div class="card">
@@ -78,32 +91,20 @@ interface BackendTeacher {
               </tr>
             </thead>
             <tbody>
-              @for (klass of classes; track klass.id) {
+              @for (row of classRows; track row.rowId) {
                 <tr>
-                  <td class="strong">{{ klass.name }} <span class="muted code">{{ klass.code }}</span></td>
+                  <td class="strong">{{ row.className }} <span class="muted code">{{ row.classCode }}</span></td>
                   <td>
-                    <div class="sections">
-                      @for (section of klass.sections; track section.id) {
-                        <div class="section-chip">
-                          {{ section.name }} · {{ section.capacity }}
-                        </div>
-                      } @empty {
-                        <span class="muted">—</span>
-                      }
-                    </div>
+                    @if (row.sectionName) {
+                      <span class="section-chip">{{ row.sectionName }} · {{ row.capacity }}</span>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
                   </td>
-                  <td>
-                    <div class="teacher-list">
-                      @for (section of klass.sections; track section.id) {
-                        <div>{{ section.name }}: {{ section.classTeacherName || '—' }}</div>
-                      } @empty {
-                        <span class="muted">—</span>
-                      }
-                    </div>
-                  </td>
+                  <td>{{ row.classTeacherName || '—' }}</td>
                   <td>
                     <div class="subject-tags">
-                      @for (subject of klass.subjects; track subject) {
+                      @for (subject of row.subjects; track subject) {
                         <span class="tag">{{ subject }}</span>
                       } @empty {
                         <span class="muted">—</span>
@@ -151,15 +152,6 @@ interface BackendTeacher {
                 <input type="number" formControlName="capacity" min="1" />
               </div>
               <div class="field">
-                <label>{{ 'academics.subjects' | translate }} *</label>
-                <select formControlName="subjectId">
-                  <option value="" disabled>{{ 'academics.selectSubject' | translate }}</option>
-                  @for (subject of subjects; track subject.id) {
-                    <option [value]="subject.id">{{ subject.name }}</option>
-                  }
-                </select>
-              </div>
-              <div class="field">
                 <label>{{ 'academics.classTeacher' | translate }} *</label>
                 <select formControlName="classTeacherId">
                   <option value="" disabled>{{ 'academics.selectTeacher' | translate }}</option>
@@ -168,10 +160,23 @@ interface BackendTeacher {
                   }
                 </select>
               </div>
+              <div class="field span-2">
+                <label>{{ 'academics.subjects' | translate }} *</label>
+                <div class="multi-select">
+                  @for (subject of subjects; track subject.id) {
+                    <label class="check-item">
+                      <input type="checkbox" [checked]="isSubjectSelected(subject.id)" (change)="toggleSubject(subject.id)" />
+                      <span>{{ subject.name }}</span>
+                    </label>
+                  } @empty {
+                    <span class="muted">{{ 'common.noData' | translate }}</span>
+                  }
+                </div>
+              </div>
             </div>
             <div class="form-actions">
               <button class="btn" type="button" (click)="closeModal()">{{ 'common.cancel' | translate }}</button>
-              <button class="btn btn-primary" type="submit" [disabled]="form.invalid || saving">
+              <button class="btn btn-primary" type="submit" [disabled]="form.invalid || selectedSubjectIds.length === 0 || saving">
                 {{ saving ? ('common.loading' | translate) : ('common.save' | translate) }}
               </button>
             </div>
@@ -220,7 +225,19 @@ interface BackendTeacher {
     }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
     .form-error { margin: 0 0 14px; color: #b91c1c; font-size: .9rem; }
-    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+    .span-2 { grid-column: span 2; }
+    .multi-select {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px;
+      max-height: 160px; overflow-y: auto; background: #fff;
+    }
+    .check-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 16px; background: var(--color-bg);
+      border: 1px solid var(--color-border); font-size: .85rem; cursor: pointer;
+    }
+    .check-item input { margin: 0; }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } .span-2 { grid-column: span 1; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -238,11 +255,58 @@ export class AcademicsComponent implements OnInit {
     code: new FormControl(''),
     sectionName: new FormControl('', Validators.required),
     capacity: new FormControl(40),
-    subjectId: new FormControl('', Validators.required),
     classTeacherId: new FormControl('', Validators.required),
   });
+  selectedSubjectIds: string[] = [];
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private auth: AuthService) {}
+
+  get canCreate(): boolean {
+    return this.auth.hasPermission('CLASS_CREATE');
+  }
+
+  get classRows(): ClassRow[] {
+    const rows: ClassRow[] = [];
+    for (const klass of this.classes) {
+      if (!klass.sections.length) {
+        rows.push({
+          rowId: klass.id,
+          className: klass.name,
+          classCode: klass.code,
+          sectionName: '',
+          capacity: null,
+          classTeacherName: '',
+          subjects: klass.subjects,
+        });
+        continue;
+      }
+      for (const section of klass.sections) {
+        rows.push({
+          rowId: section.id,
+          className: klass.name,
+          classCode: klass.code,
+          sectionName: section.name,
+          capacity: section.capacity,
+          classTeacherName: section.classTeacherName,
+          subjects: klass.subjects,
+        });
+      }
+    }
+    return rows;
+  }
+
+  isSubjectSelected(id: string): boolean {
+    return this.selectedSubjectIds.includes(id);
+  }
+
+  toggleSubject(id: string): void {
+    if (this.selectedSubjectIds.includes(id)) {
+      this.selectedSubjectIds = this.selectedSubjectIds.filter((item) => item !== id);
+    } else {
+      this.selectedSubjectIds = [...this.selectedSubjectIds, id];
+    }
+    this.cdr.markForCheck();
+  }
 
   ngOnInit(): void {
     this.load();
@@ -274,7 +338,8 @@ export class AcademicsComponent implements OnInit {
     this.showModal = true;
     this.saving = false;
     this.formError = '';
-    this.form.reset({ name: '', code: '', sectionName: '', capacity: 40, subjectId: '', classTeacherId: '' });
+    this.selectedSubjectIds = [];
+    this.form.reset({ name: '', code: '', sectionName: '', capacity: 40, classTeacherId: '' });
     this.loadLookups();
     this.cdr.markForCheck();
   }
@@ -289,7 +354,11 @@ export class AcademicsComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.selectedSubjectIds.length === 0) {
+      if (this.selectedSubjectIds.length === 0) {
+        this.formError = 'Select at least one subject.';
+        this.cdr.markForCheck();
+      }
       return;
     }
     this.saving = true;
@@ -301,7 +370,7 @@ export class AcademicsComponent implements OnInit {
       sortOrder: 0,
       sectionName: this.form.value.sectionName,
       capacity: this.form.value.capacity || 40,
-      subjectIds: this.form.value.subjectId ? [this.form.value.subjectId] : [],
+      subjectIds: this.selectedSubjectIds,
       classTeacherId: this.form.value.classTeacherId,
     };
     this.http.post<ApiResponse<unknown>>('/api/classes', body).subscribe({
@@ -337,7 +406,10 @@ export class AcademicsComponent implements OnInit {
         }));
         this.cdr.markForCheck();
       },
-      error: () => this.loadDemo(),
+      error: () => {
+        this.classes = [];
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -358,20 +430,4 @@ export class AcademicsComponent implements OnInit {
     });
   }
 
-  private loadDemo(): void {
-    this.classes = [
-      { id: 'c1', name: 'VI', code: 'VI', sections: [
-        { id: 's1', name: 'A', capacity: 40, classTeacherName: 'Asha Sharma' },
-        { id: 's2', name: 'B', capacity: 40, classTeacherName: '—' },
-      ], subjects: ['English', 'Hindi', 'Mathematics', 'Science', 'Social Studies'] },
-      { id: 'c2', name: 'VII', code: 'VII', sections: [
-        { id: 's3', name: 'A', capacity: 40, classTeacherName: 'Asha Sharma' },
-      ], subjects: ['English', 'Hindi', 'Mathematics', 'Science', 'Social Studies', 'Urdu'] },
-      { id: 'c3', name: 'VIII', code: 'VIII', sections: [
-        { id: 's4', name: 'A', capacity: 40, classTeacherName: '—' },
-        { id: 's5', name: 'B', capacity: 40, classTeacherName: '—' },
-      ], subjects: ['English', 'Mathematics', 'Science', 'Social Studies', 'Computer Science'] },
-    ];
-    this.cdr.markForCheck();
-  }
 }

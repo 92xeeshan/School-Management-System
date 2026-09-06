@@ -29,6 +29,7 @@
     "password": "Password",
     "submit": "Sign In",
     "invalidCredentials": "Invalid username or password",
+    "inactiveAccount": "This account is inactive or locked.",
     "serverError": "Unable to reach the server. Please try again.",
     "welcomeBack": "Welcome back, please sign in to continue."
   },
@@ -84,7 +85,8 @@
     "addSection": "Add Section",
     "addSubject": "Add Subject",
     "selectSection": "Select section",
-    "selectSubject": "Select subject",
+    "selectSubject": "Select subjects",
+    "selectSubjects": "Select one or more subjects",
     "selectTeacher": "Select class teacher",
     "duplicateSection": "This class already has that section.",
     "capacity": "Capacity"

@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TranslateModule } from '@ngx-translate/core';
 import { finalize } from 'rxjs';
 import { ApiResponse, PagedResponse } from '../../core/models/api.model';
+import { AuthService } from '../../core/auth/auth.service';
 
 interface Student {
   id: string;
@@ -72,7 +73,9 @@ interface AcademicYear {
           <h1>{{ 'students.title' | translate }}</h1>
           <p class="muted">{{ 'students.subtitle' | translate }}</p>
         </div>
-        <button class="btn btn-primary" (click)="openAddModal()">{{ 'students.addStudent' | translate }}</button>
+        @if (canCreate) {
+          <button class="btn btn-primary" (click)="openAddModal()">{{ 'students.addStudent' | translate }}</button>
+        }
       </div>
 
       <div class="card">
@@ -90,7 +93,9 @@ interface AcademicYear {
                 <th>{{ 'students.rollNumber' | translate }}</th>
                 <th>{{ 'students.gender' | translate }}</th>
                 <th>{{ 'common.status' | translate }}</th>
-                <th>{{ 'common.actions' | translate }}</th>
+                @if (canUpdate || canDelete) {
+                  <th>{{ 'common.actions' | translate }}</th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -103,19 +108,23 @@ interface AcademicYear {
                   <td>{{ student.rollNumber }}</td>
                   <td>{{ student.gender }}</td>
                   <td><span class="badge" [class.badge-success]="student.status === 'ACTIVE'" [class.badge-muted]="student.status !== 'ACTIVE'">{{ student.status }}</span></td>
+                  @if (canUpdate || canDelete) {
                   <td>
                     <div class="row-actions">
-                      <button class="btn btn-sm" type="button" (click)="openEditModal(student)">{{ 'common.edit' | translate }}</button>
-                      @if (student.status === 'ACTIVE') {
+                      @if (canUpdate) {
+                        <button class="btn btn-sm" type="button" (click)="openEditModal(student)">{{ 'common.edit' | translate }}</button>
+                      }
+                      @if (canDelete && student.status === 'ACTIVE') {
                         <button class="btn btn-sm btn-danger" type="button" [disabled]="deletingId === student.id" (click)="askDelete(student)">
                           {{ deletingId === student.id ? ('common.loading' | translate) : ('common.delete' | translate) }}
                         </button>
                       }
                     </div>
                   </td>
+                  }
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="center">{{ 'common.noData' | translate }}</td></tr>
+                <tr><td [attr.colspan]="canUpdate || canDelete ? 8 : 7" class="center">{{ 'common.noData' | translate }}</td></tr>
               }
             </tbody>
           </table>
@@ -271,7 +280,19 @@ export class StudentsComponent implements OnInit {
     sectionId: new FormControl(''),
   });
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private auth: AuthService) {}
+
+  get canCreate(): boolean {
+    return this.auth.hasPermission('STUDENT_CREATE');
+  }
+
+  get canUpdate(): boolean {
+    return this.auth.hasPermission('STUDENT_UPDATE');
+  }
+
+  get canDelete(): boolean {
+    return this.auth.hasPermission('STUDENT_DELETE');
+  }
 
   get sectionsForClass(): SectionOption[] {
     const classId = this.form.value.classId;
@@ -478,7 +499,10 @@ export class StudentsComponent implements OnInit {
         }));
         this.cdr.markForCheck();
       },
-      error: () => this.loadDemo(),
+      error: () => {
+        this.students = [];
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -506,14 +530,4 @@ export class StudentsComponent implements OnInit {
     });
   }
 
-  private loadDemo(): void {
-    this.students = [
-      { id: 's1', admissionNo: 'ADM-2026-001', firstName: 'Aarav', lastName: 'Sharma', className: 'VI', section: 'A', rollNumber: 1, gender: 'MALE', phone: '+91 98765 43210', guardianName: 'Rajesh Sharma', status: 'ACTIVE' },
-      { id: 's2', admissionNo: 'ADM-2026-002', firstName: 'Zoya', lastName: 'Khan', className: 'VI', section: 'A', rollNumber: 2, gender: 'FEMALE', phone: '+91 91234 56780', guardianName: 'Imran Khan', status: 'ACTIVE' },
-      { id: 's3', admissionNo: 'ADM-2026-003', firstName: 'Aisha', lastName: 'Bano', className: 'VI', section: 'B', rollNumber: 1, gender: 'FEMALE', phone: '+91 99887 76655', guardianName: 'Yusuf Bano', status: 'ACTIVE' },
-      { id: 's4', admissionNo: 'ADM-2026-004', firstName: 'Kabir', lastName: 'Singh', className: 'VII', section: 'A', rollNumber: 1, gender: 'MALE', phone: '+91 90123 45678', guardianName: 'Gurmeet Singh', status: 'ACTIVE' },
-      { id: 's5', admissionNo: 'ADM-2026-005', firstName: 'Meera', lastName: 'Nair', className: 'VII', section: 'A', rollNumber: 2, gender: 'FEMALE', phone: '+91 93456 78901', guardianName: 'Suresh Nair', status: 'INACTIVE' },
-    ];
-    this.cdr.markForCheck();
-  }
 }

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiResponse } from '../../core/models/api.model';
+import { AuthService } from '../../core/auth/auth.service';
 
 interface AcademicYear {
   id: string;
@@ -80,12 +81,14 @@ const STATUSES: Status[] = ['PRESENT', 'ABSENT', 'LATE', 'LEAVE'];
             <label>{{ 'attendance.date' | translate }}</label>
             <input type="date" [formControl]="dateControl" (change)="loadForSelectedSection()" />
           </div>
-          <div class="field field-btn">
-            <label>&nbsp;</label>
-            <button class="btn btn-primary" (click)="onSave()" [disabled]="saving">
-              {{ saving ? ('common.loading' | translate) : ('attendance.saveAttendance' | translate) }}
-            </button>
-          </div>
+          @if (canMark) {
+            <div class="field field-btn">
+              <label>&nbsp;</label>
+              <button class="btn btn-primary" (click)="onSave()" [disabled]="saving">
+                {{ saving ? ('common.loading' | translate) : ('attendance.saveAttendance' | translate) }}
+              </button>
+            </div>
+          }
         </div>
       </div>
 
@@ -115,17 +118,21 @@ const STATUSES: Status[] = ['PRESENT', 'ABSENT', 'LATE', 'LEAVE'];
                   <td>{{ admissionFor(row.studentId) }}</td>
                   <td class="strong">{{ row.studentName }}</td>
                   <td>
-                    <div class="status-group">
-                      @for (status of statuses; track status) {
-                        <button
-                          class="status-btn"
-                          [class.selected]="row.status === status"
-                          [attr.data-status]="status"
-                          (click)="setStatus(row, status)">
-                          {{ 'attendance.' + status.toLowerCase() | translate }}
-                        </button>
-                      }
-                    </div>
+                    @if (canMark) {
+                      <div class="status-group">
+                        @for (status of statuses; track status) {
+                          <button
+                            class="status-btn"
+                            [class.selected]="row.status === status"
+                            [attr.data-status]="status"
+                            (click)="setStatus(row, status)">
+                            {{ 'attendance.' + status.toLowerCase() | translate }}
+                          </button>
+                        }
+                      </div>
+                    } @else {
+                      {{ 'attendance.' + row.status.toLowerCase() | translate }}
+                    }
                   </td>
                 </tr>
               } @empty {
@@ -187,7 +194,11 @@ export class AttendanceComponent implements OnInit {
   rows: AttendanceRow[] = [];
   saving = false;
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private auth: AuthService) {}
+
+  get canMark(): boolean {
+    return this.auth.hasPermission('ATTENDANCE_MARK');
+  }
 
   get sectionsForSelectedClass(): Section[] {
     const classId = this.classControl.value;
@@ -242,7 +253,7 @@ export class AttendanceComponent implements OnInit {
         this.academicYears = res.data;
         this.cdr.markForCheck();
       },
-      error: () => this.loadDemoMeta(),
+      error: () => undefined,
     });
     this.http.get<ApiResponse<Section[]>>('/api/sections').subscribe({
       next: (res) => {
@@ -268,7 +279,7 @@ export class AttendanceComponent implements OnInit {
           },
         });
       },
-      error: () => this.loadDemoMeta(),
+      error: () => undefined,
     });
   }
 
@@ -329,7 +340,11 @@ export class AttendanceComponent implements OnInit {
           }));
           this.cdr.markForCheck();
         },
-        error: () => this.loadDemoRows(sectionId),
+        error: () => {
+          this.students = [];
+          this.rows = [];
+          this.cdr.markForCheck();
+        },
       });
   }
 
@@ -356,46 +371,8 @@ export class AttendanceComponent implements OnInit {
       error: () => {
         this.saving = false;
         this.cdr.markForCheck();
-        alert('Attendance saved (demo mode — backend not reachable)');
+        alert('Could not save attendance. Please try again.');
       },
     });
-  }
-
-  private loadDemoMeta(): void {
-    this.academicYears = [{ id: 'ay-demo', name: '2025-2026', current: true }];
-    this.classes = [
-      { id: 'c1', name: 'VI' },
-      { id: 'c2', name: 'VII' },
-      { id: 'c3', name: 'VIII' },
-    ];
-    this.sections = [
-      { id: 's1', classId: 'c1', className: 'VI', name: 'A', capacity: 40 },
-      { id: 's2', classId: 'c1', className: 'VI', name: 'B', capacity: 40 },
-      { id: 's3', classId: 'c2', className: 'VII', name: 'A', capacity: 40 },
-      { id: 's4', classId: 'c3', className: 'VIII', name: 'A', capacity: 40 },
-    ];
-    this.classControl.setValue('c1', { emitEvent: false });
-    this.cdr.markForCheck();
-    this.onClassChange();
-  }
-
-  private loadDemoRows(sectionId: string): void {
-    const first = ['Aarav Kumar', 'Zoya Khan', 'Kabir Singh', 'Meera Nair', 'Aisha Bano', 'Rahul Verma', 'Iqbal Hussain'];
-    this.students = first.map((name, index) => ({
-      id: `stu-${sectionId}-${index + 1}`,
-      admissionNo: `ADM${String(index + 1).padStart(4, '0')}`,
-      firstName: name.split(' ')[0],
-      lastName: name.split(' ')[1] ?? '',
-      className: 'VI',
-      sectionName: 'A',
-      rollNumber: index + 1,
-    }));
-    this.rows = this.students.map((s, index) => ({
-      studentId: s.id,
-      studentName: `${s.firstName} ${s.lastName}`,
-      admissionNo: s.admissionNo,
-      status: index % 5 === 3 ? 'ABSENT' : 'PRESENT',
-    }));
-    this.cdr.markForCheck();
   }
 }

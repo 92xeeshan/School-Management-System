@@ -31,6 +31,11 @@ public class GlobalExceptionHandler {
 
     private final I18nService i18n;
 
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ApiErrorResponse> handleAuth(AuthException ex) {
+        return build(ex.getStatus(), ex.getCode(), null, null);
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiErrorResponse> handleBusiness(BusinessException ex) {
         return build(HttpStatus.BAD_REQUEST, ex.getCode(), ex.getArgs(), null);
