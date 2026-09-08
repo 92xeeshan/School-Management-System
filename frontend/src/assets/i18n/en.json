@@ -38,6 +38,7 @@
     "students": "Students",
     "academics": "Academics",
     "attendance": "Attendance",
+    "calendar": "Calendar",
     "fees": "Fees",
     "notices": "Notices"
   },
@@ -121,6 +122,17 @@
     "paidOn": "Paid On",
     "method": "Payment Method",
     "dueDate": "Due Date"
+  },
+  "calendar": {
+    "title": "Academic Calendar",
+    "subtitle": "School-wide events and public holidays",
+    "addEvent": "Add Event",
+    "newEvent": "New Event",
+    "description": "Description",
+    "type": "Type",
+    "audience": "Audience",
+    "start": "Start",
+    "end": "End"
   },
   "notices": {
     "title": "Notices",

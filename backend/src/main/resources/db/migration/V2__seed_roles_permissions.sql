@@ -46,6 +46,8 @@ INSERT INTO permission (code, module, name, description) VALUES
     ('NOTICE_CREATE',          'notice',     'Create notices',          'Draft notices'),
     ('NOTICE_PUBLISH',         'notice',     'Publish notices',         'Publish/draft/archive notices'),
     ('NOTICE_DELETE',          'notice',     'Delete notices',          'Delete notices'),
+    ('EVENT_READ',             'calendar',   'Read calendar events',    'View academic calendar and events'),
+    ('EVENT_MANAGE',           'calendar',   'Manage calendar events',  'Create/edit/delete events and holidays'),
     ('DASHBOARD_VIEW',         'dashboard',  'View dashboard',          'Access role dashboard');
 
 -- role -> permission matrix --------------------------------------------
@@ -62,15 +64,15 @@ INSERT INTO role_permission (role_id, permission_id)
 SELECT '00000000-0000-0000-0000-000000000003', id FROM permission
 WHERE code IN ('STUDENT_READ', 'CLASS_READ', 'SECTION_READ', 'SUBJECT_READ',
                'TIMETABLE_READ', 'ATTENDANCE_MARK', 'ATTENDANCE_READ',
-               'NOTICE_READ', 'DASHBOARD_VIEW');
+               'NOTICE_READ', 'EVENT_READ', 'DASHBOARD_VIEW');
 
 -- STUDENT
 INSERT INTO role_permission (role_id, permission_id)
 SELECT '00000000-0000-0000-0000-000000000004', id FROM permission
-WHERE code IN ('TIMETABLE_READ', 'ATTENDANCE_READ', 'NOTICE_READ', 'DASHBOARD_VIEW');
+WHERE code IN ('TIMETABLE_READ', 'ATTENDANCE_READ', 'NOTICE_READ', 'EVENT_READ', 'DASHBOARD_VIEW');
 
 -- PARENT
 INSERT INTO role_permission (role_id, permission_id)
 SELECT '00000000-0000-0000-0000-000000000005', id FROM permission
 WHERE code IN ('TIMETABLE_READ', 'ATTENDANCE_READ', 'NOTICE_READ',
-               'FEE_READ', 'FEE_RECEIPT_VIEW', 'DASHBOARD_VIEW');
+               'FEE_READ', 'FEE_RECEIPT_VIEW', 'EVENT_READ', 'DASHBOARD_VIEW');

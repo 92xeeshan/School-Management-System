@@ -51,6 +51,13 @@ export const routes: Routes = [
         data: { permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW'] },
       },
       {
+        path: 'calendar',
+        loadComponent: () =>
+          import('./features/calendar/calendar.component').then((m) => m.CalendarComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['EVENT_READ'] },
+      },
+      {
         path: 'notices',
         loadComponent: () =>
           import('./features/notices/notices.component').then((m) => m.NoticesComponent),
