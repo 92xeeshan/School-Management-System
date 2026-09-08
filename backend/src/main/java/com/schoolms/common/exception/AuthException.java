@@ -28,4 +28,8 @@ public class AuthException extends RuntimeException {
     public static AuthException inactive() {
         return new AuthException(HttpStatus.FORBIDDEN, "auth.user_inactive");
     }
+
+    public static AuthException accessDenied() {
+        return new AuthException(HttpStatus.FORBIDDEN, "auth.access_denied");
+    }
 }

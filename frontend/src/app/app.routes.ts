@@ -30,6 +30,13 @@ export const routes: Routes = [
         data: { permissions: ['STUDENT_READ'] },
       },
       {
+        path: 'students/:id',
+        loadComponent: () =>
+          import('./features/students/student-profile.component').then((m) => m.StudentProfileComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['STUDENT_READ'] },
+      },
+      {
         path: 'academics',
         loadComponent: () =>
           import('./features/academics/academics.component').then((m) => m.AcademicsComponent),

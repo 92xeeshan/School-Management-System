@@ -9,6 +9,8 @@ import com.schoolms.student.dto.ImportResult;
 import com.schoolms.student.dto.StudentDto;
 import com.schoolms.student.dto.StudentGuardianDto;
 import com.schoolms.student.dto.StudentListItemDto;
+import com.schoolms.student.dto.StudentProfileDto;
+import com.schoolms.student.dto.StudentProfileUpdateRequest;
 import com.schoolms.student.dto.StudentRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -65,6 +67,21 @@ public class StudentController {
     @GetMapping("/{id}")
     public ApiResponse<StudentDto> get(@PathVariable UUID id) {
         return ApiResponse.ok(studentService.get(id));
+    }
+
+    @Operation(summary = "Get a student's full profile")
+    @PreAuthorize("hasAuthority('STUDENT_READ')")
+    @GetMapping("/{id}/profile")
+    public ApiResponse<StudentProfileDto> getProfile(@PathVariable UUID id) {
+        return ApiResponse.ok(studentService.getProfile(id));
+    }
+
+    @Operation(summary = "Update a student's full profile")
+    @PreAuthorize("hasAnyAuthority('STUDENT_UPDATE', 'STUDENT_READ')")
+    @PutMapping("/{id}/profile")
+    public ApiResponse<StudentProfileDto> updateProfile(@PathVariable UUID id,
+                                                       @Valid @RequestBody StudentProfileUpdateRequest request) {
+        return ApiResponse.ok(studentService.updateProfile(id, request));
     }
 
     @Operation(summary = "Get a student's guardians")

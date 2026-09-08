@@ -18,7 +18,7 @@ public interface StudentGuardianRepository extends JpaRepository<StudentGuardian
 
     boolean existsByStudentIdAndGuardianId(UUID studentId, UUID guardianId);
 
-    @Query("select sg from StudentGuardian sg where sg.student.schoolId = :schoolId and sg.student.id = :studentId")
+    @Query("select sg from StudentGuardian sg join fetch sg.guardian where sg.student.schoolId = :schoolId and sg.student.id = :studentId")
     List<StudentGuardian> findWithGuardians(@Param("schoolId") UUID schoolId, @Param("studentId") UUID studentId);
 
     @Query("select sg from StudentGuardian sg where sg.guardian.schoolId = :schoolId and sg.guardian.id = :guardianId")
