@@ -24,7 +24,11 @@ public final class TestSecurity {
     }
 
     public static void loginAsAdmin() {
-        login(USER_ID, SCHOOL_ID, List.of("ADMIN"), Set.of("STUDENT_READ", "CLASS_READ"));
+        login(USER_ID, SCHOOL_ID, List.of("ADMIN"), Set.of("STUDENT_READ", "STUDENT_UPDATE", "CLASS_READ"));
+    }
+
+    public static void loginAsTeacher() {
+        login(USER_ID, SCHOOL_ID, List.of("TEACHER"), Set.of("STUDENT_READ"));
     }
 
     public static void clear() {

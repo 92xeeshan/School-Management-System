@@ -1,0 +1,6 @@
+ALTER TABLE student
+    ADD COLUMN IF NOT EXISTS phone VARCHAR(30),
+    ADD COLUMN IF NOT EXISTS emergency_contact VARCHAR(30),
+    ADD COLUMN IF NOT EXISTS permanent_address VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS present_address VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS previous_school VARCHAR(200);

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { finalize } from 'rxjs';
 import { ApiResponse, PagedResponse } from '../../core/models/api.model';
@@ -100,7 +101,7 @@ interface AcademicYear {
             </thead>
             <tbody>
               @for (student of filteredStudents; track student.id) {
-                <tr>
+                <tr class="clickable" (click)="openProfile(student)">
                   <td>{{ student.admissionNo }}</td>
                   <td class="strong">{{ student.firstName }} {{ student.lastName }}</td>
                   <td>{{ student.className }}</td>
@@ -112,10 +113,10 @@ interface AcademicYear {
                   <td>
                     <div class="row-actions">
                       @if (canUpdate) {
-                        <button class="btn btn-sm" type="button" (click)="openEditModal(student)">{{ 'common.edit' | translate }}</button>
+                        <button class="btn btn-sm" type="button" (click)="openEditModal(student); $event.stopPropagation()">{{ 'common.edit' | translate }}</button>
                       }
                       @if (canDelete && student.status === 'ACTIVE') {
-                        <button class="btn btn-sm btn-danger" type="button" [disabled]="deletingId === student.id" (click)="askDelete(student)">
+                        <button class="btn btn-sm btn-danger" type="button" [disabled]="deletingId === student.id" (click)="askDelete(student); $event.stopPropagation()">
                           {{ deletingId === student.id ? ('common.loading' | translate) : ('common.delete' | translate) }}
                         </button>
                       }
@@ -225,6 +226,7 @@ interface AcademicYear {
     th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--color-border); font-size: .92rem; }
     th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; background: var(--color-bg); }
     tbody tr:hover { background: #f8fafc; }
+    tbody tr.clickable { cursor: pointer; }
     .strong { font-weight: 600; }
     .center { text-align: center; color: var(--color-muted); padding: 28px; }
 
@@ -280,7 +282,12 @@ export class StudentsComponent implements OnInit {
     sectionId: new FormControl(''),
   });
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private auth: AuthService) {}
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private router: Router,
+  ) {}
 
   get canCreate(): boolean {
     return this.auth.hasPermission('STUDENT_CREATE');
@@ -316,6 +323,10 @@ export class StudentsComponent implements OnInit {
   ngOnInit(): void {
     this.load();
     this.loadMeta();
+  }
+
+  openProfile(student: Student): void {
+    this.router.navigate(['/students', student.id]);
   }
 
   openAddModal(): void {

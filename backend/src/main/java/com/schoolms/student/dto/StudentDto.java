@@ -20,6 +20,11 @@ public record StudentDto(
         String nationality,
         LocalDate admissionDate,
         String photoUrl,
+        String phone,
+        String emergencyContact,
+        String permanentAddress,
+        String presentAddress,
+        String previousSchool,
         StudentStatus status,
         UUID userId
 ) {
@@ -29,6 +34,8 @@ public record StudentDto(
                 student.getLastName(), student.getDisplayName(), student.getDateOfBirth(),
                 student.getGender(), student.getBloodGroup(), student.getReligion(),
                 student.getNationality(), student.getAdmissionDate(), student.getPhotoUrl(),
+                student.getPhone(), student.getEmergencyContact(), student.getPermanentAddress(),
+                student.getPresentAddress(), student.getPreviousSchool(),
                 student.getStatus(), student.getUserId());
     }
 }
