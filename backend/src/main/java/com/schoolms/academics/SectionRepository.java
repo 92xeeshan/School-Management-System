@@ -15,4 +15,6 @@ public interface SectionRepository extends JpaRepository<Section, UUID> {
     Optional<Section> findByIdAndSchoolId(UUID id, UUID schoolId);
 
     boolean existsByClassIdAndName(UUID classId, String name);
+
+    boolean existsByClassIdAndNameAndIdNot(UUID classId, String name, UUID id);
 }

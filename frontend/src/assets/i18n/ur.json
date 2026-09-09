@@ -117,7 +117,13 @@
     "selectSubjects": "ایک یا زیادہ مضامین منتخب کریں",
     "selectTeacher": "کلاس ٹیچر منتخب کریں",
     "duplicateSection": "اس کلاس میں وہ سیکشن پہلے سے موجود ہے۔",
-    "capacity": "گنجائش"
+    "capacity": "گنجائش",
+    "studentStrength": "طلباء کی تعداد",
+    "editClass": "کلاس میں ترمیم",
+    "createSuccess": "کلاس محفوظ ہو گئی۔",
+    "updateSuccess": "کلاس اپ ڈیٹ ہو گئی۔",
+    "deleteSuccess": "کلاس حذف کر دی گئی۔",
+    "deleteConfirm": "{{name}} حذف کریں؟ اگر طلباء داخل نہیں ہیں تو یہ واپس نہیں ہوگا۔"
   },
   "attendance": {
     "title": "حاضری",

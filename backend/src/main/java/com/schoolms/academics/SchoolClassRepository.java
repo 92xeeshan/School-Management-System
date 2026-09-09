@@ -15,4 +15,6 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClass, UUID> 
     Optional<SchoolClass> findBySchoolIdAndName(UUID schoolId, String name);
 
     boolean existsBySchoolIdAndName(UUID schoolId, String name);
+
+    boolean existsBySchoolIdAndNameAndIdNot(UUID schoolId, String name, UUID id);
 }
