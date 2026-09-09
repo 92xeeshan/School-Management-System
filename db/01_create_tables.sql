@@ -207,6 +207,7 @@ CREATE TABLE section (
     class_id    UUID NOT NULL REFERENCES school_class(id) ON DELETE CASCADE,
     name        VARCHAR(20) NOT NULL,
     capacity    INTEGER NOT NULL DEFAULT 40,
+    room        VARCHAR(50),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT uq_section_class_name UNIQUE (class_id, name)

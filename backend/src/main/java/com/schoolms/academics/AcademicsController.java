@@ -4,6 +4,7 @@ import com.schoolms.academics.dto.AcademicYearDto;
 import com.schoolms.academics.dto.AcademicYearRequest;
 import com.schoolms.academics.dto.ClassDto;
 import com.schoolms.academics.dto.ClassRequest;
+import com.schoolms.academics.dto.ClassUpdateRequest;
 import com.schoolms.academics.dto.SectionDto;
 import com.schoolms.academics.dto.SectionRequest;
 import com.schoolms.academics.dto.SubjectDto;
@@ -16,9 +17,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -64,6 +67,22 @@ public class AcademicsController {
         return ApiResponse.ok(academicsService.createClass(request));
     }
 
+    @Operation(summary = "Update a class and optional section")
+    @PreAuthorize("hasAuthority('CLASS_UPDATE')")
+    @PutMapping("/api/classes/{id}")
+    public ApiResponse<ClassDto> updateClass(@PathVariable UUID id,
+                                             @Valid @RequestBody ClassUpdateRequest request) {
+        return ApiResponse.ok(academicsService.updateClass(id, request));
+    }
+
+    @Operation(summary = "Delete a class")
+    @PreAuthorize("hasAuthority('CLASS_UPDATE')")
+    @DeleteMapping("/api/classes/{id}")
+    public ApiResponse<Void> deleteClass(@PathVariable UUID id) {
+        academicsService.deleteClass(id);
+        return ApiResponse.okMessage("class.deleted");
+    }
+
     // ---- Sections -------------------------------------------------------------
     @Operation(summary = "List sections (optionally by class)")
     @PreAuthorize("hasAuthority('SECTION_READ')")
@@ -77,6 +96,14 @@ public class AcademicsController {
     @PostMapping("/api/sections")
     public ApiResponse<SectionDto> createSection(@Valid @RequestBody SectionRequest request) {
         return ApiResponse.ok(academicsService.createSection(request));
+    }
+
+    @Operation(summary = "Delete a section")
+    @PreAuthorize("hasAnyAuthority('CLASS_UPDATE', 'SECTION_UPDATE')")
+    @DeleteMapping("/api/sections/{id}")
+    public ApiResponse<Void> deleteSection(@PathVariable UUID id) {
+        academicsService.deleteSection(id);
+        return ApiResponse.okMessage("section.deleted");
     }
 
     // ---- Subjects -------------------------------------------------------------

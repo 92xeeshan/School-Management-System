@@ -10,24 +10,32 @@ interface SchoolClass {
   name: string;
   code: string;
   sections: SchoolSection[];
-  subjects: string[];
+  subjects: BackendSubject[];
 }
 
 interface SchoolSection {
   id: string;
   name: string;
   capacity: number;
+  room: string;
+  studentCount: number;
+  classTeacherId: string;
   classTeacherName: string;
 }
 
 interface ClassRow {
   rowId: string;
+  classId: string;
   className: string;
   classCode: string;
+  sectionId: string;
   sectionName: string;
   capacity: number | null;
+  room: string;
+  studentCount: number;
+  classTeacherId: string;
   classTeacherName: string;
-  subjects: string[];
+  subjects: BackendSubject[];
 }
 
 interface BackendClass {
@@ -44,6 +52,8 @@ interface BackendSection {
   className: string;
   name: string;
   capacity: number;
+  room?: string | null;
+  studentCount?: number | null;
   classTeacherId?: string | null;
   classTeacherName?: string | null;
 }
@@ -79,6 +89,13 @@ interface BackendTeacher {
         }
       </div>
 
+      @if (successMessage) {
+        <p class="banner success">{{ successMessage | translate }}</p>
+      }
+      @if (pageError) {
+        <p class="banner error">{{ pageError }}</p>
+      }
+
       <div class="card">
         <div class="table-wrap">
           <table>
@@ -88,6 +105,11 @@ interface BackendTeacher {
                 <th>{{ 'academics.sections' | translate }}</th>
                 <th>{{ 'academics.classTeacher' | translate }}</th>
                 <th>{{ 'academics.subjects' | translate }}</th>
+                <th>{{ 'academics.room' | translate }}</th>
+                <th>{{ 'academics.studentStrength' | translate }}</th>
+                @if (canUpdate) {
+                  <th>{{ 'common.actions' | translate }}</th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -96,7 +118,7 @@ interface BackendTeacher {
                   <td class="strong">{{ row.className }} <span class="muted code">{{ row.classCode }}</span></td>
                   <td>
                     @if (row.sectionName) {
-                      <span class="section-chip">{{ row.sectionName }} · {{ row.capacity }}</span>
+                      <span class="section-chip">{{ row.sectionName }}</span>
                     } @else {
                       <span class="muted">—</span>
                     }
@@ -104,16 +126,34 @@ interface BackendTeacher {
                   <td>{{ row.classTeacherName || '—' }}</td>
                   <td>
                     <div class="subject-tags">
-                      @for (subject of row.subjects; track subject) {
-                        <span class="tag">{{ subject }}</span>
+                      @for (subject of row.subjects; track subject.id) {
+                        <span class="tag">{{ subject.name }}</span>
                       } @empty {
                         <span class="muted">—</span>
                       }
                     </div>
                   </td>
+                  <td>{{ row.room || '—' }}</td>
+                  <td>
+                    @if (row.capacity != null) {
+                      {{ row.studentCount }}/{{ row.capacity }}
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                  @if (canUpdate) {
+                    <td>
+                      <div class="row-actions">
+                        <button class="btn btn-sm" type="button" (click)="openEditModal(row)">{{ 'common.edit' | translate }}</button>
+                        <button class="btn btn-sm btn-danger" type="button" [disabled]="deletingId === row.rowId" (click)="askDelete(row)">
+                          {{ deletingId === row.rowId ? ('common.loading' | translate) : ('common.delete' | translate) }}
+                        </button>
+                      </div>
+                    </td>
+                  }
                 </tr>
               } @empty {
-                <tr><td colspan="4" class="center">{{ 'common.noData' | translate }}</td></tr>
+                <tr><td [attr.colspan]="canUpdate ? 7 : 6" class="center">{{ 'common.noData' | translate }}</td></tr>
               }
             </tbody>
           </table>
@@ -124,7 +164,7 @@ interface BackendTeacher {
     @if (showModal) {
       <div class="modal-backdrop" (click)="closeModal()">
         <div class="modal" (click)="$event.stopPropagation()">
-          <h2>{{ 'academics.addClass' | translate }}</h2>
+          <h2>{{ editingRow ? ('academics.editClass' | translate) : ('academics.addClass' | translate) }}</h2>
           @if (formError) {
             <p class="form-error">{{ formError }}</p>
           }
@@ -150,6 +190,10 @@ interface BackendTeacher {
               <div class="field">
                 <label>{{ 'academics.capacity' | translate }}</label>
                 <input type="number" formControlName="capacity" min="1" />
+              </div>
+              <div class="field">
+                <label>{{ 'academics.room' | translate }}</label>
+                <input type="text" formControlName="room" placeholder="R-12" />
               </div>
               <div class="field">
                 <label>{{ 'academics.classTeacher' | translate }} *</label>
@@ -184,6 +228,21 @@ interface BackendTeacher {
         </div>
       </div>
     }
+
+    @if (pendingDelete) {
+      <div class="modal-backdrop" (click)="cancelDelete()">
+        <div class="modal modal-sm" (click)="$event.stopPropagation()">
+          <h2>{{ 'common.delete' | translate }}</h2>
+          <p class="confirm-text">{{ 'academics.deleteConfirm' | translate:{ name: pendingDelete.className + (pendingDelete.sectionName ? ' ' + pendingDelete.sectionName : '') } }}</p>
+          <div class="form-actions">
+            <button class="btn" type="button" [disabled]="!!deletingId" (click)="cancelDelete()">{{ 'common.cancel' | translate }}</button>
+            <button class="btn btn-danger" type="button" [disabled]="!!deletingId" (click)="confirmDelete()">
+              {{ deletingId ? ('common.loading' | translate) : ('common.delete' | translate) }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -196,14 +255,21 @@ interface BackendTeacher {
     th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; background: var(--color-bg); }
     .strong { font-weight: 600; }
     .center { text-align: center; color: var(--color-muted); padding: 28px; }
-    .sections { display: flex; flex-wrap: wrap; gap: 8px; }
     .section-chip {
       padding: 4px 10px; border-radius: 20px; font-size: .82rem;
       background: var(--color-primary-soft); color: var(--color-primary); font-weight: 600;
     }
     .subject-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .tag { padding: 3px 10px; border-radius: 6px; background: var(--color-bg); border: 1px solid var(--color-border); font-size: .82rem; }
-    .teacher-list { display: flex; flex-direction: column; gap: 4px; font-size: .88rem; }
+    .banner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
+    .banner.success { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+    .banner.error { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-sm { padding: 5px 10px; font-size: .82rem; }
+    .btn-danger { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+    .btn-danger:hover { background: #991b1b; color: #fff; border-color: #991b1b; }
+    .modal-sm { width: 420px; }
+    .confirm-text { margin: 0 0 8px; color: var(--color-muted); line-height: 1.45; }
 
     .modal-backdrop {
       position: fixed; inset: 0; z-index: 100;
@@ -249,12 +315,18 @@ export class AcademicsComponent implements OnInit {
   showModal = false;
   saving = false;
   formError = '';
+  successMessage = '';
+  pageError = '';
+  editingRow: ClassRow | null = null;
+  pendingDelete: ClassRow | null = null;
+  deletingId: string | null = null;
 
   readonly form = new FormGroup({
     name: new FormControl('', Validators.required),
     code: new FormControl(''),
     sectionName: new FormControl('', Validators.required),
     capacity: new FormControl(40),
+    room: new FormControl(''),
     classTeacherId: new FormControl('', Validators.required),
   });
   selectedSubjectIds: string[] = [];
@@ -265,16 +337,25 @@ export class AcademicsComponent implements OnInit {
     return this.auth.hasPermission('CLASS_CREATE');
   }
 
+  get canUpdate(): boolean {
+    return this.auth.hasPermission('CLASS_UPDATE');
+  }
+
   get classRows(): ClassRow[] {
     const rows: ClassRow[] = [];
     for (const klass of this.classes) {
       if (!klass.sections.length) {
         rows.push({
           rowId: klass.id,
+          classId: klass.id,
           className: klass.name,
           classCode: klass.code,
+          sectionId: '',
           sectionName: '',
           capacity: null,
+          room: '',
+          studentCount: 0,
+          classTeacherId: '',
           classTeacherName: '',
           subjects: klass.subjects,
         });
@@ -283,10 +364,15 @@ export class AcademicsComponent implements OnInit {
       for (const section of klass.sections) {
         rows.push({
           rowId: section.id,
+          classId: klass.id,
           className: klass.name,
           classCode: klass.code,
+          sectionId: section.id,
           sectionName: section.name,
           capacity: section.capacity,
+          room: section.room,
+          studentCount: section.studentCount,
+          classTeacherId: section.classTeacherId,
           classTeacherName: section.classTeacherName,
           subjects: klass.subjects,
         });
@@ -323,6 +409,9 @@ export class AcademicsComponent implements OnInit {
       return this.sectionOptions;
     }
     const used = new Set(existing.sections.map((section) => section.name.toUpperCase()));
+    if (this.editingRow?.sectionName) {
+      used.delete(this.editingRow.sectionName.toUpperCase());
+    }
     return this.sectionOptions.filter((section) => !used.has(section));
   }
 
@@ -335,11 +424,34 @@ export class AcademicsComponent implements OnInit {
   }
 
   openAddModal(): void {
+    this.editingRow = null;
     this.showModal = true;
     this.saving = false;
     this.formError = '';
+    this.successMessage = '';
+    this.pageError = '';
     this.selectedSubjectIds = [];
-    this.form.reset({ name: '', code: '', sectionName: '', capacity: 40, classTeacherId: '' });
+    this.form.reset({ name: '', code: '', sectionName: '', capacity: 40, room: '', classTeacherId: '' });
+    this.loadLookups();
+    this.cdr.markForCheck();
+  }
+
+  openEditModal(row: ClassRow): void {
+    this.editingRow = row;
+    this.showModal = true;
+    this.saving = false;
+    this.formError = '';
+    this.successMessage = '';
+    this.pageError = '';
+    this.selectedSubjectIds = row.subjects.map((subject) => subject.id);
+    this.form.reset({
+      name: row.className,
+      code: row.classCode,
+      sectionName: row.sectionName,
+      capacity: row.capacity ?? 40,
+      room: row.room,
+      classTeacherId: row.classTeacherId,
+    });
     this.loadLookups();
     this.cdr.markForCheck();
   }
@@ -349,8 +461,52 @@ export class AcademicsComponent implements OnInit {
       return;
     }
     this.showModal = false;
+    this.editingRow = null;
     this.formError = '';
     this.cdr.markForCheck();
+  }
+
+  askDelete(row: ClassRow): void {
+    this.pendingDelete = row;
+    this.cdr.markForCheck();
+  }
+
+  cancelDelete(): void {
+    if (this.deletingId) {
+      return;
+    }
+    this.pendingDelete = null;
+    this.cdr.markForCheck();
+  }
+
+  confirmDelete(): void {
+    if (!this.pendingDelete) {
+      return;
+    }
+    const row = this.pendingDelete;
+    this.deletingId = row.rowId;
+    this.cdr.markForCheck();
+    const request$ = row.sectionId
+      ? this.http.delete<ApiResponse<unknown>>(`/api/sections/${row.sectionId}`)
+      : this.http.delete<ApiResponse<unknown>>(`/api/classes/${row.classId}`);
+    request$.subscribe({
+      next: () => {
+        this.deletingId = null;
+        this.pendingDelete = null;
+        this.successMessage = 'academics.deleteSuccess';
+        this.pageError = '';
+        this.cdr.markForCheck();
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.deletingId = null;
+        this.pendingDelete = null;
+        const apiError = err.error as ApiError | undefined;
+        this.successMessage = '';
+        this.pageError = apiError?.message || 'Could not delete class. Please try again.';
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   onSubmit(): void {
@@ -364,29 +520,54 @@ export class AcademicsComponent implements OnInit {
     this.saving = true;
     this.formError = '';
     this.cdr.markForCheck();
+    if (this.editingRow) {
+      const body = {
+        name: this.form.value.name,
+        code: this.form.value.code || this.form.value.name,
+        sectionId: this.editingRow.sectionId || null,
+        sectionName: this.form.value.sectionName,
+        capacity: this.form.value.capacity || 40,
+        room: this.form.value.room || null,
+        subjectIds: this.selectedSubjectIds,
+        classTeacherId: this.form.value.classTeacherId,
+      };
+      this.http.put<ApiResponse<unknown>>(`/api/classes/${this.editingRow.classId}`, body).subscribe({
+        next: () => this.afterSave('academics.updateSuccess'),
+        error: (err: HttpErrorResponse) => this.onSaveError(err),
+      });
+      return;
+    }
     const body = {
       name: this.form.value.name,
       code: this.form.value.code || this.form.value.name,
       sortOrder: 0,
       sectionName: this.form.value.sectionName,
       capacity: this.form.value.capacity || 40,
+      room: this.form.value.room || null,
       subjectIds: this.selectedSubjectIds,
       classTeacherId: this.form.value.classTeacherId,
     };
     this.http.post<ApiResponse<unknown>>('/api/classes', body).subscribe({
-      next: () => {
-        this.saving = false;
-        this.showModal = false;
-        this.cdr.markForCheck();
-        this.load();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.saving = false;
-        const apiError = err.error as ApiError | undefined;
-        this.formError = apiError?.message || 'Could not save class. Please try again.';
-        this.cdr.markForCheck();
-      },
+      next: () => this.afterSave('academics.createSuccess'),
+      error: (err: HttpErrorResponse) => this.onSaveError(err),
     });
+  }
+
+  private afterSave(messageKey: string): void {
+    this.saving = false;
+    this.showModal = false;
+    this.editingRow = null;
+    this.successMessage = messageKey;
+    this.pageError = '';
+    this.cdr.markForCheck();
+    this.load();
+  }
+
+  private onSaveError(err: HttpErrorResponse): void {
+    this.saving = false;
+    const apiError = err.error as ApiError | undefined;
+    this.formError = apiError?.message || 'Could not save class. Please try again.';
+    this.cdr.markForCheck();
   }
 
   private load(): void {
@@ -400,9 +581,12 @@ export class AcademicsComponent implements OnInit {
             id: section.id,
             name: section.name,
             capacity: section.capacity,
+            room: section.room ?? '',
+            studentCount: section.studentCount ?? 0,
+            classTeacherId: section.classTeacherId ?? '',
             classTeacherName: section.classTeacherName ?? '',
           })),
-          subjects: (klass.subjects ?? []).map((subject) => subject.name),
+          subjects: klass.subjects ?? [],
         }));
         this.cdr.markForCheck();
       },

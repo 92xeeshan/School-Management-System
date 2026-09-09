@@ -14,5 +14,10 @@ public interface StudentEnrollmentRepository extends JpaRepository<StudentEnroll
 
     List<StudentEnrollment> findByStudentId(UUID studentId);
 
+    List<StudentEnrollment> findBySchoolIdAndAcademicYearIdAndStatus(
+            UUID schoolId, UUID academicYearId, String status);
+
+    long countBySectionIdAndAcademicYearIdAndStatus(UUID sectionId, UUID academicYearId, String status);
+
     boolean existsByStudentIdAndAcademicYearId(UUID studentId, UUID academicYearId);
 }

@@ -117,7 +117,13 @@
     "selectSubjects": "Select one or more subjects",
     "selectTeacher": "Select class teacher",
     "duplicateSection": "This class already has that section.",
-    "capacity": "Capacity"
+    "capacity": "Capacity",
+    "studentStrength": "Student Strength",
+    "editClass": "Edit Class",
+    "createSuccess": "Class saved.",
+    "updateSuccess": "Class updated.",
+    "deleteSuccess": "Class deleted.",
+    "deleteConfirm": "Delete {{name}}? This cannot be undone if students are not enrolled."
   },
   "attendance": {
     "title": "Attendance",

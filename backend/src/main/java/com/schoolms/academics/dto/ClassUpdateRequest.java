@@ -6,10 +6,10 @@ import jakarta.validation.constraints.Positive;
 import java.util.List;
 import java.util.UUID;
 
-public record ClassRequest(
+public record ClassUpdateRequest(
         @NotBlank(message = "{validation.not_blank}") String name,
         String code,
-        Integer sortOrder,
+        UUID sectionId,
         String sectionName,
         @Positive(message = "{validation.positive}") Integer capacity,
         String room,

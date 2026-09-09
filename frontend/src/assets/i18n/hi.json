@@ -117,7 +117,13 @@
     "selectSubjects": "एक या अधिक विषय चुनें",
     "selectTeacher": "कक्षा अध्यापक चुनें",
     "duplicateSection": "इस कक्षा में वह सेक्शन पहले से है।",
-    "capacity": "क्षमता"
+    "capacity": "क्षमता",
+    "studentStrength": "छात्र संख्या",
+    "editClass": "कक्षा संपादित करें",
+    "createSuccess": "कक्षा सहेजी गई।",
+    "updateSuccess": "कक्षा अपडेट की गई।",
+    "deleteSuccess": "कक्षा हटा दी गई।",
+    "deleteConfirm": "{{name}} हटाएँ? यदि छात्र नामांकित नहीं हैं तो यह पूर्ववत नहीं होगा।"
   },
   "attendance": {
     "title": "उपस्थिति",

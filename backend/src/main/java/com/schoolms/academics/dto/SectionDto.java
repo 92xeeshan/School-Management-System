@@ -10,11 +10,13 @@ public record SectionDto(
         String className,
         String name,
         Integer capacity,
+        String room,
+        Integer studentCount,
         UUID classTeacherId,
         String classTeacherName
 ) {
     public static SectionDto from(Section section, String className) {
         return new SectionDto(section.getId(), section.getClassId(), className,
-                section.getName(), section.getCapacity(), null, null);
+                section.getName(), section.getCapacity(), section.getRoom(), 0, null, null);
     }
 }

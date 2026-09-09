@@ -3,6 +3,7 @@ package com.schoolms.academics;
 import com.schoolms.TestSecurity;
 import com.schoolms.academics.dto.AcademicYearRequest;
 import com.schoolms.academics.dto.ClassRequest;
+import com.schoolms.academics.dto.ClassUpdateRequest;
 import com.schoolms.common.exception.BusinessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +42,8 @@ class AcademicsServiceTest {
     private TeacherSectionRepository teacherSectionRepository;
     @Mock
     private ClassSubjectRepository classSubjectRepository;
+    @Mock
+    private StudentEnrollmentRepository enrollmentRepository;
 
     private AcademicsService academicsService;
 
@@ -48,7 +51,8 @@ class AcademicsServiceTest {
     void setUp() {
         academicsService = new AcademicsService(academicYearRepository, classRepository,
                 sectionRepository, subjectRepository, teacherRepository,
-                teacherSubjectRepository, teacherSectionRepository, classSubjectRepository);
+                teacherSubjectRepository, teacherSectionRepository, classSubjectRepository,
+                enrollmentRepository);
         TestSecurity.loginAsAdmin();
     }
 
@@ -75,8 +79,10 @@ class AcademicsServiceTest {
         when(teacherRepository.findBySchoolIdOrderByFirstNameAsc(TestSecurity.SCHOOL_ID))
                 .thenReturn(java.util.List.of());
         when(teacherSectionRepository.findBySchoolId(TestSecurity.SCHOOL_ID)).thenReturn(java.util.List.of());
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.empty());
 
-        var dto = academicsService.createClass(new ClassRequest("Class 7", "C7", 7, null, null, null, null));
+        var dto = academicsService.createClass(new ClassRequest("Class 7", "C7", 7, null, null, null, null, null));
 
         assertEquals("Class 7", dto.name());
         assertEquals(7, dto.sortOrder());
@@ -134,12 +140,14 @@ class AcademicsServiceTest {
         assignment.setTeacherId(teacherId);
         assignment.setClassTeacher(true);
         when(teacherSectionRepository.findBySchoolId(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of())
                 .thenReturn(java.util.List.of(assignment));
         Section savedSection = new Section();
         savedSection.setId(sectionId);
         savedSection.setClassId(classId);
         savedSection.setName("A");
         savedSection.setCapacity(40);
+        savedSection.setRoom("R-12");
         when(sectionRepository.findBySchoolIdAndClassIdOrderByNameAsc(TestSecurity.SCHOOL_ID, classId))
                 .thenReturn(java.util.List.of(savedSection));
         when(subjectRepository.findBySchoolIdOrderByNameAsc(TestSecurity.SCHOOL_ID))
@@ -150,13 +158,18 @@ class AcademicsServiceTest {
         when(classSubjectRepository.findByClassIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
                 .thenReturn(java.util.List.of(link));
 
+        when(enrollmentRepository.findBySchoolIdAndAcademicYearIdAndStatus(
+                TestSecurity.SCHOOL_ID, yearId, "ACTIVE")).thenReturn(java.util.List.of());
+
         var dto = academicsService.createClass(new ClassRequest(
-                "Class 8", "C8", 8, "A", 40, java.util.List.of(subjectId), teacherId));
+                "Class 8", "C8", 8, "A", 40, "R-12", java.util.List.of(subjectId), teacherId));
 
         assertEquals("Class 8", dto.name());
         assertEquals(1, dto.sections().size());
         assertEquals("A", dto.sections().get(0).name());
         assertEquals("Asha Sharma", dto.sections().get(0).classTeacherName());
+        assertEquals("R-12", dto.sections().get(0).room());
+        assertEquals(0, dto.sections().get(0).studentCount());
         assertEquals(1, dto.subjects().size());
         assertEquals("Mathematics", dto.subjects().get(0).name());
     }
@@ -171,7 +184,7 @@ class AcademicsServiceTest {
         when(sectionRepository.existsByClassIdAndName(existing.getId(), "A")).thenReturn(true);
 
         assertThrows(BusinessException.class,
-                () -> academicsService.createClass(new ClassRequest("Class 5", "C5", 5, "A", 40, null, null)));
+                () -> academicsService.createClass(new ClassRequest("Class 5", "C5", 5, "A", 40, null, null, null)));
         verify(sectionRepository, never()).save(any());
     }
 
@@ -201,5 +214,215 @@ class AcademicsServiceTest {
         assertTrue(!previous.isCurrent(), "previous current year should be cleared");
         assertEquals("2026-27", dto.name());
         verify(academicYearRepository).save(previous);
+    }
+
+    @Test
+    void updateClassRejectsDuplicateName() {
+        UUID classId = UUID.randomUUID();
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setId(classId);
+        schoolClass.setName("Class 8");
+        when(classRepository.findByIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(schoolClass));
+        when(classRepository.existsBySchoolIdAndNameAndIdNot(TestSecurity.SCHOOL_ID, "Class 9", classId))
+                .thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> academicsService.updateClass(classId, new ClassUpdateRequest(
+                        "Class 9", "C9", null, null, null, null, null, null)));
+        assertEquals("class.name_exists", ex.getCode());
+    }
+
+    @Test
+    void updateClassRejectsCapacityBelowEnrollment() {
+        UUID classId = UUID.randomUUID();
+        UUID sectionId = UUID.randomUUID();
+        UUID yearId = UUID.randomUUID();
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setId(classId);
+        schoolClass.setName("Class 8");
+        Section section = new Section();
+        section.setId(sectionId);
+        section.setClassId(classId);
+        section.setName("A");
+        section.setCapacity(40);
+        when(classRepository.findByIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(schoolClass));
+        when(classRepository.existsBySchoolIdAndNameAndIdNot(TestSecurity.SCHOOL_ID, "Class 8", classId))
+                .thenReturn(false);
+        when(classRepository.saveAndFlush(schoolClass)).thenReturn(schoolClass);
+        when(sectionRepository.findByIdAndSchoolId(sectionId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(section));
+        when(sectionRepository.existsByClassIdAndNameAndIdNot(classId, "A", sectionId)).thenReturn(false);
+        AcademicYear year = new AcademicYear();
+        year.setId(yearId);
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(year));
+        when(enrollmentRepository.countBySectionIdAndAcademicYearIdAndStatus(sectionId, yearId, "ACTIVE"))
+                .thenReturn(12L);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> academicsService.updateClass(classId, new ClassUpdateRequest(
+                        "Class 8", "C8", sectionId, "A", 10, "R-1", null, null)));
+        assertEquals("section.capacity_below_enrollment", ex.getCode());
+    }
+
+    @Test
+    void updateClassRejectsTeacherConflict() {
+        UUID classId = UUID.randomUUID();
+        UUID sectionId = UUID.randomUUID();
+        UUID otherSectionId = UUID.randomUUID();
+        UUID teacherId = UUID.randomUUID();
+        UUID yearId = UUID.randomUUID();
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setId(classId);
+        schoolClass.setName("Class 8");
+        Section section = new Section();
+        section.setId(sectionId);
+        section.setClassId(classId);
+        section.setName("A");
+        section.setCapacity(40);
+        when(classRepository.findByIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(schoolClass));
+        when(classRepository.existsBySchoolIdAndNameAndIdNot(TestSecurity.SCHOOL_ID, "Class 8", classId))
+                .thenReturn(false);
+        when(classRepository.saveAndFlush(schoolClass)).thenReturn(schoolClass);
+        when(sectionRepository.findByIdAndSchoolId(sectionId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(section));
+        when(sectionRepository.existsByClassIdAndNameAndIdNot(classId, "A", sectionId)).thenReturn(false);
+        when(sectionRepository.saveAndFlush(section)).thenReturn(section);
+        AcademicYear year = new AcademicYear();
+        year.setId(yearId);
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(year));
+        when(enrollmentRepository.countBySectionIdAndAcademicYearIdAndStatus(sectionId, yearId, "ACTIVE"))
+                .thenReturn(0L);
+        TeacherSection other = new TeacherSection();
+        other.setTeacherId(teacherId);
+        other.setSectionId(otherSectionId);
+        other.setAcademicYearId(yearId);
+        other.setClassTeacher(true);
+        when(teacherSectionRepository.findBySchoolId(TestSecurity.SCHOOL_ID)).thenReturn(java.util.List.of(other));
+        TeacherProfile teacher = new TeacherProfile();
+        teacher.setId(teacherId);
+        teacher.setFirstName("Asha");
+        when(teacherRepository.findByIdAndSchoolId(teacherId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(teacher));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> academicsService.updateClass(classId, new ClassUpdateRequest(
+                        "Class 8", "C8", sectionId, "A", 40, "R-1", null, teacherId)));
+        assertEquals("section.teacher_conflict", ex.getCode());
+    }
+
+    @Test
+    void updateClassSavesRoomTeacherAndSubjects() {
+        UUID classId = UUID.randomUUID();
+        UUID sectionId = UUID.randomUUID();
+        UUID teacherId = UUID.randomUUID();
+        UUID subjectId = UUID.randomUUID();
+        UUID yearId = UUID.randomUUID();
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setId(classId);
+        schoolClass.setSchoolId(TestSecurity.SCHOOL_ID);
+        schoolClass.setName("Class 8");
+        schoolClass.setCode("C8");
+        Section section = new Section();
+        section.setId(sectionId);
+        section.setClassId(classId);
+        section.setName("A");
+        section.setCapacity(40);
+        when(classRepository.findByIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(schoolClass));
+        when(classRepository.existsBySchoolIdAndNameAndIdNot(TestSecurity.SCHOOL_ID, "Class 8A", classId))
+                .thenReturn(false);
+        when(classRepository.saveAndFlush(any(SchoolClass.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(sectionRepository.findByIdAndSchoolId(sectionId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(section));
+        when(sectionRepository.existsByClassIdAndNameAndIdNot(classId, "B", sectionId)).thenReturn(false);
+        when(sectionRepository.saveAndFlush(any(Section.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        AcademicYear year = new AcademicYear();
+        year.setId(yearId);
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(year));
+        when(enrollmentRepository.countBySectionIdAndAcademicYearIdAndStatus(sectionId, yearId, "ACTIVE"))
+                .thenReturn(8L);
+        when(teacherSectionRepository.findBySchoolId(TestSecurity.SCHOOL_ID)).thenReturn(java.util.List.of());
+        TeacherProfile teacher = new TeacherProfile();
+        teacher.setId(teacherId);
+        teacher.setFirstName("Asha");
+        teacher.setLastName("Sharma");
+        when(teacherRepository.findByIdAndSchoolId(teacherId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(teacher));
+        when(teacherSectionRepository.findByTeacherIdAndSectionIdAndAcademicYearId(teacherId, sectionId, yearId))
+                .thenReturn(java.util.Optional.empty());
+        when(teacherSectionRepository.saveAndFlush(any(TeacherSection.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        Subject math = new Subject();
+        math.setId(subjectId);
+        math.setName("Mathematics");
+        math.setCode("MATH");
+        when(subjectRepository.findByIdAndSchoolId(subjectId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(math));
+        ClassSubject savedLink = new ClassSubject();
+        savedLink.setClassId(classId);
+        savedLink.setSubjectId(subjectId);
+        when(classSubjectRepository.findByClassIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of())
+                .thenReturn(java.util.List.of(savedLink));
+        when(classSubjectRepository.saveAndFlush(any(ClassSubject.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(teacherRepository.findBySchoolIdOrderByFirstNameAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(teacher));
+        TeacherSection assignment = new TeacherSection();
+        assignment.setSectionId(sectionId);
+        assignment.setTeacherId(teacherId);
+        assignment.setClassTeacher(true);
+        when(teacherSectionRepository.findBySchoolId(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of())
+                .thenReturn(java.util.List.of(assignment));
+        when(sectionRepository.findBySchoolIdAndClassIdOrderByNameAsc(TestSecurity.SCHOOL_ID, classId))
+                .thenReturn(java.util.List.of(section));
+        when(subjectRepository.findBySchoolIdOrderByNameAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(math));
+        when(enrollmentRepository.findBySchoolIdAndAcademicYearIdAndStatus(
+                TestSecurity.SCHOOL_ID, yearId, "ACTIVE")).thenReturn(java.util.List.of());
+
+        var dto = academicsService.updateClass(classId, new ClassUpdateRequest(
+                "Class 8A", "C8A", sectionId, "B", 35, "Lab-2", java.util.List.of(subjectId), teacherId));
+
+        assertEquals("Class 8A", dto.name());
+        assertEquals("B", dto.sections().get(0).name());
+        assertEquals(35, dto.sections().get(0).capacity());
+        assertEquals("Lab-2", dto.sections().get(0).room());
+        assertEquals("Asha Sharma", dto.sections().get(0).classTeacherName());
+        assertEquals("Mathematics", dto.subjects().get(0).name());
+    }
+
+    @Test
+    void deleteClassRejectsWhenStudentsEnrolled() {
+        UUID classId = UUID.randomUUID();
+        UUID sectionId = UUID.randomUUID();
+        UUID yearId = UUID.randomUUID();
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setId(classId);
+        Section section = new Section();
+        section.setId(sectionId);
+        section.setClassId(classId);
+        when(classRepository.findByIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(schoolClass));
+        when(sectionRepository.findBySchoolIdAndClassIdOrderByNameAsc(TestSecurity.SCHOOL_ID, classId))
+                .thenReturn(java.util.List.of(section));
+        AcademicYear year = new AcademicYear();
+        year.setId(yearId);
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(year));
+        when(enrollmentRepository.countBySectionIdAndAcademicYearIdAndStatus(sectionId, yearId, "ACTIVE"))
+                .thenReturn(3L);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> academicsService.deleteClass(classId));
+        assertEquals("class.has_students", ex.getCode());
+        verify(classRepository, never()).delete(any());
     }
 }

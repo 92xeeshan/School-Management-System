@@ -26,4 +26,7 @@ public class Section extends BaseEntity {
 
     @Column(nullable = false)
     private Integer capacity = 40;
+
+    @Column(length = 50)
+    private String room;
 }
