@@ -39,9 +39,42 @@ export const routes: Routes = [
       {
         path: 'academics',
         loadComponent: () =>
-          import('./features/academics/academics.component').then((m) => m.AcademicsComponent),
+          import('./features/academics/academics-shell.component').then((m) => m.AcademicsShellComponent),
         canActivate: [PermissionGuard],
         data: { permissions: ['CLASS_READ'] },
+        children: [
+          { path: '', redirectTo: 'classes', pathMatch: 'full' },
+          {
+            path: 'classes',
+            loadComponent: () =>
+              import('./features/academics/academics.component').then((m) => m.AcademicsComponent),
+          },
+          {
+            path: 'subjects',
+            loadComponent: () =>
+              import('./features/academics/subjects.component').then((m) => m.AcademicsSubjectsComponent),
+          },
+          {
+            path: 'timetable',
+            loadComponent: () =>
+              import('./features/academics/timetable.component').then((m) => m.AcademicsTimetableComponent),
+          },
+          {
+            path: 'syllabus',
+            loadComponent: () =>
+              import('./features/academics/syllabus.component').then((m) => m.AcademicsSyllabusComponent),
+          },
+          {
+            path: 'examinations',
+            loadComponent: () =>
+              import('./features/academics/examinations.component').then((m) => m.AcademicsExaminationsComponent),
+          },
+          {
+            path: 'terms',
+            loadComponent: () =>
+              import('./features/academics/academic-terms.component').then((m) => m.AcademicsTermsComponent),
+          },
+        ],
       },
       {
         path: 'attendance',

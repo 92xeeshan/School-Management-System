@@ -101,7 +101,45 @@
   },
   "academics": {
     "title": "Academics",
-    "subtitle": "Classes, sections and subjects",
+    "subtitle": "Classes, subjects, timetables and academic sessions",
+    "comingSoon": "Coming soon",
+    "tabs": {
+      "classes": "Classes & Sections",
+      "subjects": "Subject Management",
+      "timetable": "Timetable & Class Schedules",
+      "syllabus": "Syllabus & Lesson Tracking",
+      "examinations": "Examination & Grading Schemes",
+      "terms": "Academic Terms & Sessions"
+    },
+    "classesPage": {
+      "title": "Classes & Sections",
+      "subtitle": "Classes, sections and subjects"
+    },
+    "subjectsPage": {
+      "title": "Subject Management",
+      "subtitle": "Define and organize school subjects",
+      "body": "Subject management will be available here in a later update."
+    },
+    "timetablePage": {
+      "title": "Timetable & Class Schedules",
+      "subtitle": "Plan weekly class schedules",
+      "body": "Timetable and class schedules will be available here in a later update."
+    },
+    "syllabusPage": {
+      "title": "Syllabus & Lesson Tracking",
+      "subtitle": "Track syllabus coverage and lessons",
+      "body": "Syllabus and lesson tracking will be available here in a later update."
+    },
+    "examinationsPage": {
+      "title": "Examination & Grading Schemes",
+      "subtitle": "Configure exams and grading",
+      "body": "Examination and grading schemes will be available here in a later update."
+    },
+    "termsPage": {
+      "title": "Academic Terms & Sessions",
+      "subtitle": "Manage academic years, terms and sessions",
+      "body": "Academic terms and sessions will be available here in a later update."
+    },
     "classes": "Classes",
     "sections": "Sections",
     "subjects": "Subjects",
