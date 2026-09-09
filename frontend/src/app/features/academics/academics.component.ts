@@ -76,11 +76,11 @@ interface BackendTeacher {
   selector: 'app-academics',
   imports: [TranslateModule, ReactiveFormsModule],
   template: `
-    <div class="page">
+    <div class="tab-page">
       <div class="page-header">
         <div>
-          <h1>{{ 'academics.title' | translate }}</h1>
-          <p class="muted">{{ 'academics.subtitle' | translate }}</p>
+          <h2>{{ 'academics.classesPage.title' | translate }}</h2>
+          <p class="muted">{{ 'academics.classesPage.subtitle' | translate }}</p>
         </div>
         @if (canCreate) {
           <div class="header-actions">
@@ -245,8 +245,8 @@ interface BackendTeacher {
     }
   `,
   styles: `
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    h1 { font-size: 1.5rem; margin: 0 0 4px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+    h2 { font-size: 1.2rem; margin: 0 0 4px; }
     .muted { color: var(--color-muted); }
     .code { font-size: .8rem; font-weight: 400; }
     .table-wrap { overflow-x: auto; }
