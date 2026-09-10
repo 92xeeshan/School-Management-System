@@ -7,6 +7,7 @@ import com.schoolms.academics.dto.ClassRequest;
 import com.schoolms.academics.dto.ClassUpdateRequest;
 import com.schoolms.academics.dto.SectionDto;
 import com.schoolms.academics.dto.SectionRequest;
+import com.schoolms.academics.dto.SubjectClassDto;
 import com.schoolms.academics.dto.SubjectDto;
 import com.schoolms.academics.dto.SubjectRequest;
 import com.schoolms.academics.dto.TeacherDto;
@@ -250,23 +251,52 @@ public class AcademicsService {
     // ---- Subjects ------------------------------------------------------------
     @Transactional(readOnly = true)
     public List<SubjectDto> listSubjects() {
-        return subjectRepository.findBySchoolIdOrderByNameAsc(SecurityUtils.currentSchoolId())
-                .stream().map(SubjectDto::from).toList();
+        UUID schoolId = SecurityUtils.currentSchoolId();
+        Map<UUID, SchoolClass> classes = classRepository.findBySchoolIdOrderBySortOrderAsc(schoolId)
+                .stream().collect(Collectors.toMap(SchoolClass::getId, c -> c));
+        Map<UUID, TeacherProfile> teachers = teacherRepository.findBySchoolIdOrderByFirstNameAsc(schoolId)
+                .stream().collect(Collectors.toMap(TeacherProfile::getId, t -> t));
+        Map<UUID, List<ClassSubject>> linksBySubject = classSubjectRepository.findBySchoolId(schoolId)
+                .stream().collect(Collectors.groupingBy(ClassSubject::getSubjectId));
+        Map<UUID, List<TeacherSubject>> teachersBySubject = teacherSubjectRepository.findBySchoolId(schoolId)
+                .stream().collect(Collectors.groupingBy(TeacherSubject::getSubjectId));
+        return subjectRepository.findBySchoolIdOrderByNameAsc(schoolId).stream()
+                .map(subject -> toSubjectDto(subject, classes, teachers,
+                        linksBySubject.getOrDefault(subject.getId(), List.of()),
+                        teachersBySubject.getOrDefault(subject.getId(), List.of())))
+                .toList();
     }
 
     @Transactional
     public SubjectDto createSubject(SubjectRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        if (subjectRepository.existsBySchoolIdAndName(schoolId, request.name())) {
-            throw new BusinessException("error.conflict");
+        if (subjectRepository.existsBySchoolIdAndName(schoolId, request.name().trim())) {
+            throw new BusinessException("subject.name_exists");
         }
         Subject subject = new Subject();
         subject.setSchoolId(schoolId);
-        subject.setName(request.name());
-        subject.setCode(request.code());
-        subject.setType(parseSubjectType(request.type()));
-        subject.setDescription(request.description());
-        return SubjectDto.from(subjectRepository.save(subject));
+        applySubject(subject, request);
+        subject = subjectRepository.saveAndFlush(subject);
+        replaceSubjectClasses(schoolId, subject.getId(), request.classIds(), request.teacherId());
+        replaceSubjectTeacher(schoolId, subject.getId(), request.teacherId());
+        return loadSubjectDto(subject, schoolId);
+    }
+
+    @Transactional
+    public SubjectDto updateSubject(UUID id, SubjectRequest request) {
+        UUID schoolId = SecurityUtils.currentSchoolId();
+        Subject subject = subjectRepository.findByIdAndSchoolId(id, schoolId)
+                .orElseThrow(() -> ResourceNotFoundException.of("subject", id));
+        if (subjectRepository.existsBySchoolIdAndNameAndIdNot(schoolId, request.name().trim(), id)) {
+            throw new BusinessException("subject.name_exists");
+        }
+        applySubject(subject, request);
+        subject = subjectRepository.saveAndFlush(subject);
+        if (request.classIds() != null) {
+            replaceSubjectClasses(schoolId, subject.getId(), request.classIds(), request.teacherId());
+        }
+        replaceSubjectTeacher(schoolId, subject.getId(), request.teacherId());
+        return loadSubjectDto(subject, schoolId);
     }
 
     // ---- Teachers ------------------------------------------------------------
@@ -553,6 +583,137 @@ public class AcademicsService {
             throw new BusinessException("section.invalid");
         }
         return name;
+    }
+
+    private void applySubject(Subject subject, SubjectRequest request) {
+        subject.setName(request.name().trim());
+        subject.setCode(blankToNull(request.code()));
+        subject.setType(parseSubjectType(request.type()));
+        if (request.description() != null) {
+            subject.setDescription(blankToNull(request.description()));
+        }
+        subject.setWeeklyPeriods(request.weeklyPeriods());
+        subject.setPractical(Boolean.TRUE.equals(request.practical()));
+        subject.setStatus(parseSubjectStatus(request.status()));
+    }
+
+    private SubjectDto loadSubjectDto(Subject subject, UUID schoolId) {
+        Map<UUID, SchoolClass> classes = classRepository.findBySchoolIdOrderBySortOrderAsc(schoolId)
+                .stream().collect(Collectors.toMap(SchoolClass::getId, c -> c));
+        Map<UUID, TeacherProfile> teachers = teacherRepository.findBySchoolIdOrderByFirstNameAsc(schoolId)
+                .stream().collect(Collectors.toMap(TeacherProfile::getId, t -> t));
+        return toSubjectDto(
+                subject,
+                classes,
+                teachers,
+                classSubjectRepository.findBySubjectIdAndSchoolId(subject.getId(), schoolId),
+                teacherSubjectRepository.findBySubjectIdAndSchoolId(subject.getId(), schoolId));
+    }
+
+    private SubjectDto toSubjectDto(Subject subject,
+                                    Map<UUID, SchoolClass> classes,
+                                    Map<UUID, TeacherProfile> teachers,
+                                    List<ClassSubject> links,
+                                    List<TeacherSubject> assignedTeachers) {
+        List<SubjectClassDto> mapped = new ArrayList<>();
+        UUID teacherId = null;
+        String teacherName = null;
+        for (ClassSubject link : links) {
+            SchoolClass schoolClass = classes.get(link.getClassId());
+            if (schoolClass == null) {
+                continue;
+            }
+            TeacherProfile classTeacher = link.getTeacherId() == null ? null : teachers.get(link.getTeacherId());
+            mapped.add(new SubjectClassDto(
+                    schoolClass.getId(),
+                    schoolClass.getName(),
+                    schoolClass.getCode(),
+                    link.getTeacherId(),
+                    classTeacher == null ? null : classTeacher.getDisplayName()));
+            if (teacherId == null && link.getTeacherId() != null) {
+                teacherId = link.getTeacherId();
+                teacherName = classTeacher == null ? null : classTeacher.getDisplayName();
+            }
+        }
+        if (teacherId == null && assignedTeachers != null && !assignedTeachers.isEmpty()) {
+            TeacherProfile teacher = teachers.get(assignedTeachers.get(0).getTeacherId());
+            if (teacher != null) {
+                teacherId = teacher.getId();
+                teacherName = teacher.getDisplayName();
+            }
+        }
+        return new SubjectDto(
+                subject.getId(),
+                subject.getName(),
+                subject.getCode(),
+                subject.getType(),
+                subject.getDescription(),
+                subject.getWeeklyPeriods(),
+                subject.isPractical(),
+                subject.getStatus(),
+                teacherId,
+                teacherName,
+                mapped);
+    }
+
+    private void replaceSubjectClasses(UUID schoolId, UUID subjectId, List<UUID> classIds, UUID teacherId) {
+        Set<UUID> unique = classIds == null
+                ? Set.of()
+                : classIds.stream().filter(id -> id != null).collect(Collectors.toSet());
+        for (UUID classId : unique) {
+            classRepository.findByIdAndSchoolId(classId, schoolId)
+                    .orElseThrow(() -> ResourceNotFoundException.of("class", classId));
+        }
+        if (teacherId != null) {
+            teacherRepository.findByIdAndSchoolId(teacherId, schoolId)
+                    .orElseThrow(() -> ResourceNotFoundException.of("teacher", teacherId));
+        }
+        List<ClassSubject> existing = classSubjectRepository.findBySubjectIdAndSchoolId(subjectId, schoolId);
+        for (ClassSubject link : existing) {
+            if (!unique.contains(link.getClassId())) {
+                classSubjectRepository.delete(link);
+            }
+        }
+        Map<UUID, ClassSubject> byClass = existing.stream()
+                .collect(Collectors.toMap(ClassSubject::getClassId, link -> link, (a, b) -> a));
+        for (UUID classId : unique) {
+            ClassSubject link = byClass.get(classId);
+            if (link == null) {
+                link = new ClassSubject();
+                link.setSchoolId(schoolId);
+                link.setClassId(classId);
+                link.setSubjectId(subjectId);
+            }
+            link.setTeacherId(teacherId);
+            classSubjectRepository.saveAndFlush(link);
+        }
+    }
+
+    private void replaceSubjectTeacher(UUID schoolId, UUID subjectId, UUID teacherId) {
+        teacherSubjectRepository.deleteBySubjectIdAndSchoolId(subjectId, schoolId);
+        if (teacherId == null) {
+            return;
+        }
+        teacherRepository.findByIdAndSchoolId(teacherId, schoolId)
+                .orElseThrow(() -> ResourceNotFoundException.of("teacher", teacherId));
+        if (!teacherSubjectRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId)) {
+            TeacherSubject assignment = new TeacherSubject();
+            assignment.setSchoolId(schoolId);
+            assignment.setTeacherId(teacherId);
+            assignment.setSubjectId(subjectId);
+            teacherSubjectRepository.saveAndFlush(assignment);
+        }
+    }
+
+    private String parseSubjectStatus(String value) {
+        if (value == null || value.isBlank()) {
+            return "ACTIVE";
+        }
+        String status = value.trim().toUpperCase();
+        if (!Set.of("ACTIVE", "INACTIVE").contains(status)) {
+            throw new BusinessException("validation.invalid");
+        }
+        return status;
     }
 
     private SubjectType parseSubjectType(String value) {

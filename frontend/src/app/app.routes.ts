@@ -53,6 +53,8 @@ export const routes: Routes = [
             path: 'subjects',
             loadComponent: () =>
               import('./features/academics/subjects.component').then((m) => m.AcademicsSubjectsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['SUBJECT_READ'] },
           },
           {
             path: 'timetable',
