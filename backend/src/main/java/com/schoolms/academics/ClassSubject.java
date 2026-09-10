@@ -28,6 +28,9 @@ public class ClassSubject {
     @Column(name = "subject_id", nullable = false)
     private UUID subjectId;
 
+    @Column(name = "teacher_id")
+    private UUID teacherId;
+
     @PrePersist
     void onCreate() {
         if (id == null) {

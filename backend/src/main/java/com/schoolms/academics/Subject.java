@@ -31,4 +31,13 @@ public class Subject extends BaseEntity {
     private SubjectType type = SubjectType.CORE;
 
     private String description;
+
+    @Column(name = "weekly_periods")
+    private Integer weeklyPeriods;
+
+    @Column(nullable = false)
+    private boolean practical = false;
+
+    @Column(nullable = false)
+    private String status = "ACTIVE";
 }

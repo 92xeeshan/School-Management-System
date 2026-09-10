@@ -4,6 +4,7 @@ import com.schoolms.TestSecurity;
 import com.schoolms.academics.dto.AcademicYearRequest;
 import com.schoolms.academics.dto.ClassRequest;
 import com.schoolms.academics.dto.ClassUpdateRequest;
+import com.schoolms.academics.dto.SubjectRequest;
 import com.schoolms.common.exception.BusinessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -424,5 +425,135 @@ class AcademicsServiceTest {
                 () -> academicsService.deleteClass(classId));
         assertEquals("class.has_students", ex.getCode());
         verify(classRepository, never()).delete(any());
+    }
+
+    @Test
+    void createSubjectPersistsMetadataAndMappings() {
+        UUID subjectId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        UUID teacherId = UUID.randomUUID();
+        when(subjectRepository.existsBySchoolIdAndName(TestSecurity.SCHOOL_ID, "Physics"))
+                .thenReturn(false);
+        when(subjectRepository.saveAndFlush(any(Subject.class))).thenAnswer(invocation -> {
+            Subject subject = invocation.getArgument(0);
+            subject.setId(subjectId);
+            return subject;
+        });
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setId(classId);
+        schoolClass.setName("Class 8");
+        schoolClass.setCode("C8");
+        when(classRepository.findByIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(schoolClass));
+        TeacherProfile teacher = new TeacherProfile();
+        teacher.setId(teacherId);
+        teacher.setFirstName("Asha");
+        teacher.setLastName("Sharma");
+        when(teacherRepository.findByIdAndSchoolId(teacherId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(teacher));
+        when(classSubjectRepository.findBySubjectIdAndSchoolId(subjectId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of())
+                .thenReturn(java.util.List.of(classSubject(classId, subjectId, teacherId)));
+        when(classSubjectRepository.saveAndFlush(any(ClassSubject.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(teacherSubjectRepository.findBySubjectIdAndSchoolId(subjectId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of());
+        when(teacherSubjectRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId)).thenReturn(false);
+        when(teacherSubjectRepository.saveAndFlush(any(TeacherSubject.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(classRepository.findBySchoolIdOrderBySortOrderAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(schoolClass));
+        when(teacherRepository.findBySchoolIdOrderByFirstNameAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(teacher));
+
+        var dto = academicsService.createSubject(new SubjectRequest(
+                "Physics", "PHY", "ELECTIVE", "Lab science", 4, true, "ACTIVE",
+                java.util.List.of(classId), teacherId));
+
+        assertEquals("Physics", dto.name());
+        assertEquals("PHY", dto.code());
+        assertEquals("ELECTIVE", dto.type().name());
+        assertEquals(4, dto.weeklyPeriods());
+        assertTrue(dto.practical());
+        assertEquals("ACTIVE", dto.status());
+        assertEquals("Asha Sharma", dto.teacherName());
+        assertEquals(1, dto.classes().size());
+        assertEquals("Class 8", dto.classes().get(0).name());
+        verify(classSubjectRepository).saveAndFlush(any(ClassSubject.class));
+        verify(teacherSubjectRepository).saveAndFlush(any(TeacherSubject.class));
+    }
+
+    @Test
+    void createSubjectRejectsDuplicateName() {
+        when(subjectRepository.existsBySchoolIdAndName(TestSecurity.SCHOOL_ID, "Mathematics"))
+                .thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> academicsService.createSubject(new SubjectRequest(
+                        "Mathematics", "MATH", "CORE", null, 5, false, "ACTIVE", null, null)));
+        assertEquals("subject.name_exists", ex.getCode());
+        verify(subjectRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void updateSubjectReplacesClassesAndTeacher() {
+        UUID subjectId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        UUID teacherId = UUID.randomUUID();
+        Subject subject = new Subject();
+        subject.setId(subjectId);
+        subject.setSchoolId(TestSecurity.SCHOOL_ID);
+        subject.setName("Science");
+        subject.setCode("SCI");
+        when(subjectRepository.findByIdAndSchoolId(subjectId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(subject));
+        when(subjectRepository.existsBySchoolIdAndNameAndIdNot(TestSecurity.SCHOOL_ID, "Science Lab", subjectId))
+                .thenReturn(false);
+        when(subjectRepository.saveAndFlush(any(Subject.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        SchoolClass schoolClass = new SchoolClass();
+        schoolClass.setId(classId);
+        schoolClass.setName("Class 9");
+        schoolClass.setCode("C9");
+        when(classRepository.findByIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(schoolClass));
+        TeacherProfile teacher = new TeacherProfile();
+        teacher.setId(teacherId);
+        teacher.setFirstName("Ravi");
+        teacher.setLastName("Mehta");
+        when(teacherRepository.findByIdAndSchoolId(teacherId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.Optional.of(teacher));
+        when(classSubjectRepository.findBySubjectIdAndSchoolId(subjectId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of())
+                .thenReturn(java.util.List.of(classSubject(classId, subjectId, teacherId)));
+        when(classSubjectRepository.saveAndFlush(any(ClassSubject.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(teacherSubjectRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId)).thenReturn(false);
+        when(teacherSubjectRepository.saveAndFlush(any(TeacherSubject.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(teacherSubjectRepository.findBySubjectIdAndSchoolId(subjectId, TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of());
+        when(classRepository.findBySchoolIdOrderBySortOrderAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(schoolClass));
+        when(teacherRepository.findBySchoolIdOrderByFirstNameAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(java.util.List.of(teacher));
+
+        var dto = academicsService.updateSubject(subjectId, new SubjectRequest(
+                "Science Lab", "SCI", "CORE", null, 5, true, "INACTIVE",
+                java.util.List.of(classId), teacherId));
+
+        assertEquals("Science Lab", dto.name());
+        assertTrue(dto.practical());
+        assertEquals("INACTIVE", dto.status());
+        assertEquals(teacherId, dto.teacherId());
+        assertEquals(1, dto.classes().size());
+        verify(teacherSubjectRepository).deleteBySubjectIdAndSchoolId(subjectId, TestSecurity.SCHOOL_ID);
+    }
+
+    private ClassSubject classSubject(UUID classId, UUID subjectId, UUID teacherId) {
+        ClassSubject link = new ClassSubject();
+        link.setClassId(classId);
+        link.setSubjectId(subjectId);
+        link.setTeacherId(teacherId);
+        return link;
     }
 }

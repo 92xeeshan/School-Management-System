@@ -121,6 +121,14 @@ public class AcademicsController {
         return ApiResponse.ok(academicsService.createSubject(request));
     }
 
+    @Operation(summary = "Update a subject")
+    @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
+    @PutMapping("/api/subjects/{id}")
+    public ApiResponse<SubjectDto> updateSubject(@PathVariable UUID id,
+                                                 @Valid @RequestBody SubjectRequest request) {
+        return ApiResponse.ok(academicsService.updateSubject(id, request));
+    }
+
     // ---- Teachers ---------------------------------------------------------------
     @Operation(summary = "List teachers")
     @PreAuthorize("hasAuthority('CLASS_READ')")
