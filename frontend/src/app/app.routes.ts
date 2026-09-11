@@ -72,6 +72,8 @@ export const routes: Routes = [
             path: 'examinations',
             loadComponent: () =>
               import('./features/academics/examinations.component').then((m) => m.AcademicsExaminationsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['EXAM_READ', 'CLASS_READ'] },
           },
           {
             path: 'terms',
