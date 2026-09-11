@@ -60,6 +60,8 @@ export const routes: Routes = [
             path: 'timetable',
             loadComponent: () =>
               import('./features/academics/timetable.component').then((m) => m.AcademicsTimetableComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['TIMETABLE_READ', 'CLASS_READ'] },
           },
           {
             path: 'syllabus',
