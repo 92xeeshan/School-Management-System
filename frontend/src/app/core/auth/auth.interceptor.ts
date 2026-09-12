@@ -1,53 +1,47 @@
-import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { Injector, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, Observable, switchMap, throwError } from 'rxjs';
+import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  private refreshing = false;
+let refreshing = false;
 
-  constructor(private auth: AuthService, private router: Router) {}
-
-  intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    if (!req.url.includes('/api/') || req.url.includes('/api/auth/login') || req.url.includes('/api/auth/refresh')) {
-      return next.handle(req);
-    }
-
-    let request = req;
-    const token = this.auth.accessToken;
-    if (token) {
-      request = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
-    }
-
-    return next.handle(request).pipe(
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 401 && !this.refreshing) {
-          return this.handleUnauthorized(request, next);
-        }
-        return throwError(() => error);
-      })
-    );
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  if (!req.url.includes('/api/') || req.url.includes('/api/auth/login') || req.url.includes('/api/auth/refresh')) {
+    return next(req);
   }
 
-  private handleUnauthorized(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    this.refreshing = true;
-    return this.auth.refresh().pipe(
-      switchMap((refreshed) => {
-        this.refreshing = false;
-        if (refreshed) {
-          const token = this.auth.accessToken ?? '';
-          return next.handle(request.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
-        }
-        this.router.navigate(['/login']);
-        return throwError(() => new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' }));
-      }),
-      catchError((error) => {
-        this.refreshing = false;
-        this.router.navigate(['/login']);
-        return throwError(() => error);
-      })
-    );
+  const auth = inject(AuthService);
+  const injector = inject(Injector);
+
+  let request = req;
+  const token = auth.accessToken;
+  if (token) {
+    request = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
   }
-}
+
+  return next(request).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && !refreshing) {
+        refreshing = true;
+        return auth.refresh().pipe(
+          switchMap((refreshed) => {
+            refreshing = false;
+            if (refreshed) {
+              const nextToken = auth.accessToken ?? '';
+              return next(request.clone({ setHeaders: { Authorization: `Bearer ${nextToken}` } }));
+            }
+            injector.get(Router).navigate(['/login']);
+            return throwError(() => new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' }));
+          }),
+          catchError((refreshError) => {
+            refreshing = false;
+            injector.get(Router).navigate(['/login']);
+            return throwError(() => refreshError);
+          })
+        );
+      }
+      return throwError(() => error);
+    })
+  );
+};

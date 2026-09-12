@@ -1,6 +1,8 @@
+import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/auth/auth.guard';
 import { PermissionGuard } from './core/auth/permission.guard';
+import { AuthService } from './core/auth/auth.service';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
 export const routes: Routes = [
@@ -79,6 +81,55 @@ export const routes: Routes = [
             path: 'terms',
             loadComponent: () =>
               import('./features/academics/academic-terms.component').then((m) => m.AcademicsTermsComponent),
+          },
+        ],
+      },
+      {
+        path: 'examinations',
+        loadComponent: () =>
+          import('./features/examinations/examinations-shell.component').then((m) => m.ExaminationsShellComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['EXAM_READ', 'EXAM_MANAGE'] },
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            redirectTo: () => inject(AuthService).hasPermission('EXAM_MANAGE') ? 'schedules' : 'marks',
+          },
+          {
+            path: 'schedules',
+            loadComponent: () =>
+              import('./features/examinations/exam-schedules.component').then((m) => m.ExamSchedulesComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['EXAM_MANAGE'] },
+          },
+          {
+            path: 'marks',
+            loadComponent: () =>
+              import('./features/examinations/marks-entry.component').then((m) => m.MarksEntryComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['EXAM_READ', 'EXAM_MANAGE'] },
+          },
+          {
+            path: 'report-cards',
+            loadComponent: () =>
+              import('./features/examinations/report-cards.component').then((m) => m.ReportCardsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['EXAM_MANAGE'] },
+          },
+          {
+            path: 'analytics',
+            loadComponent: () =>
+              import('./features/examinations/exam-analytics.component').then((m) => m.ExamAnalyticsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['EXAM_MANAGE'] },
+          },
+          {
+            path: 'reevaluation',
+            loadComponent: () =>
+              import('./features/examinations/reevaluation.component').then((m) => m.ReevaluationComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['EXAM_MANAGE'] },
           },
         ],
       },

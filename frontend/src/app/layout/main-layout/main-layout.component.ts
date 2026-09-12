@@ -137,6 +137,7 @@ export class MainLayoutComponent {
     { route: '/dashboard', labelKey: 'nav.dashboard', icon: '📊', permissions: ['DASHBOARD_VIEW'] },
     { route: '/students', labelKey: 'nav.students', icon: '👩‍🎓', permissions: ['STUDENT_READ'] },
     { route: '/academics', labelKey: 'nav.academics', icon: '📚', permissions: ['CLASS_READ'] },
+    { route: '/examinations', labelKey: 'nav.examinations', icon: '📋', permissions: ['EXAM_READ', 'EXAM_MANAGE'] },
     { route: '/attendance', labelKey: 'nav.attendance', icon: '✅', permissions: ['ATTENDANCE_READ', 'ATTENDANCE_MARK'] },
     { route: '/fees', labelKey: 'nav.fees', icon: '💳', permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW'] },
     { route: '/notices', labelKey: 'nav.notices', icon: '📢', permissions: ['NOTICE_READ'] },

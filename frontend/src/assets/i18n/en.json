@@ -37,6 +37,7 @@
     "dashboard": "Dashboard",
     "students": "Students",
     "academics": "Academics",
+    "examinations": "Examinations",
     "attendance": "Attendance",
     "fees": "Fees",
     "notices": "Notices"
@@ -264,6 +265,43 @@
     "updateSuccess": "Class updated.",
     "deleteSuccess": "Class deleted.",
     "deleteConfirm": "Delete {{name}}? This cannot be undone if students are not enrolled."
+  },
+  "examinations": {
+    "title": "Examinations",
+    "subtitle": "Exam schedules, marks, report cards and re-evaluation",
+    "comingSoon": "Coming soon",
+    "tabs": {
+      "schedules": "Exam Schedules",
+      "marks": "Marks Entry",
+      "reportCards": "Report Cards",
+      "analytics": "Analytics & Performance",
+      "reevaluation": "Re-evaluation & Grace Marks"
+    },
+    "schedulesPage": {
+      "title": "Exam Schedules",
+      "subtitle": "Plan and publish examination timetables",
+      "body": "Exam schedules will be available here in a later update."
+    },
+    "marksPage": {
+      "title": "Marks Entry",
+      "subtitle": "Enter and review student marks",
+      "body": "Marks entry will be available here in a later update."
+    },
+    "reportCardsPage": {
+      "title": "Report Cards",
+      "subtitle": "Generate and view student report cards",
+      "body": "Report cards will be available here in a later update."
+    },
+    "analyticsPage": {
+      "title": "Analytics & Performance",
+      "subtitle": "Track examination results and performance",
+      "body": "Analytics and performance will be available here in a later update."
+    },
+    "reevaluationPage": {
+      "title": "Re-evaluation & Grace Marks",
+      "subtitle": "Handle re-evaluation requests and grace marks",
+      "body": "Re-evaluation and grace marks will be available here in a later update."
+    }
   },
   "attendance": {
     "title": "Attendance",
