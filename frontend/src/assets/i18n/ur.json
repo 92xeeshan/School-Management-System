@@ -37,6 +37,7 @@
     "dashboard": "ڈیش بورڈ",
     "students": "طلباء",
     "academics": "تعلیمی امور",
+    "examinations": "امتحانات",
     "attendance": "حاضری",
     "fees": "فیس",
     "notices": "اطلاعات"
@@ -185,6 +186,58 @@
       "subtitle": "امتحانات اور گریڈنگ ترتیب دیں",
       "body": "امتحانات اور گریڈنگ اسکیمز اس صفحے پر بعد میں دستیاب ہوں گی۔"
     },
+    "addScheme": "گریڈنگ اسکیم شامل کریں",
+    "editScheme": "گریڈنگ اسکیم میں ترمیم کریں",
+    "viewScheme": "گریڈنگ اسکیم دیکھیں",
+    "schemeName": "اسکیم کا نام",
+    "academicYear": "تعلیمی سال",
+    "academicLevel": "تعلیمی سطح",
+    "examType": "امتحان کی قسم",
+    "scaleType": "گریڈنگ اسکیل",
+    "passMarks": "پاسنگ مارکس",
+    "passPercent": "پاسنگ فیصد",
+    "maxMarks": "زیادہ سے زیادہ نمبر",
+    "evaluationCriteria": "جائزے کے معیار",
+    "gradeBoundaries": "گریڈ کی حدود",
+    "addBoundary": "گریڈ شامل کریں",
+    "gradeLabel": "گریڈ",
+    "minPercent": "کم از کم %",
+    "maxPercent": "زیادہ سے زیادہ %",
+    "gpaValue": "GPA",
+    "assessmentWeightage": "اسسمنٹ ویٹیج",
+    "addWeightage": "اسسمنٹ شامل کریں",
+    "assessmentType": "اسسمنٹ کی قسم",
+    "weightPercent": "ویٹیج %",
+    "weightageTotal": "کل ویٹیج",
+    "activeForClass": "کلاس کے لیے فعال",
+    "activate": "فعال کریں",
+    "deactivate": "غیر فعال کریں",
+    "activateConfirm": "اس اسکیم کو کلاس کے لیے فعال کریں؟ موجودہ فعال اسکیم غیر فعال ہو جائے گی۔",
+    "deactivateConfirm": "اس گریڈنگ اسکیم کو غیر فعال کریں؟",
+    "schemeCreateSuccess": "گریڈنگ اسکیم محفوظ ہو گئی۔",
+    "schemeUpdateSuccess": "گریڈنگ اسکیم اپ ڈیٹ ہو گئی۔",
+    "schemeActivateSuccess": "گریڈنگ اسکیم فعال ہو گئی۔",
+    "schemeDeactivateSuccess": "گریڈنگ اسکیم غیر فعال ہو گئی۔",
+    "allClasses": "تمام کلاسیں",
+    "allScales": "تمام اسکیلز",
+    "levelPrimary": "پرائمری",
+    "levelMiddle": "مڈل",
+    "levelSecondary": "سیکنڈری",
+    "levelSenior": "سینئر",
+    "examQuiz": "کوئز",
+    "examUnit": "یونٹ ٹیسٹ",
+    "examMidterm": "مڈٹرم",
+    "examTerm": "ٹرم امتحان",
+    "examFinal": "فائنل امتحان",
+    "examContinuous": "مسلسل",
+    "scalePercentage": "فیصد",
+    "scaleLetter": "لیٹر گریڈز",
+    "scaleGpa": "GPA",
+    "assessQuiz": "کوئزز",
+    "assessAssignment": "اسائنمنٹس",
+    "assessMidterm": "مڈٹرم",
+    "assessPractical": "عملی",
+    "assessFinal": "فائنل امتحان",
     "termsPage": {
       "title": "تعلیمی ٹرمز اور سیشنز",
       "subtitle": "تعلیمی سال، ٹرمز اور سیشنز کا انتظام کریں",
@@ -212,6 +265,43 @@
     "updateSuccess": "کلاس اپ ڈیٹ ہو گئی۔",
     "deleteSuccess": "کلاس حذف کر دی گئی۔",
     "deleteConfirm": "{{name}} حذف کریں؟ اگر طلباء داخل نہیں ہیں تو یہ واپس نہیں ہوگا۔"
+  },
+  "examinations": {
+    "title": "امتحانات",
+    "subtitle": "امتحان شیڈولز، نمبرز، رپورٹ کارڈز اور ازسرنو جانچ",
+    "comingSoon": "جلد آ رہا ہے",
+    "tabs": {
+      "schedules": "امتحان شیڈولز",
+      "marks": "نمبر اندراج",
+      "reportCards": "رپورٹ کارڈز",
+      "analytics": "تجزیہ اور کارکردگی",
+      "reevaluation": "ازسرنو جانچ اور گریس مارکس"
+    },
+    "schedulesPage": {
+      "title": "امتحان شیڈولز",
+      "subtitle": "امتحان ٹائم ٹیبل بنائیں اور شائع کریں",
+      "body": "امتحان شیڈولز اس صفحے پر بعد میں دستیاب ہوں گے۔"
+    },
+    "marksPage": {
+      "title": "نمبر اندراج",
+      "subtitle": "طلباء کے نمبر درج کریں اور دیکھیں",
+      "body": "نمبر اندراج اس صفحے پر بعد میں دستیاب ہوگا۔"
+    },
+    "reportCardsPage": {
+      "title": "رپورٹ کارڈز",
+      "subtitle": "طلباء کے رپورٹ کارڈ بنائیں اور دیکھیں",
+      "body": "رپورٹ کارڈز اس صفحے پر بعد میں دستیاب ہوں گے۔"
+    },
+    "analyticsPage": {
+      "title": "تجزیہ اور کارکردگی",
+      "subtitle": "امتحانی نتائج اور کارکردگی ٹریک کریں",
+      "body": "تجزیہ اور کارکردگی اس صفحے پر بعد میں دستیاب ہوگی۔"
+    },
+    "reevaluationPage": {
+      "title": "ازسرنو جانچ اور گریس مارکس",
+      "subtitle": "ازسرنو جانچ کی درخواستیں اور گریس مارکس سنبھالیں",
+      "body": "ازسرنو جانچ اور گریس مارکس اس صفحے پر بعد میں دستیاب ہوں گے۔"
+    }
   },
   "attendance": {
     "title": "حاضری",

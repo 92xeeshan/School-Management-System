@@ -10,11 +10,10 @@ export class LocaleService {
   private readonly localeSubject = new BehaviorSubject<SupportedLocale>(this.storedLocale());
   readonly locale$ = this.localeSubject.asObservable();
 
-  constructor(private translate: TranslateService) {
-    this.translate.setDefaultLang('en');
-  }
+  constructor(private translate: TranslateService) {}
 
   init(): Promise<unknown> {
+    this.translate.setDefaultLang('en');
     return this.apply(this.localeSubject.value);
   }
 
