@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { AuthUser } from '../../core/auth/auth.model';
 import { LocaleService } from '../../i18n/locale.service';
 import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
+import { ThemeService } from '../../core/theme.service';
 
 interface NavItem {
   route: string;
@@ -42,6 +43,9 @@ interface NavItem {
         <header class="topbar">
           <div class="topbar-title">{{ 'app.tagline' | translate }}</div>
           <div class="topbar-actions">
+            <button class="btn btn-ghost theme-toggle" (click)="themeService.toggleTheme()">
+              {{ themeService.currentTheme() === 'legacy' ? '✨ Modern' : '🏛️ Legacy' }}
+            </button>
             <div class="lang-switcher">
               <select [value]="localeService.current" (change)="onLanguageChange($event)">
                 @for (locale of supportedLocales; track locale) {
@@ -129,6 +133,41 @@ interface NavItem {
       .sidebar { width: 200px; }
       .user-name { display: none; }
     }
+
+    /* Modern Layout Overrides */
+    :host-context(.theme-modern) {
+      .layout { padding: 16px; gap: 16px; background: linear-gradient(135deg, #f0f2f5 0%, #e2e8f0 100%); }
+      
+      .sidebar {
+        border-radius: 24px;
+        background: rgba(30, 27, 75, 0.9);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        height: calc(100vh - 32px);
+      }
+
+      .main { gap: 16px; }
+
+      .topbar {
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.05);
+        position: sticky;
+        top: 0;
+      }
+
+      .nav-link.active {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      }
+
+      .content {
+        padding: 0;
+      }
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -154,6 +193,7 @@ export class MainLayoutComponent {
 
   constructor(
     readonly localeService: LocaleService,
+    readonly themeService: ThemeService,
     private auth: AuthService
   ) {
     this.user$ = this.auth.user$;

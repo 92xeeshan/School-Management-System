@@ -118,6 +118,22 @@ interface BackendNotice {
     .notice-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); margin-top: 8px; flex-shrink: 0; }
     .notice-title { font-weight: 500; }
     .notice-date { color: var(--color-muted); font-size: .82rem; }
+
+    :host-context(.theme-modern) {
+      h1 { font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, #0f172a 0%, #475569 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+      .stat {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        &:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+      }
+      .stat-icon {
+        width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+        background: var(--color-primary-soft); border-radius: 12px; font-size: 1.5rem;
+      }
+      .stat-value { color: var(--color-primary); }
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

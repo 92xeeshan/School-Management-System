@@ -87,6 +87,31 @@ import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
       cursor: pointer; font: inherit; font-size: .85rem;
     }
     .lang-pill.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+    :host-context(.theme-modern) {
+      .login-page {
+        background: radial-gradient(circle at top left, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
+      }
+      .login-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 32px 64px rgba(0, 0, 0, 0.2);
+        border-radius: 28px;
+      }
+      .brand-logo { 
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        transform: scale(1.1);
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+      h1 { font-weight: 800; color: #1e1b4b; }
+      input {
+        background: rgba(255, 255, 255, 0.5);
+        border-color: rgba(255, 255, 255, 0.8);
+        &:focus { background: #fff; }
+      }
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
