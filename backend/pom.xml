@@ -24,6 +24,7 @@
         <jasperreports.version>6.21.3</jasperreports.version>
         <minio.version>8.5.17</minio.version>
         <opencsv.version>5.10</opencsv.version>
+        <poi.version>5.4.1</poi.version>
     </properties>
 
     <dependencies>
@@ -110,6 +111,11 @@
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
             <version>${opencsv.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${poi.version}</version>
         </dependency>
 
         <dependency>
