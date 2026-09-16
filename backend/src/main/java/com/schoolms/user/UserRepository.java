@@ -42,4 +42,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             WHERE ur.user_id = :userId
             """, nativeQuery = true)
     List<String> findPermissionCodesByUserId(@Param("userId") UUID userId);
+
+    @Query(value = """
+            SELECT count(DISTINCT ur.user_id) FROM user_role ur
+            JOIN role r ON r.id = ur.role_id
+            WHERE ur.school_id = :schoolId AND r.code IN ('ADMIN')
+            """, nativeQuery = true)
+    long countNonTeachingStaff(@Param("schoolId") UUID schoolId);
 }

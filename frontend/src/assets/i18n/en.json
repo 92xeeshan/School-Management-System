@@ -48,11 +48,128 @@
     "subtitle": "Here is an overview of your school today.",
     "totalStudents": "Total Students",
     "totalTeachers": "Teachers",
+    "totalStaff": "Total Staff",
+    "totalAwards": "Awards",
+    "feeBalance": "Fee Balance",
     "presentToday": "Present Today",
     "feesCollected": "Fees Collected (month)",
     "recentNotices": "Recent Notices",
     "attendanceSummary": "Attendance Overview",
-    "feesSummary": "Fees Overview"
+    "feesSummary": "Fees Overview",
+    "gender": {
+      "title": "Gender Ratio",
+      "total": "Students",
+      "boys": "Boys",
+      "girls": "Girls",
+      "other": "Other"
+    },
+    "attendanceTrend": {
+      "title": "Attendance Trend (last 5 school days)",
+      "present": "Present",
+      "absent": "Absent",
+      "late": "Late",
+      "leave": "Leave",
+      "total": "Total",
+      "hint": "Hover a bar to see the daily breakdown.",
+      "good": "90% and above",
+      "watch": "75% - 89%",
+      "low": "Below 75%"
+    },
+    "starStudents": {
+      "title": "Star Students",
+      "empty": "No achievements recorded yet.",
+      "points": "pts",
+      "badges": {
+        "GOLD": "Gold",
+        "SILVER": "Silver",
+        "BRONZE": "Bronze",
+        "STAR": "Star"
+      }
+    },
+    "calendar": {
+      "title": "Calendar",
+      "today": "Today",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "prevDay": "Prev",
+      "nextDay": "Next"
+    },
+    "agenda": {
+      "title": "Daily Agenda",
+      "noEvents": "No events scheduled for this day.",
+      "allDay": "All day",
+      "types": {
+        "HOLIDAY": "Holiday",
+        "EXAM": "Exam",
+        "MEETING": "Meeting",
+        "EVENT": "Event",
+        "ACTIVITY": "Activity",
+        "OTHER": "Other"
+      }
+    },
+    "notices": {
+      "title": "Notice Board",
+      "viewAll": "View all",
+      "priorities": {
+        "NORMAL": "Normal",
+        "IMPORTANT": "Important",
+        "URGENT": "Urgent"
+      }
+    },
+    "alerts": {
+      "urgent": "Priority alert:"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "markAttendance": "Mark Attendance",
+      "addStudent": "Add Student",
+      "publishNotice": "Publish Notice",
+      "collectFee": "Collect Fee",
+      "addEvent": "Add Event"
+    },
+    "roleInsights": {
+      "title": "Insights",
+      "feesCollected": "Fees Collected",
+      "feesOverdue": "Overdue",
+      "collectionRate": "Collection Rate",
+      "mySections": "My Classes",
+      "pendingGrading": "pending",
+      "students": "students",
+      "average": "avg",
+      "attendanceRate": "Attendance",
+      "feeBalance": "Fee Dues",
+      "upcomingExams": "Upcoming Exams"
+    },
+    "search": {
+      "placeholder": "Search students, events...",
+      "noResults": "No matches found"
+    },
+    "theme": {
+      "light": "Switch to light theme",
+      "dark": "Switch to dark theme"
+    },
+    "customize": {
+      "title": "Customize Dashboard",
+      "reset": "Reset",
+      "widgets": {
+        "gender": "Gender Ratio",
+        "attendanceTrend": "Attendance Trend",
+        "starStudents": "Star Students",
+        "roleInsights": "Insights",
+        "calendar": "Calendar",
+        "agenda": "Daily Agenda",
+        "notices": "Notice Board"
+      }
+    },
+    "eventDialog": {
+      "title": "New Calendar Event",
+      "eventTitle": "Title",
+      "type": "Type",
+      "location": "Location",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "description": "Description"
+    }
   },
   "students": {
     "title": "Students",

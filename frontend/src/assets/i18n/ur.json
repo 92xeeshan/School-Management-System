@@ -48,11 +48,128 @@
     "subtitle": "آج آپ کے اسکول کا جائزہ۔",
     "totalStudents": "کل طلباء",
     "totalTeachers": "اساتذہ",
+    "totalStaff": "کل عملہ",
+    "totalAwards": "اعزازات",
+    "feeBalance": "باقی فیس",
     "presentToday": "آج حاضر",
     "feesCollected": "فیس وصولی (ماہ)",
     "recentNotices": "حالیہ اطلاعات",
     "attendanceSummary": "حاضری کا جائزہ",
-    "feesSummary": "فیس کا جائزہ"
+    "feesSummary": "فیس کا جائزہ",
+    "gender": {
+      "title": "صنفی تناسب",
+      "total": "طلباء",
+      "boys": "لڑکے",
+      "girls": "لڑکیاں",
+      "other": "دیگر"
+    },
+    "attendanceTrend": {
+      "title": "حاضری کا رجحان (گزشتہ 5 اسکول دن)",
+      "present": "حاضر",
+      "absent": "غیر حاضر",
+      "late": "تاخیر",
+      "leave": "رخصت",
+      "total": "کل",
+      "hint": "روزانہ تفصیل کے لیے بار پر ہوور کریں۔",
+      "good": "90% اور زیادہ",
+      "watch": "75% - 89%",
+      "low": "75% سے کم"
+    },
+    "starStudents": {
+      "title": "نمایاں طلباء",
+      "empty": "ابھی کوئی کامیابی درج نہیں۔",
+      "points": "پوائنٹس",
+      "badges": {
+        "GOLD": "طلائی",
+        "SILVER": "چاندی",
+        "BRONZE": "کانسی",
+        "STAR": "ستارہ"
+      }
+    },
+    "calendar": {
+      "title": "کیلنڈر",
+      "today": "آج",
+      "prevMonth": "پچھلا مہینہ",
+      "nextMonth": "اگلا مہینہ",
+      "prevDay": "پچھلا",
+      "nextDay": "اگلا"
+    },
+    "agenda": {
+      "title": "روزانہ ایجنڈا",
+      "noEvents": "اس دن کوئی تقریب نہیں۔",
+      "allDay": "پورا دن",
+      "types": {
+        "HOLIDAY": "تعطیل",
+        "EXAM": "امتحان",
+        "MEETING": "اجلاس",
+        "EVENT": "تقریب",
+        "ACTIVITY": "سرگرمی",
+        "OTHER": "دیگر"
+      }
+    },
+    "notices": {
+      "title": "نوٹس بورڈ",
+      "viewAll": "سب دیکھیں",
+      "priorities": {
+        "NORMAL": "عام",
+        "IMPORTANT": "اہم",
+        "URGENT": "فوری"
+      }
+    },
+    "alerts": {
+      "urgent": "ترجیحی انتباہ:"
+    },
+    "quickActions": {
+      "title": "فوری اقدامات",
+      "markAttendance": "حاضری درج کریں",
+      "addStudent": "طالب علم شامل کریں",
+      "publishNotice": "اطلاع جاری کریں",
+      "collectFee": "فیس وصول کریں",
+      "addEvent": "تقریب شامل کریں"
+    },
+    "roleInsights": {
+      "title": "بصیرت",
+      "feesCollected": "وصول شدہ فیس",
+      "feesOverdue": "واجب الادا",
+      "collectionRate": "وصولی کی شرح",
+      "mySections": "میری کلاسیں",
+      "pendingGrading": "زیر التوا",
+      "students": "طلباء",
+      "average": "اوسط",
+      "attendanceRate": "حاضری",
+      "feeBalance": "باقی فیس",
+      "upcomingExams": "آنے والے امتحانات"
+    },
+    "search": {
+      "placeholder": "طلباء، تقریبات تلاش کریں...",
+      "noResults": "کوئی نتیجہ نہیں ملا"
+    },
+    "theme": {
+      "light": "لائٹ تھیم پر جائیں",
+      "dark": "ڈارک تھیم پر جائیں"
+    },
+    "customize": {
+      "title": "ڈیش بورڈ کو حسب ضرورت بنائیں",
+      "reset": "ری سیٹ",
+      "widgets": {
+        "gender": "صنفی تناسب",
+        "attendanceTrend": "حاضری کا رجحان",
+        "starStudents": "نمایاں طلباء",
+        "roleInsights": "بصیرت",
+        "calendar": "کیلنڈر",
+        "agenda": "روزانہ ایجنڈا",
+        "notices": "نوٹس بورڈ"
+      }
+    },
+    "eventDialog": {
+      "title": "نیا کیلنڈر ایونٹ",
+      "eventTitle": "عنوان",
+      "type": "قسم",
+      "location": "مقام",
+      "startDate": "آغاز کی تاریخ",
+      "endDate": "اختتام کی تاریخ",
+      "description": "تفصیل"
+    }
   },
   "students": {
     "title": "طلباء",

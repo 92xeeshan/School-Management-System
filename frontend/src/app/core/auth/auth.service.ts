@@ -30,6 +30,10 @@ export class AuthService {
     return this.userSubject.value?.roles?.includes(role) ?? false;
   }
 
+  hasAnyRole(roles: string[]): boolean {
+    return roles.some((role) => this.hasRole(role));
+  }
+
   login(username: string, password: string): Observable<AuthResponse> {
     const body: LoginRequest = { username, password };
     return this.http.post<ApiResponse<AuthResponse>>('/api/auth/login', body).pipe(

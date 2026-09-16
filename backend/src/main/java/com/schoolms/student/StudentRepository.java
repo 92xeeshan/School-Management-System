@@ -35,6 +35,19 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
 
     long countBySchoolIdAndStatus(UUID schoolId, com.schoolms.common.enums.StudentStatus status);
 
+    @Query("""
+            select s.gender as gender, count(s) as total from Student s
+            where s.schoolId = :schoolId and s.status = com.schoolms.common.enums.StudentStatus.ACTIVE
+            group by s.gender
+            """)
+    List<GenderCount> countActiveByGender(@Param("schoolId") UUID schoolId);
+
+    interface GenderCount {
+        com.schoolms.common.enums.Gender getGender();
+
+        long getTotal();
+    }
+
     @Query(value = """
             select s.* from student s
             join student_enrollment e on e.student_id = s.id

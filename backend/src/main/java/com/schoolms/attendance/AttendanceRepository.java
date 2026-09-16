@@ -40,4 +40,22 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
 
     long countBySchoolIdAndAttendanceDateAndStatus(UUID schoolId, LocalDate date,
                                                    com.schoolms.common.enums.AttendanceStatus status);
+
+    @Query("""
+            select a.attendanceDate as attendanceDate, a.status as status, count(a) as total
+            from Attendance a
+            where a.schoolId = :schoolId and a.attendanceDate between :from and :to
+            group by a.attendanceDate, a.status
+            """)
+    List<DateStatusCount> countByDateAndStatus(@Param("schoolId") UUID schoolId,
+                                               @Param("from") LocalDate from,
+                                               @Param("to") LocalDate to);
+
+    interface DateStatusCount {
+        LocalDate getAttendanceDate();
+
+        com.schoolms.common.enums.AttendanceStatus getStatus();
+
+        long getTotal();
+    }
 }
