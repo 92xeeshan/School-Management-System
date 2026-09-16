@@ -48,11 +48,128 @@
     "subtitle": "आज आपके स्कूल की स्थिति का अवलोकन।",
     "totalStudents": "कुल छात्र",
     "totalTeachers": "शिक्षक",
+    "totalStaff": "कुल स्टाफ",
+    "totalAwards": "पुरस्कार",
+    "feeBalance": "शेष फीस",
     "presentToday": "आज उपस्थित",
     "feesCollected": "फीस वसूली (माह)",
     "recentNotices": "हाल की सूचनाएँ",
     "attendanceSummary": "उपस्थिति अवलोकन",
-    "feesSummary": "फीस अवलोकन"
+    "feesSummary": "फीस अवलोकन",
+    "gender": {
+      "title": "लिंग अनुपात",
+      "total": "छात्र",
+      "boys": "लड़के",
+      "girls": "लड़कियाँ",
+      "other": "अन्य"
+    },
+    "attendanceTrend": {
+      "title": "उपस्थिति रुझान (पिछले 5 स्कूल दिन)",
+      "present": "उपस्थित",
+      "absent": "अनुपस्थित",
+      "late": "देर से",
+      "leave": "अवकाश",
+      "total": "कुल",
+      "hint": "दैनिक विवरण देखने के लिए बार पर हॉवर करें।",
+      "good": "90% और अधिक",
+      "watch": "75% - 89%",
+      "low": "75% से कम"
+    },
+    "starStudents": {
+      "title": "स्टार छात्र",
+      "empty": "अभी तक कोई उपलब्धि दर्ज नहीं है।",
+      "points": "अंक",
+      "badges": {
+        "GOLD": "स्वर्ण",
+        "SILVER": "रजत",
+        "BRONZE": "कांस्य",
+        "STAR": "स्टार"
+      }
+    },
+    "calendar": {
+      "title": "कैलेंडर",
+      "today": "आज",
+      "prevMonth": "पिछला माह",
+      "nextMonth": "अगला माह",
+      "prevDay": "पिछला",
+      "nextDay": "अगला"
+    },
+    "agenda": {
+      "title": "दैनिक कार्यक्रम",
+      "noEvents": "इस दिन कोई कार्यक्रम नहीं है।",
+      "allDay": "पूरा दिन",
+      "types": {
+        "HOLIDAY": "अवकाश",
+        "EXAM": "परीक्षा",
+        "MEETING": "बैठक",
+        "EVENT": "कार्यक्रम",
+        "ACTIVITY": "गतिविधि",
+        "OTHER": "अन्य"
+      }
+    },
+    "notices": {
+      "title": "सूचना पट्ट",
+      "viewAll": "सभी देखें",
+      "priorities": {
+        "NORMAL": "सामान्य",
+        "IMPORTANT": "महत्वपूर्ण",
+        "URGENT": "अत्यावश्यक"
+      }
+    },
+    "alerts": {
+      "urgent": "प्राथमिकता चेतावनी:"
+    },
+    "quickActions": {
+      "title": "त्वरित कार्य",
+      "markAttendance": "उपस्थिति दर्ज करें",
+      "addStudent": "छात्र जोड़ें",
+      "publishNotice": "सूचना प्रकाशित करें",
+      "collectFee": "फीस जमा करें",
+      "addEvent": "कार्यक्रम जोड़ें"
+    },
+    "roleInsights": {
+      "title": "अंतर्दृष्टि",
+      "feesCollected": "वसूली फीस",
+      "feesOverdue": "बकाया",
+      "collectionRate": "वसूली दर",
+      "mySections": "मेरी कक्षाएँ",
+      "pendingGrading": "लंबित",
+      "students": "छात्र",
+      "average": "औसत",
+      "attendanceRate": "उपस्थिति",
+      "feeBalance": "शेष फीस",
+      "upcomingExams": "आगामी परीक्षाएँ"
+    },
+    "search": {
+      "placeholder": "छात्र, कार्यक्रम खोजें...",
+      "noResults": "कोई परिणाम नहीं मिला"
+    },
+    "theme": {
+      "light": "लाइट थीम पर जाएँ",
+      "dark": "डार्क थीम पर जाएँ"
+    },
+    "customize": {
+      "title": "डैशबोर्ड अनुकूलित करें",
+      "reset": "रीसेट",
+      "widgets": {
+        "gender": "लिंग अनुपात",
+        "attendanceTrend": "उपस्थिति रुझान",
+        "starStudents": "स्टार छात्र",
+        "roleInsights": "अंतर्दृष्टि",
+        "calendar": "कैलेंडर",
+        "agenda": "दैनिक कार्यक्रम",
+        "notices": "सूचना पट्ट"
+      }
+    },
+    "eventDialog": {
+      "title": "नया कैलेंडर कार्यक्रम",
+      "eventTitle": "शीर्षक",
+      "type": "प्रकार",
+      "location": "स्थान",
+      "startDate": "प्रारंभ तिथि",
+      "endDate": "समाप्ति तिथि",
+      "description": "विवरण"
+    }
   },
   "students": {
     "title": "छात्र",
