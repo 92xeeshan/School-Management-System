@@ -40,7 +40,8 @@
     "examinations": "परीक्षाएँ",
     "attendance": "उपस्थिति",
     "fees": "फीस",
-    "notices": "सूचनाएँ"
+    "notices": "सूचनाएँ",
+    "staff": "स्टाफ प्रबंधन"
   },
   "dashboard": {
     "title": "डैशबोर्ड",
@@ -499,5 +500,43 @@
     "everyone": "सभी",
     "teachers": "शिक्षक",
     "parents": "माता-पिता"
+  },
+  "staff": {
+    "title": "स्टाफ प्रबंधन",
+    "subtitle": "शिक्षण और गैर-शिक्षण स्टाफ का प्रबंधन करें",
+    "tabs": {
+      "teachers": "शिक्षण स्टाफ",
+      "nonTeaching": "गैर-शिक्षण स्टाफ"
+    },
+    "addTeacher": "स्टाफ जोड़ें",
+    "editTeacher": "शिक्षण स्टाफ संपादित करें",
+    "addNonTeaching": "स्टाफ जोड़ें",
+    "editNonTeaching": "गैर-शिक्षण स्टाफ संपादित करें",
+    "deleteConfirm": "{{name}} को निष्क्रिय करें? उन्हें निष्क्रिय चिह्नित किया जाएगा।",
+    "employeeNo": "कर्मचारी संख्या",
+    "name": "नाम",
+    "firstName": "पहला नाम",
+    "lastName": "अंतिम नाम",
+    "email": "ईमेल",
+    "phone": "फ़ोन",
+    "gender": "लिंग",
+    "dateOfBirth": "जन्म तिथि",
+    "designation": "पदनाम",
+    "department": "विभाग",
+    "qualification": "योग्यता",
+    "employmentType": "रोजगार",
+    "joinDate": "जॉइन तिथि",
+    "address": "पता",
+    "classTeacher": "कक्षा शिक्षक",
+    "assignClassTeacher": "नियुक्त करें",
+    "assignClassTeacherFor": "{{name}} के लिए कक्षा शिक्षक नियुक्ति सेट करें।",
+    "noClassTeacher": "कोई कक्षा शिक्षक नियुक्ति नहीं",
+    "section": "अनुभाग",
+    "employment": {
+      "FULL_TIME": "पूर्णकालिक",
+      "PART_TIME": "अंशकालिक",
+      "CONTRACT": "अनुबंध",
+      "VOLUNTEER": "स्वयंसेवक"
+    }
   }
 }

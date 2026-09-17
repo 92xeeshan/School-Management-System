@@ -40,7 +40,8 @@
     "examinations": "امتحانات",
     "attendance": "حاضری",
     "fees": "فیس",
-    "notices": "اطلاعات"
+    "notices": "اطلاعات",
+    "staff": "عملے کا انتظام"
   },
   "dashboard": {
     "title": "ڈیش بورڈ",
@@ -499,5 +500,43 @@
     "everyone": "سب",
     "teachers": "اساتذہ",
     "parents": "والدین"
+  },
+  "staff": {
+    "title": "عملے کا انتظام",
+    "subtitle": "تدریسی اور غیر تدریسی عملے کا انتظام کریں",
+    "tabs": {
+      "teachers": "تدریسی عملہ",
+      "nonTeaching": "غیر تدریسی عملہ"
+    },
+    "addTeacher": "عملہ شامل کریں",
+    "editTeacher": "تدریسی عملہ ترمیم کریں",
+    "addNonTeaching": "عملہ شامل کریں",
+    "editNonTeaching": "غیر تدریسی عملہ ترمیم کریں",
+    "deleteConfirm": "{{name}} کو غیر فعال کریں؟ انہیں غیر فعال نشان زد کیا جائے گا۔",
+    "employeeNo": "ملازم نمبر",
+    "name": "نام",
+    "firstName": "پہلا نام",
+    "lastName": "آخری نام",
+    "email": "ای میل",
+    "phone": "فون",
+    "gender": "جنس",
+    "dateOfBirth": "تاریخ پیدائش",
+    "designation": "عہدہ",
+    "department": "محکمہ",
+    "qualification": "قابلیت",
+    "employmentType": "ملازمت",
+    "joinDate": "شمولیت کی تاریخ",
+    "address": "پتہ",
+    "classTeacher": "کلاس ٹیچر",
+    "assignClassTeacher": "تفویض",
+    "assignClassTeacherFor": "{{name}} کے لیے کلاس ٹیچر تفویض سیٹ کریں۔",
+    "noClassTeacher": "کوئی کلاس ٹیچر تفویض نہیں",
+    "section": "سیکشن",
+    "employment": {
+      "FULL_TIME": "فل ٹائم",
+      "PART_TIME": "پارٹ ٹائم",
+      "CONTRACT": "کنٹریکٹ",
+      "VOLUNTEER": "رضاکار"
+    }
   }
 }

@@ -1,4 +1,4 @@
-package com.schoolms.academics;
+package com.schoolms.staff;
 
 import com.schoolms.common.BaseEntity;
 import com.schoolms.common.enums.EmploymentType;
@@ -14,11 +14,15 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.util.UUID;
 
+/**
+ * Non-teaching staff record (administration, library, facilities, ...).
+ * Teaching staff are stored in {@code teacher_profile}.
+ */
 @Entity
-@Table(name = "teacher_profile")
+@Table(name = "non_teaching_staff")
 @Getter
 @Setter
-public class TeacherProfile extends BaseEntity {
+public class NonTeachingStaff extends BaseEntity {
 
     @Column(name = "school_id", nullable = false)
     private UUID schoolId;
@@ -39,13 +43,6 @@ public class TeacherProfile extends BaseEntity {
 
     private String phone;
 
-    private String designation;
-
-    private String qualification;
-
-    @Column(name = "join_date")
-    private LocalDate joinDate;
-
     @Enumerated(EnumType.STRING)
     @Column(length = 10)
     private Gender gender;
@@ -53,11 +50,18 @@ public class TeacherProfile extends BaseEntity {
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
+    private String designation;
+
     private String department;
+
+    private String qualification;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "employment_type", length = 20)
     private EmploymentType employmentType;
+
+    @Column(name = "join_date")
+    private LocalDate joinDate;
 
     private String address;
 
