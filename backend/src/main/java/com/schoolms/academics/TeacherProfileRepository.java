@@ -15,4 +15,6 @@ public interface TeacherProfileRepository extends JpaRepository<TeacherProfile, 
     Optional<TeacherProfile> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
 
     boolean existsBySchoolIdAndEmployeeNo(UUID schoolId, String employeeNo);
+
+    boolean existsBySchoolIdAndEmployeeNoAndIdNot(UUID schoolId, String employeeNo, UUID id);
 }

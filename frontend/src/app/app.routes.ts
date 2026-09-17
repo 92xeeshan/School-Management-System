@@ -134,6 +134,26 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'staff',
+        loadComponent: () =>
+          import('./features/staff/staff-shell.component').then((m) => m.StaffShellComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['STAFF_READ'] },
+        children: [
+          { path: '', redirectTo: 'teachers', pathMatch: 'full' },
+          {
+            path: 'teachers',
+            loadComponent: () =>
+              import('./features/staff/teaching-staff.component').then((m) => m.TeachingStaffComponent),
+          },
+          {
+            path: 'non-teaching',
+            loadComponent: () =>
+              import('./features/staff/non-teaching-staff.component').then((m) => m.NonTeachingStaffComponent),
+          },
+        ],
+      },
+      {
         path: 'attendance',
         loadComponent: () =>
           import('./features/attendance/attendance.component').then((m) => m.AttendanceComponent),

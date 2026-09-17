@@ -40,7 +40,8 @@
     "examinations": "Examinations",
     "attendance": "Attendance",
     "fees": "Fees",
-    "notices": "Notices"
+    "notices": "Notices",
+    "staff": "Staff Management"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -499,5 +500,43 @@
     "everyone": "Everyone",
     "teachers": "Teachers",
     "parents": "Parents"
+  },
+  "staff": {
+    "title": "Staff Management",
+    "subtitle": "Manage teaching and non-teaching staff",
+    "tabs": {
+      "teachers": "Teaching Staff",
+      "nonTeaching": "Non-Teaching Staff"
+    },
+    "addTeacher": "Add Staff",
+    "editTeacher": "Edit Teaching Staff",
+    "addNonTeaching": "Add Staff",
+    "editNonTeaching": "Edit Non-Teaching Staff",
+    "deleteConfirm": "Deactivate {{name}}? They will be marked inactive.",
+    "employeeNo": "Employee No.",
+    "name": "Name",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phone": "Phone",
+    "gender": "Gender",
+    "dateOfBirth": "Date of Birth",
+    "designation": "Designation",
+    "department": "Department",
+    "qualification": "Qualification",
+    "employmentType": "Employment",
+    "joinDate": "Join Date",
+    "address": "Address",
+    "classTeacher": "Class Teacher",
+    "assignClassTeacher": "Assign",
+    "assignClassTeacherFor": "Set the class teacher assignment for {{name}}.",
+    "noClassTeacher": "No class teacher assignment",
+    "section": "Section",
+    "employment": {
+      "FULL_TIME": "Full Time",
+      "PART_TIME": "Part Time",
+      "CONTRACT": "Contract",
+      "VOLUNTEER": "Volunteer"
+    }
   }
 }
