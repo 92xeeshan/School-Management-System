@@ -89,12 +89,21 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/examinations/examinations-shell.component').then((m) => m.ExaminationsShellComponent),
         canActivate: [PermissionGuard],
-        data: { permissions: ['EXAM_READ', 'EXAM_MANAGE'] },
+        data: { permissions: ['EXAM_READ', 'EXAM_MANAGE', 'ADMIT_CARD_READ'] },
         children: [
           {
             path: '',
             pathMatch: 'full',
-            redirectTo: () => inject(AuthService).hasPermission('EXAM_MANAGE') ? 'schedules' : 'marks',
+            redirectTo: () => {
+              const auth = inject(AuthService);
+              if (auth.hasPermission('EXAM_MANAGE')) {
+                return 'schedules';
+              }
+              if (auth.hasPermission('EXAM_READ')) {
+                return 'marks';
+              }
+              return 'admit-cards';
+            },
           },
           {
             path: 'schedules',
@@ -109,6 +118,13 @@ export const routes: Routes = [
               import('./features/examinations/marks-entry.component').then((m) => m.MarksEntryComponent),
             canActivate: [PermissionGuard],
             data: { permissions: ['EXAM_READ', 'EXAM_MANAGE'] },
+          },
+          {
+            path: 'admit-cards',
+            loadComponent: () =>
+              import('./features/examinations/admit-cards.component').then((m) => m.AdmitCardsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['ADMIT_CARD_READ'] },
           },
           {
             path: 'report-cards',
