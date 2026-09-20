@@ -60,6 +60,7 @@ export class ExaminationsTabsComponent {
   readonly tabs: ExaminationsTab[] = [
     { path: 'schedules', labelKey: 'examinations.tabs.schedules', permissions: ['EXAM_MANAGE'] },
     { path: 'marks', labelKey: 'examinations.tabs.marks', permissions: ['EXAM_READ', 'EXAM_MANAGE'] },
+    { path: 'admit-cards', labelKey: 'examinations.tabs.admitCards', permissions: ['ADMIT_CARD_READ'] },
     { path: 'report-cards', labelKey: 'examinations.tabs.reportCards', permissions: ['EXAM_MANAGE'] },
     { path: 'analytics', labelKey: 'examinations.tabs.analytics', permissions: ['EXAM_MANAGE'] },
     { path: 'reevaluation', labelKey: 'examinations.tabs.reevaluation', permissions: ['EXAM_MANAGE'] },
