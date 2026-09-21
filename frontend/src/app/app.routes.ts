@@ -89,7 +89,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/examinations/examinations-shell.component').then((m) => m.ExaminationsShellComponent),
         canActivate: [PermissionGuard],
-        data: { permissions: ['EXAM_READ', 'EXAM_MANAGE', 'ADMIT_CARD_READ'] },
+        data: { permissions: ['EXAM_READ', 'EXAM_MANAGE', 'ADMIT_CARD_READ', 'REPORT_CARD_READ'] },
         children: [
           {
             path: '',
@@ -102,7 +102,10 @@ export const routes: Routes = [
               if (auth.hasPermission('EXAM_READ')) {
                 return 'marks';
               }
-              return 'admit-cards';
+              if (auth.hasPermission('ADMIT_CARD_READ')) {
+                return 'admit-cards';
+              }
+              return 'report-cards';
             },
           },
           {
@@ -131,7 +134,7 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/examinations/report-cards.component').then((m) => m.ReportCardsComponent),
             canActivate: [PermissionGuard],
-            data: { permissions: ['EXAM_MANAGE'] },
+            data: { permissions: ['REPORT_CARD_READ'] },
           },
           {
             path: 'analytics',

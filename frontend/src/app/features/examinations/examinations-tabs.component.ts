@@ -1,7 +1,10 @@
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { Observable } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { AuthUser } from '../../core/auth/auth.model';
 
 interface ExaminationsTab {
   path: string;
@@ -11,10 +14,10 @@ interface ExaminationsTab {
 
 @Component({
   selector: 'app-examinations-tabs',
-  imports: [RouterLink, RouterLinkActive, TranslateModule],
+  imports: [RouterLink, RouterLinkActive, TranslateModule, AsyncPipe],
   template: `
     <nav class="tabs" aria-label="Examinations">
-      @for (tab of visibleTabs; track tab.path) {
+      @for (tab of tabsFor(user$ | async); track tab.path) {
         <a class="tab"
            [routerLink]="['/examinations', tab.path]"
            routerLinkActive="active">
@@ -61,14 +64,18 @@ export class ExaminationsTabsComponent {
     { path: 'schedules', labelKey: 'examinations.tabs.schedules', permissions: ['EXAM_MANAGE'] },
     { path: 'marks', labelKey: 'examinations.tabs.marks', permissions: ['EXAM_READ', 'EXAM_MANAGE'] },
     { path: 'admit-cards', labelKey: 'examinations.tabs.admitCards', permissions: ['ADMIT_CARD_READ'] },
-    { path: 'report-cards', labelKey: 'examinations.tabs.reportCards', permissions: ['EXAM_MANAGE'] },
+    { path: 'report-cards', labelKey: 'examinations.tabs.reportCards', permissions: ['REPORT_CARD_READ'] },
     { path: 'analytics', labelKey: 'examinations.tabs.analytics', permissions: ['EXAM_MANAGE'] },
     { path: 'reevaluation', labelKey: 'examinations.tabs.reevaluation', permissions: ['EXAM_MANAGE'] },
   ];
 
-  constructor(private auth: AuthService) {}
+  readonly user$: Observable<AuthUser | null>;
 
-  get visibleTabs(): ExaminationsTab[] {
+  constructor(private auth: AuthService) {
+    this.user$ = this.auth.user$;
+  }
+
+  tabsFor(_user: AuthUser | null): ExaminationsTab[] {
     return this.tabs.filter((tab) => this.auth.hasAnyPermission(tab.permissions));
   }
 }

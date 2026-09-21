@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +18,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
 
     List<Attendance> findByStudentIdAndAttendanceDateBetweenOrderByAttendanceDateAsc(
             UUID studentId, LocalDate from, LocalDate to);
+
+    List<Attendance> findByStudentIdInAndAttendanceDateBetween(
+            Collection<UUID> studentIds, LocalDate from, LocalDate to);
 
     List<Attendance> findBySectionIdAndAttendanceDateBetweenOrderByAttendanceDateAsc(
             UUID sectionId, LocalDate from, LocalDate to);
