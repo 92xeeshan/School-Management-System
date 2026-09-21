@@ -94,7 +94,7 @@ interface AcademicYear {
                 <th>{{ 'students.rollNumber' | translate }}</th>
                 <th>{{ 'students.gender' | translate }}</th>
                 <th>{{ 'common.status' | translate }}</th>
-                @if (canUpdate || canDelete) {
+                @if (showActions) {
                   <th>{{ 'common.actions' | translate }}</th>
                 }
               </tr>
@@ -109,15 +109,40 @@ interface AcademicYear {
                   <td>{{ student.rollNumber }}</td>
                   <td>{{ student.gender }}</td>
                   <td><span class="badge" [class.badge-success]="student.status === 'ACTIVE'" [class.badge-muted]="student.status !== 'ACTIVE'">{{ student.status }}</span></td>
-                  @if (canUpdate || canDelete) {
+                  @if (showActions) {
                   <td>
                     <div class="row-actions">
+                      @if (canViewReportCard) {
+                        <button class="icon-btn" type="button"
+                                [attr.title]="'students.viewReportCard' | translate"
+                                [attr.aria-label]="'students.viewReportCard' | translate"
+                                (click)="openReportCard(student); $event.stopPropagation()">
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M7 3h8l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm8 1.5V9h4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                            <path d="M9 13h6M9 17h6M9 9h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                          </svg>
+                        </button>
+                      }
                       @if (canUpdate) {
-                        <button class="btn btn-sm" type="button" (click)="openEditModal(student); $event.stopPropagation()">{{ 'common.edit' | translate }}</button>
+                        <button class="icon-btn" type="button"
+                                [attr.title]="'common.edit' | translate"
+                                [attr.aria-label]="'common.edit' | translate"
+                                (click)="openEditModal(student); $event.stopPropagation()">
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 20h4.5L19 9.5 14.5 5 4 15.5V20z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                            <path d="M13.2 6.3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                          </svg>
+                        </button>
                       }
                       @if (canDelete && student.status === 'ACTIVE') {
-                        <button class="btn btn-sm btn-danger" type="button" [disabled]="deletingId === student.id" (click)="askDelete(student); $event.stopPropagation()">
-                          {{ deletingId === student.id ? ('common.loading' | translate) : ('common.delete' | translate) }}
+                        <button class="icon-btn icon-btn-danger" type="button"
+                                [disabled]="deletingId === student.id"
+                                [attr.title]="'common.delete' | translate"
+                                [attr.aria-label]="'common.delete' | translate"
+                                (click)="askDelete(student); $event.stopPropagation()">
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M5 7h14M10 7V5h4v2M8 7l1 12h6l1-12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
                         </button>
                       }
                     </div>
@@ -125,7 +150,7 @@ interface AcademicYear {
                   }
                 </tr>
               } @empty {
-                <tr><td [attr.colspan]="canUpdate || canDelete ? 8 : 7" class="center">{{ 'common.noData' | translate }}</td></tr>
+                <tr><td [attr.colspan]="showActions ? 8 : 7" class="center">{{ 'common.noData' | translate }}</td></tr>
               }
             </tbody>
           </table>
@@ -249,8 +274,18 @@ interface AcademicYear {
       padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit;
     }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .btn-sm { padding: 5px 10px; font-size: .82rem; }
+    .row-actions { display: flex; gap: 4px; flex-wrap: nowrap; align-items: center; }
+    .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; padding: 0; border-radius: 8px;
+      border: 1px solid var(--color-border); background: #fff; color: #334155;
+      cursor: pointer;
+    }
+    .icon-btn svg { width: 16px; height: 16px; display: block; }
+    .icon-btn:hover { background: var(--color-primary-soft); color: var(--color-primary); border-color: var(--color-primary); }
+    .icon-btn-danger { color: #b91c1c; }
+    .icon-btn-danger:hover { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+    .icon-btn:disabled { opacity: .5; cursor: not-allowed; }
     .btn-danger { background: #b91c1c; border-color: #b91c1c; color: #fff; }
     .btn-danger:hover { background: #991b1b; color: #fff; border-color: #991b1b; }
     .modal-sm { width: 420px; }
@@ -301,6 +336,14 @@ export class StudentsComponent implements OnInit {
     return this.auth.hasPermission('STUDENT_DELETE');
   }
 
+  get canViewReportCard(): boolean {
+    return this.auth.hasPermission('REPORT_CARD_READ');
+  }
+
+  get showActions(): boolean {
+    return this.canUpdate || this.canDelete || this.canViewReportCard;
+  }
+
   get sectionsForClass(): SectionOption[] {
     const classId = this.form.value.classId;
     return this.sections.filter((s) => s.classId === classId);
@@ -327,6 +370,10 @@ export class StudentsComponent implements OnInit {
 
   openProfile(student: Student): void {
     this.router.navigate(['/students', student.id]);
+  }
+
+  openReportCard(student: Student): void {
+    this.router.navigate(['/examinations/report-cards'], { queryParams: { studentId: student.id } });
   }
 
   openAddModal(): void {

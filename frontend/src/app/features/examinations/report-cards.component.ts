@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
 
@@ -433,7 +434,9 @@ export class ReportCardsComponent implements OnInit {
   showPreview = false;
   selectedIds = new Set<string>();
 
-  constructor(private http: HttpClient, public cdr: ChangeDetectorRef) {}
+  private pendingStudentId = '';
+
+  constructor(private http: HttpClient, public cdr: ChangeDetectorRef, private route: ActivatedRoute) {}
 
   get filterSections(): SectionOption[] {
     return this.options?.classes.find((klass) => klass.id === this.classId)?.sections ?? [];
@@ -458,6 +461,7 @@ export class ReportCardsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.pendingStudentId = this.route.snapshot.queryParamMap.get('studentId') ?? '';
     this.loadOptions();
   }
 
@@ -591,10 +595,30 @@ export class ReportCardsComponent implements OnInit {
         this.yearId = res.data.academicYears.find((year) => year.current)?.id ?? res.data.academicYears[0]?.id ?? '';
         this.classId = res.data.defaultClassId ?? '';
         this.sectionId = res.data.defaultSectionId ?? '';
+        const studentId = this.pendingStudentId;
         this.reload();
+        if (studentId && !this.studentView) {
+          this.openPendingStudent(studentId);
+        }
       },
       error: (err) => this.fail(err),
     });
+  }
+
+  private openPendingStudent(studentId: string): void {
+    this.http.get<ApiResponse<ReportCard>>(`/api/report-cards/${studentId}`, { params: this.baseParams() })
+      .subscribe({
+        next: (res) => {
+          this.pendingStudentId = '';
+          this.classId = res.data.classId;
+          this.sectionId = res.data.sectionId;
+          this.cards = [res.data];
+          this.showPreview = true;
+          this.reload();
+          this.cdr.markForCheck();
+        },
+        error: (err) => this.fail(err),
+      });
   }
 
   private reload(): void {
