@@ -6,6 +6,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { routes } from './app.routes';
 import { translateConfig } from './i18n/i18n.config';
 import { authInterceptor } from './core/auth/auth.interceptor';
+import { AuthService } from './core/auth/auth.service';
 import { LocaleService } from './i18n/locale.service';
 
 export const appConfig: ApplicationConfig = {
@@ -15,5 +16,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     provideTranslateService(translateConfig),
     provideAppInitializer(() => inject(LocaleService).init()),
+    provideAppInitializer(() => inject(AuthService).hydrateUser()),
   ],
 };

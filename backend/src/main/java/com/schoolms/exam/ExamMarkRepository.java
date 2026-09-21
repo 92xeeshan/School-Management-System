@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,6 +14,8 @@ public interface ExamMarkRepository extends JpaRepository<ExamMark, UUID> {
     List<ExamMark> findByExamEntryIdAndSchoolId(UUID examEntryId, UUID schoolId);
 
     Optional<ExamMark> findByExamEntryIdAndStudentId(UUID examEntryId, UUID studentId);
+
+    List<ExamMark> findBySchoolIdAndExamEntryIdIn(UUID schoolId, Collection<UUID> examEntryIds);
 
     @Query(value = """
             select avg(m.percentage)

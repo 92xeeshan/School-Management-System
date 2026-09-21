@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, tap } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom, of, tap } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AuthResponse, AuthUser, LoginRequest, RefreshRequest } from './auth.model';
 import { ApiResponse } from '../models/api.model';
@@ -32,6 +32,19 @@ export class AuthService {
 
   hasAnyRole(roles: string[]): boolean {
     return roles.some((role) => this.hasRole(role));
+  }
+
+  hydrateUser(): Promise<void> {
+    if (!this.isAuthenticated()) {
+      return Promise.resolve();
+    }
+    return firstValueFrom(
+      this.http.get<ApiResponse<AuthUser>>('/api/auth/me').pipe(
+        tap((res) => this.updateUser(res.data)),
+        map(() => undefined),
+        catchError(() => of(undefined))
+      )
+    );
   }
 
   login(username: string, password: string): Observable<AuthResponse> {
@@ -102,6 +115,16 @@ export class AuthService {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
     this.userSubject.next(auth.user);
+  }
+
+  private updateUser(user: AuthUser): void {
+    const session = this.readSession();
+    if (!session || !user) {
+      return;
+    }
+    session.user = user;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    this.userSubject.next(user);
   }
 
   private clearSession(): void {
