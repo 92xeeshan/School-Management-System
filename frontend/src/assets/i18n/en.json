@@ -177,6 +177,7 @@
     "subtitle": "Manage student records",
     "addStudent": "Add Student",
     "editStudent": "Edit Student",
+    "viewReportCard": "Report card",
     "deleteConfirm": "Deactivate {{name}}? They will be marked inactive.",
     "studentId": "Admission No.",
     "name": "Name",
