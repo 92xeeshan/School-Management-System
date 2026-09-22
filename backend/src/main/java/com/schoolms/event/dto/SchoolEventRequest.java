@@ -19,6 +19,7 @@ public record SchoolEventRequest(
         LocalTime endTime,
         @Size(max = 200) String location,
         String visibilityScope,
+        String audienceRole,
         UUID classId,
         UUID sectionId
 ) {

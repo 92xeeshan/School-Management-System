@@ -61,6 +61,9 @@ public class SchoolEvent extends BaseEntity {
     @Column(name = "section_id")
     private UUID sectionId;
 
+    @Column(name = "audience_role")
+    private String audienceRole;
+
     @Column(name = "created_by")
     private UUID createdBy;
 }

@@ -1,6 +1,7 @@
 package com.schoolms.event;
 
 import com.schoolms.common.api.ApiResponse;
+import com.schoolms.event.dto.EventOptionsDto;
 import com.schoolms.event.dto.SchoolEventDto;
 import com.schoolms.event.dto.SchoolEventRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,6 +9,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,16 +40,38 @@ public class SchoolEventController {
     @GetMapping
     public ApiResponse<List<SchoolEventDto>> list(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ApiResponse.ok(eventService.list(from, to));
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String type) {
+        return ApiResponse.ok(eventService.list(from, to, type));
     }
 
-    @Operation(summary = "List upcoming calendar events within the given number of days")
+    @Operation(summary = "List upcoming calendar events")
     @PreAuthorize("hasAuthority('EVENT_READ')")
     @GetMapping("/upcoming")
     public ApiResponse<List<SchoolEventDto>> upcoming(
-            @RequestParam(required = false, defaultValue = "7") int days) {
+            @RequestParam(required = false, defaultValue = "30") int days) {
         return ApiResponse.ok(eventService.upcoming(days));
+    }
+
+    @Operation(summary = "Filter options for calendar events")
+    @PreAuthorize("hasAuthority('EVENT_READ')")
+    @GetMapping("/options")
+    public ApiResponse<EventOptionsDto> options() {
+        return ApiResponse.ok(eventService.options());
+    }
+
+    @Operation(summary = "Export yearly holiday list as PDF")
+    @PreAuthorize("hasAuthority('EVENT_MANAGE')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) Integer year) {
+        byte[] body = eventService.exportHolidays(year);
+        String filename = "holiday-calendar-" + (year == null ? LocalDate.now().getYear() : year) + ".pdf";
+        return ResponseEntity.ok()
+                .headers(eventService.downloadHeaders(filename, MediaType.APPLICATION_PDF_VALUE))
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, eventService.contentDisposition(filename))
+                .body(body);
     }
 
     @Operation(summary = "Create a calendar event")

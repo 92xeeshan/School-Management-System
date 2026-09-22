@@ -41,7 +41,8 @@
     "attendance": "उपस्थिति",
     "fees": "फीस",
     "notices": "सूचनाएँ",
-    "staff": "स्टाफ प्रबंधन"
+    "staff": "स्टाफ प्रबंधन",
+    "calendar": "कैलेंडर"
   },
   "dashboard": {
     "title": "डैशबोर्ड",
@@ -105,8 +106,16 @@
         "MEETING": "बैठक",
         "EVENT": "कार्यक्रम",
         "ACTIVITY": "गतिविधि",
+        "PTM": "अभिभावक बैठक",
+        "SPORTS": "खेल",
+        "NOTICE": "सूचना",
         "OTHER": "अन्य"
       }
+    },
+    "upcoming": {
+      "title": "आगामी कार्यक्रम",
+      "viewAll": "कैलेंडर देखें",
+      "empty": "कोई आगामी कार्यक्रम नहीं।"
     },
     "notices": {
       "title": "सूचना पट्ट",
@@ -159,6 +168,7 @@
         "roleInsights": "अंतर्दृष्टि",
         "calendar": "कैलेंडर",
         "agenda": "दैनिक कार्यक्रम",
+        "upcoming": "आगामी कार्यक्रम",
         "notices": "सूचना पट्ट"
       }
     },
@@ -677,6 +687,59 @@
       "PART_TIME": "अंशकालिक",
       "CONTRACT": "अनुबंध",
       "VOLUNTEER": "स्वयंसेवक"
+    }
+  },
+  "calendar": {
+    "title": "शैक्षणिक कैलेंडर",
+    "subtitle": "विद्यालय कार्यक्रम, अवकाश और बैठकें",
+    "addEvent": "कार्यक्रम जोड़ें",
+    "editEvent": "कार्यक्रम संपादित करें",
+    "exportHolidays": "अवकाश PDF निर्यात करें",
+    "today": "आज",
+    "filterType": "प्रकार",
+    "noEvents": "इस अवधि में कोई कार्यक्रम नहीं।",
+    "eventTitle": "शीर्षक",
+    "type": "प्रकार",
+    "audience": "दर्शक",
+    "class": "कक्षा",
+    "section": "अनुभाग",
+    "role": "भूमिका",
+    "startDate": "प्रारंभ तिथि",
+    "endDate": "समाप्ति तिथि",
+    "allDay": "पूरा दिन",
+    "startTime": "प्रारंभ समय",
+    "endTime": "समाप्ति समय",
+    "location": "स्थान",
+    "description": "विवरण",
+    "when": "कब",
+    "updatedAt": "अंतिम अद्यतन",
+    "deleteConfirm": "{{title}} हटाएँ?",
+    "views": {
+      "month": "माह",
+      "week": "सप्ताह",
+      "agenda": "सूची"
+    },
+    "types": {
+      "HOLIDAY": "अवकाश",
+      "EXAM": "परीक्षा",
+      "MEETING": "बैठक",
+      "EVENT": "कार्यक्रम",
+      "ACTIVITY": "गतिविधि",
+      "PTM": "अभिभावक बैठक",
+      "SPORTS": "खेल",
+      "NOTICE": "सूचना",
+      "OTHER": "अन्य"
+    },
+    "scopes": {
+      "SCHOOL_WIDE": "पूरा विद्यालय",
+      "CLASS_WIDE": "कक्षा / अनुभाग",
+      "STAFF": "स्टाफ",
+      "ROLE": "भूमिका"
+    },
+    "roles": {
+      "TEACHER": "शिक्षक",
+      "STUDENT": "छात्र",
+      "PARENT": "अभिभावक"
     }
   }
 }

@@ -50,6 +50,7 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
   roleInsights: true,
   calendar: true,
   agenda: true,
+  upcoming: true,
   notices: true,
 };
 
@@ -331,6 +332,42 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
             </div>
           }
 
+          @if (widgetVisible('upcoming')) {
+            <div class="card widget">
+              <div class="card-head">
+                <h3 class="card-title">{{ 'dashboard.upcoming.title' | translate }}</h3>
+                <a class="link" routerLink="/calendar">{{ 'dashboard.upcoming.viewAll' | translate }}</a>
+              </div>
+              @if (loadingUpcoming) {
+                <div class="skeleton block"></div>
+              } @else if (upcomingEvents.length === 0) {
+                <p class="muted empty">{{ 'dashboard.upcoming.empty' | translate }}</p>
+              } @else {
+                <ul class="agenda">
+                  @for (event of upcomingEvents; track event.id) {
+                    <li>
+                      <span class="tag" [class]="'tag-' + event.eventType.toLowerCase()">
+                        {{ 'dashboard.agenda.types.' + event.eventType | translate }}
+                      </span>
+                      <div class="agenda-body">
+                        <span class="agenda-title">{{ event.title }}</span>
+                        <span class="agenda-meta">
+                          <span>{{ event.startDate }}</span>
+                          @if (!event.allDay && event.startTime) {
+                            <span> · {{ formatTime(event.startTime) }}</span>
+                          }
+                          @if (event.location) {
+                            <span> · {{ event.location }}</span>
+                          }
+                        </span>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+
           @if (widgetVisible('agenda')) {
             <div class="card widget">
               <h3 class="card-title">{{ 'dashboard.agenda.title' | translate }}</h3>
@@ -422,6 +459,9 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
                   <option value="MEETING">{{ 'dashboard.agenda.types.MEETING' | translate }}</option>
                   <option value="HOLIDAY">{{ 'dashboard.agenda.types.HOLIDAY' | translate }}</option>
                   <option value="ACTIVITY">{{ 'dashboard.agenda.types.ACTIVITY' | translate }}</option>
+                  <option value="PTM">{{ 'dashboard.agenda.types.PTM' | translate }}</option>
+                  <option value="SPORTS">{{ 'dashboard.agenda.types.SPORTS' | translate }}</option>
+                  <option value="NOTICE">{{ 'dashboard.agenda.types.NOTICE' | translate }}</option>
                   <option value="OTHER">{{ 'dashboard.agenda.types.OTHER' | translate }}</option>
                 </select>
               </div>
@@ -647,6 +687,9 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
     }
     .tag-holiday { background: #fee2e2; color: #b91c1c; }
     .tag-exam { background: #fef3c7; color: #b45309; }
+    .tag-ptm { background: #dbeafe; color: #1d4ed8; }
+    .tag-sports { background: #dcfce7; color: #15803d; }
+    .tag-notice { background: #f3e8ff; color: #7e22ce; }
     .tag-meeting { background: #dbeafe; color: #1d4ed8; }
     .tag-activity { background: #d1fae5; color: #047857; }
     .tag-event { background: #ede9fe; color: #6d28d9; }
@@ -712,11 +755,13 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
 export class DashboardComponent implements OnInit {
   summary: DashboardSummary | null = null;
   events: SchoolEvent[] = [];
+  upcomingEvents: SchoolEvent[] = [];
   notices: DashboardNotice[] = [];
   selectedDate = this.todayIso();
 
   loadingSummary = true;
   loadingEvents = true;
+  loadingUpcoming = true;
   loadingNotices = true;
   summaryError = false;
 
@@ -735,6 +780,7 @@ export class DashboardComponent implements OnInit {
     { id: 'roleInsights', labelKey: 'dashboard.customize.widgets.roleInsights' },
     { id: 'calendar', labelKey: 'dashboard.customize.widgets.calendar' },
     { id: 'agenda', labelKey: 'dashboard.customize.widgets.agenda' },
+    { id: 'upcoming', labelKey: 'dashboard.customize.widgets.upcoming' },
     { id: 'notices', labelKey: 'dashboard.customize.widgets.notices' },
   ];
 
@@ -763,6 +809,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loadSummary();
     this.loadEvents();
+    this.loadUpcoming();
     this.loadNotices();
   }
 
@@ -832,7 +879,7 @@ export class DashboardComponent implements OnInit {
       { key: 'addStudent', labelKey: 'dashboard.quickActions.addStudent', icon: '👩‍🎓', route: '/students', permissions: ['STUDENT_CREATE'] },
       { key: 'publishNotice', labelKey: 'dashboard.quickActions.publishNotice', icon: '📢', route: '/notices', permissions: ['NOTICE_CREATE'] },
       { key: 'collectFee', labelKey: 'dashboard.quickActions.collectFee', icon: '💳', route: '/fees', permissions: ['FEE_PAYMENT_RECORD'] },
-      { key: 'addEvent', labelKey: 'dashboard.quickActions.addEvent', icon: '📅', permissions: ['EVENT_MANAGE'] },
+      { key: 'addEvent', labelKey: 'dashboard.quickActions.addEvent', icon: '📅', route: '/calendar', permissions: ['EVENT_MANAGE'] },
       { key: 'admitCards', labelKey: 'examinations.tabs.admitCards', icon: '🎫', route: '/examinations/admit-cards', permissions: ['ADMIT_CARD_READ'] },
       { key: 'reportCards', labelKey: 'examinations.tabs.reportCards', icon: '📄', route: '/examinations/report-cards', permissions: ['REPORT_CARD_READ'] },
     ];
@@ -907,6 +954,16 @@ export class DashboardComponent implements OnInit {
     this.dashboardService.events(from, to).subscribe((events) => {
       this.events = events;
       this.loadingEvents = false;
+      this.cdr.markForCheck();
+    });
+  }
+
+  loadUpcoming(): void {
+    this.loadingUpcoming = true;
+    this.cdr.markForCheck();
+    this.dashboardService.upcoming(30).subscribe((events) => {
+      this.upcomingEvents = events.slice(0, 5);
+      this.loadingUpcoming = false;
       this.cdr.markForCheck();
     });
   }
@@ -1014,6 +1071,7 @@ export class DashboardComponent implements OnInit {
         if (created) {
           this.eventDialogOpen = false;
           this.loadEvents();
+          this.loadUpcoming();
         } else {
           this.eventError = true;
         }

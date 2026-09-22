@@ -32,6 +32,14 @@ export class DashboardService {
     );
   }
 
+  upcoming(days = 30): Observable<SchoolEvent[]> {
+    const params = new HttpParams().set('days', String(days));
+    return this.http.get<ApiResponse<SchoolEvent[]>>('/api/events/upcoming', { params }).pipe(
+      map((res) => res.data ?? []),
+      catchError(() => of([] as SchoolEvent[]))
+    );
+  }
+
   notices(): Observable<DashboardNotice[]> {
     return this.http.get<ApiResponse<BackendNotice[]>>('/api/notices/published').pipe(
       map((res) =>
