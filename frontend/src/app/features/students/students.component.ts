@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { finalize } from 'rxjs';
-import { ApiResponse, PagedResponse } from '../../core/models/api.model';
+import { ApiError, ApiResponse, PagedResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
 
 interface Student {
@@ -62,6 +62,64 @@ interface AcademicYear {
   id: string;
   name: string;
   current: boolean;
+}
+
+interface StudentReportSubject {
+  subjectId: string;
+  subjectName: string;
+  theory: number | null;
+  practical: number | null;
+  assignment: number | null;
+  total: number | null;
+  maxTotal: number | null;
+  grade: string | null;
+  remarks: string | null;
+}
+
+interface StudentReportCard {
+  studentId: string;
+  studentName: string;
+  admissionNo: string;
+  rollNumber: number | null;
+  dateOfBirth: string | null;
+  guardianName: string | null;
+  photoUrl: string | null;
+  classId: string;
+  className: string;
+  sectionId: string;
+  sectionName: string;
+  academicYearId: string;
+  academicYearName: string;
+  examTerm: string;
+  published: boolean;
+  schoolName: string;
+  schoolAddress: string;
+  schoolPhone: string;
+  schoolEmail: string;
+  affiliation: string;
+  classTeacherName: string;
+  totalObtained: number;
+  totalMax: number;
+  percentage: number;
+  overallGrade: string | null;
+  result: string;
+  attendance: {
+    workingDays: number;
+    daysPresent: number;
+    daysAbsent: number;
+    daysLate: number;
+    daysLeave: number;
+    percent: number;
+  } | null;
+  subjects: StudentReportSubject[];
+  behaviour: {
+    conduct: string;
+    discipline: string;
+    punctuality: string;
+    coCurricular: string | null;
+  } | null;
+  teacherComment: string;
+  principalComment: string;
 }
 
 @Component({
@@ -236,6 +294,153 @@ interface AcademicYear {
         </div>
       </div>
     }
+
+    @if (showReportCard) {
+      <div class="modal-backdrop report-backdrop" (click)="closeReportCard()">
+        <div class="modal report-modal" (click)="$event.stopPropagation()">
+          <div class="report-toolbar">
+            <h2>{{ 'examinations.reportCardsPage.printPreview' | translate }}</h2>
+            <span class="spacer"></span>
+            <button class="btn" type="button" [disabled]="!reportCard?.published" (click)="printReportCard()">
+              {{ 'examinations.reportCardsPage.print' | translate }}
+            </button>
+            <button class="btn btn-primary" type="button" [disabled]="!reportCard?.published || exportingReport" (click)="downloadReportCard()">
+              {{ 'examinations.reportCardsPage.downloadPdf' | translate }}
+            </button>
+            <button class="btn" type="button" (click)="closeReportCard()">{{ 'examinations.reportCardsPage.close' | translate }}</button>
+          </div>
+          @if (reportCardError) {
+            <p class="banner error">{{ reportCardError }}</p>
+          }
+          @if (loadingReportCard) {
+            <p class="center muted">{{ 'common.loading' | translate }}</p>
+          }
+          @if (reportCard && !reportCard.published) {
+            <p class="banner warn">{{ 'examinations.reportCardsPage.notPublished' | translate }}</p>
+          }
+          @if (reportCard) {
+            <div class="print-area">
+              <article class="report-card">
+                <header class="card-head">
+                  <div class="school">
+                    <h3>{{ reportCard.schoolName }}</h3>
+                    <p>{{ reportCard.affiliation }}</p>
+                    <p>{{ reportCard.schoolAddress }}</p>
+                    <p>{{ reportCard.schoolPhone }} {{ reportCard.schoolEmail }}</p>
+                    <strong>{{ 'examinations.reportCardsPage.heading' | translate }} · {{ reportCard.academicYearName }} · {{ reportCard.examTerm }}</strong>
+                  </div>
+                  <div class="photo">
+                    @if (reportCard.photoUrl) {
+                      <img [src]="reportCard.photoUrl" alt="" />
+                    } @else {
+                      <span>{{ initial(reportCard.studentName) }}</span>
+                    }
+                  </div>
+                </header>
+                <dl class="meta">
+                  <div><dt>{{ 'examinations.reportCardsPage.student' | translate }}</dt><dd>{{ reportCard.studentName }}</dd></div>
+                  <div><dt>{{ 'examinations.reportCardsPage.admissionNo' | translate }}</dt><dd>{{ reportCard.admissionNo }}</dd></div>
+                  <div><dt>{{ 'examinations.reportCardsPage.roll' | translate }}</dt><dd>{{ reportCard.rollNumber ?? '—' }}</dd></div>
+                  <div><dt>{{ 'examinations.reportCardsPage.class' | translate }}</dt><dd>{{ reportCard.className }} {{ reportCard.sectionName }}</dd></div>
+                  <div><dt>{{ 'examinations.reportCardsPage.dob' | translate }}</dt><dd>{{ reportCard.dateOfBirth || '—' }}</dd></div>
+                  <div><dt>{{ 'examinations.reportCardsPage.guardian' | translate }}</dt><dd>{{ reportCard.guardianName || '—' }}</dd></div>
+                  <div><dt>{{ 'examinations.reportCardsPage.classTeacher' | translate }}</dt><dd>{{ reportCard.classTeacherName || '—' }}</dd></div>
+                  <div><dt>{{ 'examinations.reportCardsPage.result' | translate }}</dt><dd>{{ reportCard.result }} / {{ reportCard.overallGrade || '—' }}</dd></div>
+                </dl>
+                <h4>{{ 'examinations.reportCardsPage.attendance' | translate }}</h4>
+                <table class="sheet">
+                  <thead>
+                    <tr>
+                      <th>{{ 'examinations.reportCardsPage.workingDays' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.present' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.absent' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.late' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.leave' | translate }}</th>
+                      <th>%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ reportCard.attendance?.workingDays ?? 0 }}</td>
+                      <td>{{ reportCard.attendance?.daysPresent ?? 0 }}</td>
+                      <td>{{ reportCard.attendance?.daysAbsent ?? 0 }}</td>
+                      <td>{{ reportCard.attendance?.daysLate ?? 0 }}</td>
+                      <td>{{ reportCard.attendance?.daysLeave ?? 0 }}</td>
+                      <td>{{ reportCard.attendance?.percent ?? 0 }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <h4>{{ 'examinations.reportCardsPage.subjects' | translate }}</h4>
+                <table class="sheet">
+                  <thead>
+                    <tr>
+                      <th>{{ 'examinations.reportCardsPage.subject' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.formative' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.theory' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.practical' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.total' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.max' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.grade' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.remarks' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of reportCard.subjects; track row.subjectId) {
+                      <tr>
+                        <td>{{ row.subjectName }}</td>
+                        <td>{{ row.assignment ?? '—' }}</td>
+                        <td>{{ row.theory ?? '—' }}</td>
+                        <td>{{ row.practical ?? '—' }}</td>
+                        <td>{{ row.total ?? '—' }}</td>
+                        <td>{{ row.maxTotal ?? '—' }}</td>
+                        <td>{{ row.grade || '—' }}</td>
+                        <td>{{ row.remarks || '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <dl class="meta">
+                  <div><dt>{{ 'examinations.reportCardsPage.grandTotal' | translate }}</dt><dd>{{ reportCard.totalObtained }} / {{ reportCard.totalMax }}</dd></div>
+                  <div><dt>{{ 'examinations.reportCardsPage.percentage' | translate }}</dt><dd>{{ reportCard.percentage }}%</dd></div>
+                </dl>
+                <h4>{{ 'examinations.reportCardsPage.behaviour' | translate }}</h4>
+                <table class="sheet">
+                  <thead>
+                    <tr>
+                      <th>{{ 'examinations.reportCardsPage.conduct' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.discipline' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.punctuality' | translate }}</th>
+                      <th>{{ 'examinations.reportCardsPage.coCurricular' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ label(reportCard.behaviour?.conduct) }}</td>
+                      <td>{{ label(reportCard.behaviour?.discipline) }}</td>
+                      <td>{{ label(reportCard.behaviour?.punctuality) }}</td>
+                      <td>{{ reportCard.behaviour?.coCurricular || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="comment">
+                  <strong>{{ 'examinations.reportCardsPage.teacherRemarks' | translate }}</strong>
+                  <p>{{ reportCard.teacherComment }}</p>
+                </div>
+                <div class="comment">
+                  <strong>{{ 'examinations.reportCardsPage.principalRemarks' | translate }}</strong>
+                  <p>{{ reportCard.principalComment }}</p>
+                </div>
+                <footer class="signs">
+                  <span>{{ 'examinations.reportCardsPage.classTeacher' | translate }}</span>
+                  <span>{{ 'examinations.reportCardsPage.parentSign' | translate }}</span>
+                  <span>{{ 'examinations.reportCardsPage.principalSign' | translate }}</span>
+                </footer>
+              </article>
+            </div>
+          }
+        </div>
+      </div>
+    }
   `,
   styles: `
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -290,9 +495,38 @@ interface AcademicYear {
     .btn-danger:hover { background: #991b1b; color: #fff; border-color: #991b1b; }
     .modal-sm { width: 420px; }
     .confirm-text { margin: 0 0 8px; color: var(--color-muted); line-height: 1.45; }
+    .report-backdrop { align-items: stretch; }
+    .report-modal { width: 900px; max-width: 100%; }
+    .report-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .report-toolbar h2 { margin: 0; }
+    .spacer { flex: 1; }
+    .banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
+    .banner.error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+    .banner.warn { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
+    .report-card { border: 1px solid #cbd5e1; padding: 18px; background: #fff; }
+    .card-head { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; }
+    .school h3 { margin: 0 0 4px; }
+    .school p { margin: 0; color: #64748b; font-size: .85rem; }
+    .photo { width: 88px; height: 110px; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: 700; overflow: hidden; }
+    .photo img { width: 100%; height: 100%; object-fit: cover; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 12px 0; }
+    dt { font-size: .75rem; color: #64748b; }
+    dd { margin: 0; font-weight: 600; }
+    .sheet { width: 100%; border-collapse: collapse; }
+    .sheet th, .sheet td { font-size: .82rem; padding: 8px 10px; }
+    .comment { border: 1px solid #e2e8f0; padding: 8px 10px; margin-top: 10px; }
+    .comment p { margin: 6px 0 0; font-size: .88rem; white-space: pre-wrap; }
+    .signs { display: flex; justify-content: space-between; margin-top: 24px; font-size: .82rem; gap: 12px; }
+    @media print {
+      body * { visibility: hidden; }
+      .print-area, .print-area * { visibility: visible; }
+      .print-area { position: absolute; inset: 0; width: 100%; background: #fff; padding: 0; margin: 0; }
+      .report-card { box-shadow: none; margin: 0; }
+    }
     @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
 })
 export class StudentsComponent implements OnInit {
   students: Student[] = [];
@@ -302,6 +536,11 @@ export class StudentsComponent implements OnInit {
   editingId: string | null = null;
   pendingDelete: Student | null = null;
   deletingId: string | null = null;
+  showReportCard = false;
+  loadingReportCard = false;
+  exportingReport = false;
+  reportCard: StudentReportCard | null = null;
+  reportCardError = '';
   classes: ClassOption[] = [];
   sections: SectionOption[] = [];
   academicYears: AcademicYear[] = [];
@@ -373,7 +612,79 @@ export class StudentsComponent implements OnInit {
   }
 
   openReportCard(student: Student): void {
-    this.router.navigate(['/examinations/report-cards'], { queryParams: { studentId: student.id } });
+    this.showReportCard = true;
+    this.loadingReportCard = true;
+    this.exportingReport = false;
+    this.reportCard = null;
+    this.reportCardError = '';
+    this.cdr.markForCheck();
+    this.http.get<ApiResponse<StudentReportCard>>(`/api/report-cards/${student.id}`, {
+      params: { examTerm: 'TERM' },
+    }).subscribe({
+      next: (res) => {
+        this.reportCard = res.data;
+        this.loadingReportCard = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        const body = err.error as ApiError | undefined;
+        this.reportCardError = body?.message || err.message || 'Error';
+        this.loadingReportCard = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  closeReportCard(): void {
+    this.showReportCard = false;
+    this.reportCard = null;
+    this.reportCardError = '';
+    this.loadingReportCard = false;
+    this.exportingReport = false;
+    this.cdr.markForCheck();
+  }
+
+  printReportCard(): void {
+    window.print();
+  }
+
+  downloadReportCard(): void {
+    if (!this.reportCard?.published) {
+      return;
+    }
+    this.exportingReport = true;
+    this.http.post('/api/report-cards/export/pdf', {
+      academicYearId: this.reportCard.academicYearId,
+      examTerm: this.reportCard.examTerm || 'TERM',
+      classId: this.reportCard.classId,
+      sectionId: this.reportCard.sectionId,
+      studentIds: [this.reportCard.studentId],
+    }, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        this.exportingReport = false;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'report-cards.pdf';
+        link.click();
+        URL.revokeObjectURL(url);
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.exportingReport = false;
+        const body = err.error as ApiError | undefined;
+        this.reportCardError = body?.message || err.message || 'Error';
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  initial(name: string): string {
+    return (name || '?').slice(0, 1);
+  }
+
+  label(value: string | null | undefined): string {
+    return (value || '—').replace(/_/g, ' ');
   }
 
   openAddModal(): void {
