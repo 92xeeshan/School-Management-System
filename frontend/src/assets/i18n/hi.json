@@ -702,6 +702,7 @@
     "type": "प्रकार",
     "audience": "दर्शक",
     "class": "कक्षा",
+    "selectClass": "कक्षा चुनें",
     "section": "अनुभाग",
     "role": "भूमिका",
     "startDate": "प्रारंभ तिथि",

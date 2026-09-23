@@ -702,6 +702,7 @@
     "type": "Type",
     "audience": "Audience",
     "class": "Class",
+    "selectClass": "Select class",
     "section": "Section",
     "role": "Role",
     "startDate": "Start date",

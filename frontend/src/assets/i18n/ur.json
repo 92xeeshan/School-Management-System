@@ -702,6 +702,7 @@
     "type": "قسم",
     "audience": "سامعین",
     "class": "کلاس",
+    "selectClass": "کلاس منتخب کریں",
     "section": "سیکشن",
     "role": "رول",
     "startDate": "آغاز کی تاریخ",

@@ -91,7 +91,7 @@ interface MonthCell {
               <button type="button" class="cell" [class.out]="!cell.inMonth" [class.today]="cell.isToday" (click)="openDay(cell.iso)">
                 <span class="num">{{ cell.day }}</span>
                 @for (event of cell.events.slice(0, 3); track event.id) {
-                  <span class="chip" [class]="'type-' + event.eventType.toLowerCase()">{{ event.title }}</span>
+                  <span class="chip" [class]="'type-' + event.eventType.toLowerCase()" (click)="openView(event); $event.stopPropagation()">{{ event.title }}</span>
                 }
                 @if (cell.events.length > 3) {
                   <span class="more">+{{ cell.events.length - 3 }}</span>
@@ -224,7 +224,7 @@ interface MonthCell {
                 <div class="field">
                   <label>{{ 'calendar.class' | translate }}</label>
                   <select formControlName="classId">
-                    <option value="">{{ 'common.all' | translate }}</option>
+                    <option value="">{{ 'calendar.selectClass' | translate }}</option>
                     @for (klass of classes; track klass.id) {
                       <option [value]="klass.id">{{ klass.name }}</option>
                     }
@@ -471,7 +471,7 @@ export class CalendarComponent implements OnInit {
   }
 
   goToday(): void {
-    this.cursor = this.startOfMonth(new Date());
+    this.cursor = new Date();
     this.reload();
   }
 
@@ -556,6 +556,11 @@ export class CalendarComponent implements OnInit {
       return;
     }
     const value = this.form.getRawValue();
+    if (value.visibilityScope === 'CLASS_WIDE' && !value.classId) {
+      this.formError = 'Select a class for class-scoped events.';
+      this.cdr.markForCheck();
+      return;
+    }
     const payload = {
       title: value.title,
       description: value.description || null,
