@@ -41,7 +41,8 @@
     "attendance": "Attendance",
     "fees": "Fees",
     "notices": "Notices",
-    "staff": "Staff Management"
+    "staff": "Staff Management",
+    "calendar": "Calendar"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -105,8 +106,16 @@
         "MEETING": "Meeting",
         "EVENT": "Event",
         "ACTIVITY": "Activity",
+        "PTM": "PTM",
+        "SPORTS": "Sports",
+        "NOTICE": "Notice",
         "OTHER": "Other"
       }
+    },
+    "upcoming": {
+      "title": "Upcoming Events",
+      "viewAll": "View calendar",
+      "empty": "No upcoming events."
     },
     "notices": {
       "title": "Notice Board",
@@ -159,6 +168,7 @@
         "roleInsights": "Insights",
         "calendar": "Calendar",
         "agenda": "Daily Agenda",
+        "upcoming": "Upcoming Events",
         "notices": "Notice Board"
       }
     },
@@ -677,6 +687,60 @@
       "PART_TIME": "Part Time",
       "CONTRACT": "Contract",
       "VOLUNTEER": "Volunteer"
+    }
+  },
+  "calendar": {
+    "title": "Academic Calendar",
+    "subtitle": "School events, holidays and meetings",
+    "addEvent": "Add Event",
+    "editEvent": "Edit Event",
+    "exportHolidays": "Export holidays PDF",
+    "today": "Today",
+    "filterType": "Type",
+    "noEvents": "No events in this range.",
+    "eventTitle": "Title",
+    "type": "Type",
+    "audience": "Audience",
+    "class": "Class",
+    "selectClass": "Select class",
+    "section": "Section",
+    "role": "Role",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "allDay": "All day",
+    "startTime": "Start time",
+    "endTime": "End time",
+    "location": "Location",
+    "description": "Description",
+    "when": "When",
+    "updatedAt": "Last updated",
+    "deleteConfirm": "Delete {{title}}?",
+    "views": {
+      "month": "Month",
+      "week": "Week",
+      "agenda": "Agenda"
+    },
+    "types": {
+      "HOLIDAY": "Holiday",
+      "EXAM": "Exam",
+      "MEETING": "Meeting",
+      "EVENT": "Event",
+      "ACTIVITY": "Activity",
+      "PTM": "PTM",
+      "SPORTS": "Sports",
+      "NOTICE": "Notice",
+      "OTHER": "Other"
+    },
+    "scopes": {
+      "SCHOOL_WIDE": "Whole school",
+      "CLASS_WIDE": "Class / section",
+      "STAFF": "Staff",
+      "ROLE": "Role"
+    },
+    "roles": {
+      "TEACHER": "Teachers",
+      "STUDENT": "Students",
+      "PARENT": "Parents"
     }
   }
 }

@@ -141,6 +141,7 @@ export class MainLayoutComponent {
     { route: '/examinations', labelKey: 'nav.examinations', icon: '📋', permissions: ['EXAM_READ', 'EXAM_MANAGE', 'ADMIT_CARD_READ', 'REPORT_CARD_READ'] },
     { route: '/attendance', labelKey: 'nav.attendance', icon: '✅', permissions: ['ATTENDANCE_READ', 'ATTENDANCE_MARK'] },
     { route: '/fees', labelKey: 'nav.fees', icon: '💳', permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW'] },
+    { route: '/calendar', labelKey: 'nav.calendar', icon: '📅', permissions: ['EVENT_READ'] },
     { route: '/notices', labelKey: 'nav.notices', icon: '📢', permissions: ['NOTICE_READ'] },
   ];
 

@@ -41,7 +41,8 @@
     "attendance": "حاضری",
     "fees": "فیس",
     "notices": "اطلاعات",
-    "staff": "عملے کا انتظام"
+    "staff": "عملے کا انتظام",
+    "calendar": "کیلنڈر"
   },
   "dashboard": {
     "title": "ڈیش بورڈ",
@@ -105,8 +106,16 @@
         "MEETING": "اجلاس",
         "EVENT": "تقریب",
         "ACTIVITY": "سرگرمی",
+        "PTM": "والدین میٹنگ",
+        "SPORTS": "کھیل",
+        "NOTICE": "نوٹس",
         "OTHER": "دیگر"
       }
+    },
+    "upcoming": {
+      "title": "آنے والی تقریبات",
+      "viewAll": "کیلنڈر دیکھیں",
+      "empty": "کوئی آنے والی تقریب نہیں۔"
     },
     "notices": {
       "title": "نوٹس بورڈ",
@@ -159,6 +168,7 @@
         "roleInsights": "بصیرت",
         "calendar": "کیلنڈر",
         "agenda": "روزانہ ایجنڈا",
+        "upcoming": "آنے والی تقریبات",
         "notices": "نوٹس بورڈ"
       }
     },
@@ -677,6 +687,60 @@
       "PART_TIME": "پارٹ ٹائم",
       "CONTRACT": "کنٹریکٹ",
       "VOLUNTEER": "رضاکار"
+    }
+  },
+  "calendar": {
+    "title": "تعلیمی کیلنڈر",
+    "subtitle": "اسکول کی تقریبات، تعطیلات اور اجلاس",
+    "addEvent": "تقریب شامل کریں",
+    "editEvent": "تقریب ترمیم کریں",
+    "exportHolidays": "تعطیلات PDF برآمد کریں",
+    "today": "آج",
+    "filterType": "قسم",
+    "noEvents": "اس مدت میں کوئی تقریب نہیں۔",
+    "eventTitle": "عنوان",
+    "type": "قسم",
+    "audience": "سامعین",
+    "class": "کلاس",
+    "selectClass": "کلاس منتخب کریں",
+    "section": "سیکشن",
+    "role": "رول",
+    "startDate": "آغاز کی تاریخ",
+    "endDate": "اختتام کی تاریخ",
+    "allDay": "پورا دن",
+    "startTime": "آغاز کا وقت",
+    "endTime": "اختتام کا وقت",
+    "location": "مقام",
+    "description": "تفصیل",
+    "when": "کب",
+    "updatedAt": "آخری تازہ کاری",
+    "deleteConfirm": "{{title}} حذف کریں؟",
+    "views": {
+      "month": "مہینہ",
+      "week": "ہفتہ",
+      "agenda": "فہرست"
+    },
+    "types": {
+      "HOLIDAY": "تعطیل",
+      "EXAM": "امتحان",
+      "MEETING": "اجلاس",
+      "EVENT": "تقریب",
+      "ACTIVITY": "سرگرمی",
+      "PTM": "والدین میٹنگ",
+      "SPORTS": "کھیل",
+      "NOTICE": "نوٹس",
+      "OTHER": "دیگر"
+    },
+    "scopes": {
+      "SCHOOL_WIDE": "پورا اسکول",
+      "CLASS_WIDE": "کلاس / سیکشن",
+      "STAFF": "عملہ",
+      "ROLE": "رول"
+    },
+    "roles": {
+      "TEACHER": "اساتذہ",
+      "STUDENT": "طلباء",
+      "PARENT": "والدین"
     }
   }
 }

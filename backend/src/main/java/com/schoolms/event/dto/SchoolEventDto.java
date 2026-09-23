@@ -1,5 +1,6 @@
 package com.schoolms.event.dto;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
@@ -16,9 +17,11 @@ public record SchoolEventDto(
         LocalTime endTime,
         String location,
         String visibilityScope,
+        String audienceRole,
         UUID classId,
         String className,
         UUID sectionId,
-        String sectionName
+        String sectionName,
+        Instant updatedAt
 ) {
 }

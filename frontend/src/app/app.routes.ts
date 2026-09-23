@@ -193,6 +193,13 @@ export const routes: Routes = [
         canActivate: [PermissionGuard],
         data: { permissions: ['NOTICE_READ'] },
       },
+      {
+        path: 'calendar',
+        loadComponent: () =>
+          import('./features/calendar/calendar.component').then((m) => m.CalendarComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['EVENT_READ'] },
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

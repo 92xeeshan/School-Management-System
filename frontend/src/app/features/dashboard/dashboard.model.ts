@@ -81,7 +81,16 @@ export interface DashboardSummary {
   pendingGrading: number;
 }
 
-export type EventType = 'HOLIDAY' | 'EXAM' | 'MEETING' | 'EVENT' | 'ACTIVITY' | 'OTHER';
+export type EventType =
+  | 'HOLIDAY'
+  | 'EXAM'
+  | 'MEETING'
+  | 'EVENT'
+  | 'ACTIVITY'
+  | 'OTHER'
+  | 'PTM'
+  | 'SPORTS'
+  | 'NOTICE';
 
 export interface SchoolEvent {
   id: string;
@@ -95,10 +104,12 @@ export interface SchoolEvent {
   endTime: string | null;
   location: string | null;
   visibilityScope: string;
+  audienceRole?: string | null;
   classId: string | null;
   className: string | null;
   sectionId: string | null;
   sectionName: string | null;
+  updatedAt?: string | null;
 }
 
 export interface DashboardNotice {
@@ -129,4 +140,5 @@ export type WidgetId =
   | 'roleInsights'
   | 'calendar'
   | 'agenda'
+  | 'upcoming'
   | 'notices';
