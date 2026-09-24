@@ -98,6 +98,7 @@ public class ExamMarksService {
     private final TeacherProfileRepository teacherRepository;
     private final TeacherSectionRepository teacherSectionRepository;
     private final TeacherSubjectRepository teacherSubjectRepository;
+    private final MarksheetService marksheetService;
 
     @Transactional(readOnly = true)
     public MarksOptionsDto options() {
@@ -492,6 +493,10 @@ public class ExamMarksService {
         }
         if (isEffectivelyLocked(ctx.entry)) {
             throw new BusinessException("marks.locked");
+        }
+        if (marksheetService.sectionTermLocked(ctx.entry.getSchoolId(), ctx.entry.getAcademicYearId(),
+                ctx.entry.getSectionId(), ctx.entry.getExamTerm())) {
+            throw new BusinessException("marksheet.locked");
         }
     }
 
