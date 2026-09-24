@@ -67,6 +67,7 @@ class ExamMarksServiceTest {
     @Mock private TeacherProfileRepository teacherRepository;
     @Mock private TeacherSectionRepository teacherSectionRepository;
     @Mock private TeacherSubjectRepository teacherSubjectRepository;
+    @Mock private MarksheetService marksheetService;
 
     private ExamMarksService service;
     private UUID yearId;
@@ -81,7 +82,7 @@ class ExamMarksServiceTest {
         service = new ExamMarksService(examEntryRepository, examMarkRepository, academicYearRepository,
                 classRepository, sectionRepository, subjectRepository, classSubjectRepository,
                 studentRepository, enrollmentRepository, schemeRepository, boundaryRepository,
-                teacherRepository, teacherSectionRepository, teacherSubjectRepository);
+                teacherRepository, teacherSectionRepository, teacherSubjectRepository, marksheetService);
         TestSecurity.login(TestSecurity.USER_ID, TestSecurity.SCHOOL_ID, List.of("ADMIN"),
                 Set.of("EXAM_READ", "EXAM_MARK", "EXAM_MANAGE"));
         yearId = UUID.randomUUID();
@@ -146,6 +147,18 @@ class ExamMarksServiceTest {
         BusinessException ex = assertThrows(BusinessException.class, () -> service.save(saveRequest(
                 new BigDecimal("40"), null, new BigDecimal("10"), false)));
         assertEquals("marks.locked", ex.getCode());
+    }
+
+    @Test
+    void saveRejectsWhenMarksheetLocked() {
+        stubContext(false);
+        when(marksheetService.sectionTermLocked(TestSecurity.SCHOOL_ID, yearId, sectionId, "TERM"))
+                .thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.save(saveRequest(
+                new BigDecimal("40"), null, new BigDecimal("10"), false)));
+        assertEquals("marksheet.locked", ex.getCode());
+        verify(examMarkRepository, never()).save(any());
     }
 
     @Test

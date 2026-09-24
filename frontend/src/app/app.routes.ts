@@ -200,6 +200,23 @@ export const routes: Routes = [
         canActivate: [PermissionGuard],
         data: { permissions: ['EVENT_READ'] },
       },
+      {
+        path: 'downloads',
+        loadComponent: () =>
+          import('./features/downloads/downloads-shell.component').then((m) => m.DownloadsShellComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['MARKSHEET_READ'] },
+        children: [
+          { path: '', redirectTo: 'marksheet', pathMatch: 'full' },
+          {
+            path: 'marksheet',
+            loadComponent: () =>
+              import('./features/downloads/marksheet.component').then((m) => m.MarksheetComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['MARKSHEET_READ'] },
+          },
+        ],
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },
