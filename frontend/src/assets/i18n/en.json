@@ -21,7 +21,11 @@
     "welcome": "Welcome",
     "logout": "Log Out",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar",
+    "lightMode": "Switch to light mode",
+    "darkMode": "Switch to dark mode"
   },
   "login": {
     "title": "Sign In",
@@ -635,7 +639,14 @@
     "amount": "Amount",
     "paidOn": "Paid On",
     "method": "Payment Method",
-    "dueDate": "Due Date"
+    "dueDate": "Due Date",
+    "selectStudentTitle": "Select a student to view fees",
+    "selectStudentHint": "Choose a student from the dropdown above, or browse the student directory.",
+    "browseStudents": "Browse Students",
+    "noInstallments": "No installments yet",
+    "noInstallmentsHint": "Fee installments will appear here once a fee structure is assigned.",
+    "noPayments": "No payments recorded",
+    "noPaymentsHint": "Collected payments will show up here."
   },
   "notices": {
     "title": "Notices",
