@@ -494,7 +494,7 @@ public class ExamMarksService {
         if (isEffectivelyLocked(ctx.entry)) {
             throw new BusinessException("marks.locked");
         }
-        if (marksheetService.sectionTermLocked(ctx.entry.getSchoolId(), ctx.entry.getAcademicYearId(),
+        if (!canManage() && marksheetService.sectionTermLocked(ctx.entry.getSchoolId(), ctx.entry.getAcademicYearId(),
                 ctx.entry.getSectionId(), ctx.entry.getExamTerm())) {
             throw new BusinessException("marksheet.locked");
         }

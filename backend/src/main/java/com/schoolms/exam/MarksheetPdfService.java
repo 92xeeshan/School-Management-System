@@ -166,12 +166,13 @@ public class MarksheetPdfService {
     }
 
     private PdfPTable totals(MarksheetDto card) {
-        PdfPTable table = new PdfPTable(5);
+        PdfPTable table = new PdfPTable(6);
         table.setWidthPercentage(100);
         table.setSpacingBefore(8);
         addMetaWide(table, "Total marks", formatNumber(card.totalObtained()) + " / " + formatNumber(card.totalMax()));
         addMetaWide(table, "Percentage", formatNumber(card.percentage()) + "%");
         addMetaWide(table, "GPA", formatNumber(card.gpa()));
+        addMetaWide(table, "Class rank", card.classRank() == null ? "—" : String.valueOf(card.classRank()));
         addMetaWide(table, "Overall grade", blank(card.overallGrade()));
         addMetaWide(table, "Qualification", blank(card.result()));
         return table;

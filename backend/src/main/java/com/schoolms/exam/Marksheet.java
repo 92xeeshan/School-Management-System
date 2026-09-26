@@ -39,6 +39,9 @@ public class Marksheet extends BaseEntity {
     private String serialNo;
 
     @Column(nullable = false)
+    private String status = "DRAFT";
+
+    @Column(nullable = false)
     private boolean published;
 
     @Column(nullable = false)
@@ -47,11 +50,29 @@ public class Marksheet extends BaseEntity {
     @Column(name = "issued_at")
     private LocalDate issuedAt;
 
+    @Column(name = "submitted_at")
+    private Instant submittedAt;
+
+    @Column(name = "submitted_by")
+    private UUID submittedBy;
+
     @Column(name = "published_at")
     private Instant publishedAt;
 
     @Column(name = "published_by")
     private UUID publishedBy;
+
+    @Column(name = "rejected_at")
+    private Instant rejectedAt;
+
+    @Column(name = "rejected_by")
+    private UUID rejectedBy;
+
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
+    @Column(name = "class_rank")
+    private Integer classRank;
 
     @Column(name = "locked_at")
     private Instant lockedAt;

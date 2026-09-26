@@ -151,6 +151,8 @@ class ExamMarksServiceTest {
 
     @Test
     void saveRejectsWhenMarksheetLocked() {
+        TestSecurity.login(TestSecurity.USER_ID, TestSecurity.SCHOOL_ID, List.of("TEACHER"),
+                Set.of("EXAM_READ", "EXAM_MARK"));
         stubContext(false);
         when(marksheetService.sectionTermLocked(TestSecurity.SCHOOL_ID, yearId, sectionId, "TERM"))
                 .thenReturn(true);

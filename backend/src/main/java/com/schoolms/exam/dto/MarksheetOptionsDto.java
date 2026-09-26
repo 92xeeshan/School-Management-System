@@ -9,6 +9,7 @@ public record MarksheetOptionsDto(
         List<String> examTerms,
         boolean studentView,
         boolean canManage,
+        boolean canSubmit,
         UUID defaultStudentId,
         UUID defaultClassId,
         UUID defaultSectionId

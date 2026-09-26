@@ -22,6 +22,7 @@ import com.schoolms.common.enums.Gender;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
+import com.schoolms.exam.dto.MarksheetActionRequest;
 import com.schoolms.exam.dto.MarksheetDto;
 import com.schoolms.exam.dto.MarksheetExportRequest;
 import com.schoolms.exam.dto.MarksheetOptionsDto;
@@ -128,7 +129,7 @@ public class MarksheetService {
                     }
                 }
             }
-            return new MarksheetOptionsDto(years, classes, EXAM_TERMS, true, false, student.getId(), classId, sectionId);
+            return new MarksheetOptionsDto(years, classes, EXAM_TERMS, true, false, false, student.getId(), classId, sectionId);
         }
 
         TeacherScope scope = teacherScope(schoolId, principal);
@@ -146,20 +147,25 @@ public class MarksheetService {
                                 .toList()))
                 .filter(option -> !option.sections().isEmpty())
                 .toList();
-        return new MarksheetOptionsDto(years, classes, EXAM_TERMS, false, manage, null, null, null);
+        boolean submit = canSubmit(principal);
+        return new MarksheetOptionsDto(years, classes, EXAM_TERMS, false, manage, submit, null, null, null);
     }
 
     @Transactional(readOnly = true)
     public List<MarksheetStudentDto> roster(UUID academicYearId, UUID classId, UUID sectionId, String examTerm,
-                                            String query) {
+                                            String query, String status) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         UserPrincipal principal = SecurityUtils.currentPrincipal();
         String term = normalizeTerm(examTerm);
         AcademicYear year = academicYearRepository.findByIdAndSchoolId(academicYearId, schoolId)
                 .orElseThrow(() -> ResourceNotFoundException.of("academic_year", academicYearId));
+        String statusFilter = normalizeStatusFilter(status);
         if (isLearner(principal)) {
             Student student = requireOwnStudent(principal);
             MarksheetDto card = buildCard(schoolId, student, year, term);
+            if (statusFilter != null && !statusFilter.equals(card.status())) {
+                return List.of();
+            }
             return List.of(toStudentDto(card));
         }
         if (sectionId == null) {
@@ -172,6 +178,7 @@ public class MarksheetService {
         return ctx.students.stream()
                 .filter(student -> matchesQuery(student, needle))
                 .map(student -> toStudentDto(assemble(ctx, student)))
+                .filter(row -> statusFilter == null || statusFilter.equals(row.status()))
                 .toList();
     }
 
@@ -194,6 +201,118 @@ public class MarksheetService {
     }
 
     @Transactional
+    public List<MarksheetStudentDto> submit(MarksheetActionRequest request) {
+        UserPrincipal principal = SecurityUtils.currentPrincipal();
+        if (!canSubmit(principal)) {
+            throw AuthException.accessDenied();
+        }
+        SectionContext ctx = loadActionContext(request.academicYearId(), request.classId(), request.sectionId(),
+                request.examTerm());
+        List<Student> students = selectStudents(ctx, request.studentIds());
+        Instant now = Instant.now();
+        UUID actor = principal.id();
+        for (Student student : students) {
+            MarksheetDto card = assemble(ctx, student);
+            if (!card.ready()) {
+                throw new BusinessException("marksheet.not_ready");
+            }
+            String status = card.status();
+            if (!"DRAFT".equals(status) && !"REJECTED".equals(status)) {
+                throw new BusinessException("marksheet.invalid_transition");
+            }
+            if (card.locked()) {
+                throw new BusinessException("marksheet.locked");
+            }
+            Marksheet stored = ctx.records.computeIfAbsent(student.getId(), id -> newRecord(ctx, student));
+            stored.setStatus("PENDING_APPROVAL");
+            stored.setPublished(false);
+            stored.setLocked(false);
+            stored.setSubmittedAt(now);
+            stored.setSubmittedBy(actor);
+            stored.setRejectedAt(null);
+            stored.setRejectedBy(null);
+            stored.setRejectionReason(null);
+            stored.setPublishedAt(null);
+            stored.setPublishedBy(null);
+            stored.setLockedAt(null);
+            stored.setLockedBy(null);
+            if (stored.getSerialNo() == null || stored.getSerialNo().isBlank()) {
+                stored.setSerialNo(serialFor(ctx, student));
+            }
+            marksheetRepository.save(stored);
+            ctx.records.put(student.getId(), stored);
+        }
+        return students.stream().map(student -> toStudentDto(assemble(ctx, student))).toList();
+    }
+
+    @Transactional
+    public List<MarksheetStudentDto> approve(MarksheetActionRequest request) {
+        UserPrincipal principal = SecurityUtils.currentPrincipal();
+        if (!canManage(principal)) {
+            throw AuthException.accessDenied();
+        }
+        SectionContext ctx = loadActionContext(request.academicYearId(), request.classId(), request.sectionId(),
+                request.examTerm());
+        List<Student> students = selectStudents(ctx, request.studentIds());
+        Instant now = Instant.now();
+        UUID actor = principal.id();
+        ensureRanks(ctx);
+        for (Student student : students) {
+            MarksheetDto card = assemble(ctx, student);
+            if (!"PENDING_APPROVAL".equals(card.status())) {
+                throw new BusinessException("marksheet.invalid_transition");
+            }
+            if (!card.ready()) {
+                throw new BusinessException("marksheet.not_ready");
+            }
+            Marksheet stored = ctx.records.computeIfAbsent(student.getId(), id -> newRecord(ctx, student));
+            applyPublished(stored, ctx, student, now, actor, request.locked(), ctx.ranks.get(student.getId()));
+            marksheetRepository.save(stored);
+            ctx.records.put(student.getId(), stored);
+        }
+        return students.stream().map(student -> toStudentDto(assemble(ctx, student))).toList();
+    }
+
+    @Transactional
+    public List<MarksheetStudentDto> reject(MarksheetActionRequest request) {
+        UserPrincipal principal = SecurityUtils.currentPrincipal();
+        if (!canManage(principal)) {
+            throw AuthException.accessDenied();
+        }
+        String reason = request.reason() == null ? "" : request.reason().trim();
+        if (reason.isBlank()) {
+            throw new BusinessException("marksheet.reason_required");
+        }
+        SectionContext ctx = loadActionContext(request.academicYearId(), request.classId(), request.sectionId(),
+                request.examTerm());
+        List<Student> students = selectStudents(ctx, request.studentIds());
+        Instant now = Instant.now();
+        UUID actor = principal.id();
+        for (Student student : students) {
+            Marksheet stored = ctx.records.get(student.getId());
+            String status = stored == null ? "DRAFT" : stored.getStatus();
+            if (!"PENDING_APPROVAL".equals(status)) {
+                throw new BusinessException("marksheet.invalid_transition");
+            }
+            stored.setStatus("REJECTED");
+            stored.setPublished(false);
+            stored.setLocked(false);
+            stored.setRejectedAt(now);
+            stored.setRejectedBy(actor);
+            stored.setRejectionReason(reason);
+            stored.setPublishedAt(null);
+            stored.setPublishedBy(null);
+            stored.setLockedAt(null);
+            stored.setLockedBy(null);
+            stored.setClassRank(null);
+            marksheetRepository.save(stored);
+            ctx.records.put(student.getId(), stored);
+            resetMarksToDraft(ctx, student.getId());
+        }
+        return students.stream().map(student -> toStudentDto(assemble(ctx, student))).toList();
+    }
+
+    @Transactional
     public List<MarksheetStudentDto> publish(MarksheetPublishRequest request) {
         UserPrincipal principal = SecurityUtils.currentPrincipal();
         if (!canManage(principal)) {
@@ -210,32 +329,33 @@ public class MarksheetService {
         List<Student> students = selectStudents(ctx, request.studentIds());
         Instant now = Instant.now();
         UUID actor = principal.id();
+        if (request.published()) {
+            ensureRanks(ctx);
+        }
         for (Student student : students) {
             Marksheet stored = ctx.records.computeIfAbsent(student.getId(), id -> newRecord(ctx, student));
-            stored.setPublished(request.published());
             if (request.published()) {
-                if (stored.getSerialNo() == null || stored.getSerialNo().isBlank()) {
-                    stored.setSerialNo(serialFor(ctx, student));
+                MarksheetDto card = assemble(ctx, student);
+                if (!card.ready()) {
+                    throw new BusinessException("marksheet.not_ready");
                 }
-                if (stored.getIssuedAt() == null) {
-                    stored.setIssuedAt(LocalDate.now());
+                String status = stored.getStatus() == null ? "DRAFT" : stored.getStatus();
+                if (!"PENDING_APPROVAL".equals(status) && !"PUBLISHED".equals(status)) {
+                    throw new BusinessException("marksheet.invalid_transition");
                 }
-                stored.setPublishedAt(now);
-                stored.setPublishedBy(actor);
+                applyPublished(stored, ctx, student, now, actor, request.locked(), ctx.ranks.get(student.getId()));
             } else {
+                if (stored.isLocked() && !"PUBLISHED".equals(stored.getStatus())) {
+                    throw new BusinessException("marksheet.locked");
+                }
+                stored.setStatus("DRAFT");
+                stored.setPublished(false);
+                stored.setLocked(false);
                 stored.setPublishedAt(null);
                 stored.setPublishedBy(null);
-                stored.setLocked(false);
                 stored.setLockedAt(null);
                 stored.setLockedBy(null);
-            }
-            stored.setLocked(request.published() && request.locked());
-            if (stored.isLocked()) {
-                stored.setLockedAt(now);
-                stored.setLockedBy(actor);
-            } else {
-                stored.setLockedAt(null);
-                stored.setLockedBy(null);
+                stored.setClassRank(null);
             }
             marksheetRepository.save(stored);
             ctx.records.put(student.getId(), stored);
@@ -298,7 +418,9 @@ public class MarksheetService {
         return marksheetRepository
                 .findBySchoolIdAndAcademicYearIdAndSectionIdAndExamTerm(schoolId, academicYearId, sectionId, examTerm)
                 .stream()
-                .anyMatch(Marksheet::isLocked);
+                .anyMatch(row -> row.isLocked()
+                        || "PENDING_APPROVAL".equals(row.getStatus())
+                        || "PUBLISHED".equals(row.getStatus()));
     }
 
     private List<MarksheetDto> loadCardsForExport(MarksheetExportRequest request) {
@@ -418,6 +540,7 @@ public class MarksheetService {
         ctx.scheme = scheme;
         ctx.boundaries = boundaries;
         ctx.school = school;
+        ctx.ranks = computeLiveRanks(ctx);
         return ctx;
     }
 
@@ -431,7 +554,8 @@ public class MarksheetService {
                 }))
                 .map(entry -> toSubjectRow(entry, marks, ctx))
                 .toList();
-        boolean ready = !subjects.isEmpty() && subjects.stream().allMatch(row -> row.marksObtained() != null);
+        boolean ready = !subjects.isEmpty() && subjects.stream().allMatch(row -> row.marksObtained() != null)
+                && marksSubmitted(ctx.entries, marks);
         BigDecimal obtained = subjects.stream()
                 .map(row -> nz(row.marksObtained()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -446,13 +570,18 @@ public class MarksheetService {
         BigDecimal gpa = averageGpa(subjects, overallBoundary);
         String result = overallResult(subjects, percent, ctx.scheme);
         Marksheet stored = ctx.records.get(student.getId());
-        boolean published = stored != null && stored.isPublished();
+        String status = stored == null || stored.getStatus() == null ? "DRAFT" : stored.getStatus();
+        boolean published = "PUBLISHED".equals(status) || (stored != null && stored.isPublished());
         boolean locked = stored != null && stored.isLocked();
+        Integer rank = stored != null && stored.getClassRank() != null
+                ? stored.getClassRank()
+                : ctx.ranks.get(student.getId());
+        String rejection = stored == null ? null : stored.getRejectionReason();
         String serial = stored == null ? serialFor(ctx, student) : stored.getSerialNo();
         LocalDate issued = stored == null || stored.getIssuedAt() == null ? LocalDate.now() : stored.getIssuedAt();
         School school = ctx.school;
         String photo = resolvePhoto(student.getPhotoUrl());
-        return new MarksheetDto(
+        MarksheetDto card = new MarksheetDto(
                 student.getId(),
                 student.getDisplayName(),
                 student.getAdmissionNo(),
@@ -469,8 +598,11 @@ public class MarksheetService {
                 ctx.year.getName(),
                 ctx.term,
                 ready,
+                status,
                 published,
                 locked,
+                rank,
+                rejection,
                 serial,
                 issued,
                 school == null ? "" : school.getName(),
@@ -485,6 +617,10 @@ public class MarksheetService {
                 grade,
                 result,
                 subjects);
+        if (isLearner(SecurityUtils.currentPrincipal()) && !published) {
+            return redact(card);
+        }
+        return card;
     }
 
     private MarksheetSubjectDto toSubjectRow(ExamEntry entry, List<ExamMark> marks, SectionContext ctx) {
@@ -593,9 +729,166 @@ public class MarksheetService {
         row.setStudentId(student.getId());
         row.setExamTerm(ctx.term);
         row.setSerialNo(serialFor(ctx, student));
+        row.setStatus("DRAFT");
         row.setPublished(false);
         row.setLocked(false);
         return row;
+    }
+
+    private SectionContext loadActionContext(UUID academicYearId, UUID classId, UUID sectionId, String examTerm) {
+        UUID schoolId = SecurityUtils.currentSchoolId();
+        AcademicYear year = resolveYear(schoolId, academicYearId);
+        if (sectionId == null) {
+            throw new BusinessException("marksheet.section_required");
+        }
+        Section section = loadSection(schoolId, classId, sectionId);
+        assertStaffCanAccessSection(SecurityUtils.currentPrincipal(), schoolId, section.getId());
+        return loadSectionContext(schoolId, year, section, normalizeTerm(examTerm));
+    }
+
+    private void applyPublished(Marksheet stored, SectionContext ctx, Student student, Instant now, UUID actor,
+                                boolean locked, Integer rank) {
+        stored.setStatus("PUBLISHED");
+        stored.setPublished(true);
+        stored.setRejectedAt(null);
+        stored.setRejectedBy(null);
+        stored.setRejectionReason(null);
+        if (stored.getSerialNo() == null || stored.getSerialNo().isBlank()) {
+            stored.setSerialNo(serialFor(ctx, student));
+        }
+        if (stored.getIssuedAt() == null) {
+            stored.setIssuedAt(LocalDate.now());
+        }
+        stored.setPublishedAt(now);
+        stored.setPublishedBy(actor);
+        stored.setClassRank(rank);
+        stored.setLocked(locked);
+        if (locked) {
+            stored.setLockedAt(now);
+            stored.setLockedBy(actor);
+        } else {
+            stored.setLockedAt(null);
+            stored.setLockedBy(null);
+        }
+    }
+
+    private void ensureRanks(SectionContext ctx) {
+        ctx.ranks = computeLiveRanks(ctx);
+    }
+
+    private Map<UUID, Integer> computeLiveRanks(SectionContext ctx) {
+        List<ScoredStudent> scored = new ArrayList<>();
+        for (Student student : ctx.students) {
+            List<ExamMark> marks = ctx.marksByStudent.getOrDefault(student.getId(), List.of());
+            BigDecimal obtained = BigDecimal.ZERO;
+            BigDecimal max = BigDecimal.ZERO;
+            for (ExamEntry entry : ctx.entries) {
+                BigDecimal maxTotal = nz(entry.getMaxTheory()).add(nz(entry.getMaxPractical())).add(nz(entry.getMaxAssignment()));
+                max = max.add(maxTotal);
+                ExamMark mark = marks.stream()
+                        .filter(row -> entry.getId().equals(row.getExamEntryId()))
+                        .findFirst()
+                        .orElse(null);
+                if (mark != null && mark.getTotal() != null) {
+                    obtained = obtained.add(mark.getTotal());
+                }
+            }
+            BigDecimal percent = max.compareTo(BigDecimal.ZERO) == 0
+                    ? BigDecimal.ZERO
+                    : obtained.multiply(HUNDRED).divide(max, 2, RoundingMode.HALF_UP);
+            scored.add(new ScoredStudent(student.getId(), percent));
+        }
+        scored.sort(Comparator.comparing(ScoredStudent::percent).reversed()
+                .thenComparing(row -> row.id().toString()));
+        Map<UUID, Integer> ranks = new LinkedHashMap<>();
+        BigDecimal previous = null;
+        int rank = 0;
+        int index = 0;
+        for (ScoredStudent row : scored) {
+            index += 1;
+            if (previous == null || row.percent().compareTo(previous) != 0) {
+                rank = index;
+                previous = row.percent();
+            }
+            ranks.put(row.id(), rank);
+        }
+        return ranks;
+    }
+
+    private void resetMarksToDraft(SectionContext ctx, UUID studentId) {
+        List<ExamMark> marks = ctx.marksByStudent.getOrDefault(studentId, List.of());
+        for (ExamMark mark : marks) {
+            if ("SUBMITTED".equals(mark.getStatus())) {
+                mark.setStatus("DRAFT");
+                examMarkRepository.save(mark);
+            }
+        }
+    }
+
+    private static boolean marksSubmitted(List<ExamEntry> entries, List<ExamMark> marks) {
+        if (entries == null || entries.isEmpty()) {
+            return false;
+        }
+        for (ExamEntry entry : entries) {
+            ExamMark mark = marks.stream()
+                    .filter(row -> entry.getId().equals(row.getExamEntryId()))
+                    .findFirst()
+                    .orElse(null);
+            if (mark == null || !"SUBMITTED".equals(mark.getStatus())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static MarksheetDto redact(MarksheetDto card) {
+        return new MarksheetDto(
+                card.studentId(),
+                card.studentName(),
+                card.admissionNo(),
+                card.rollNumber(),
+                card.dateOfBirth(),
+                card.gender(),
+                card.photoUrl(),
+                card.photoPlaceholder(),
+                card.classId(),
+                card.className(),
+                card.sectionId(),
+                card.sectionName(),
+                card.academicYearId(),
+                card.academicYearName(),
+                card.examTerm(),
+                card.ready(),
+                card.status(),
+                false,
+                card.locked(),
+                null,
+                card.rejectionReason(),
+                card.serialNo(),
+                card.issueDate(),
+                card.schoolName(),
+                card.schoolAddress(),
+                card.schoolPhone(),
+                card.schoolEmail(),
+                card.affiliation(),
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                null,
+                null,
+                null,
+                List.of());
+    }
+
+    private static String normalizeStatusFilter(String status) {
+        if (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)) {
+            return null;
+        }
+        String value = status.trim().toUpperCase(Locale.ROOT);
+        if (!List.of("DRAFT", "PENDING_APPROVAL", "PUBLISHED", "REJECTED").contains(value)) {
+            throw new BusinessException("marksheet.invalid_status");
+        }
+        return value;
     }
 
     private static String serialFor(SectionContext ctx, Student student) {
@@ -722,6 +1015,12 @@ public class MarksheetService {
                 || principal.hasRole("SUPER_ADMIN");
     }
 
+    private static boolean canSubmit(UserPrincipal principal) {
+        return canManage(principal)
+                || principal.permissions().contains("EXAM_MARK")
+                || principal.hasRole("TEACHER");
+    }
+
     private static MarksheetStudentDto toStudentDto(MarksheetDto card) {
         return new MarksheetStudentDto(
                 card.studentId(),
@@ -731,8 +1030,11 @@ public class MarksheetService {
                 card.gender(),
                 card.photoUrl(),
                 card.ready(),
+                card.status(),
                 card.published(),
                 card.locked(),
+                card.classRank(),
+                card.rejectionReason(),
                 card.percentage(),
                 card.gpa(),
                 card.overallGrade(),
@@ -771,9 +1073,13 @@ public class MarksheetService {
         Map<UUID, Subject> subjects;
         Map<UUID, List<ExamMark>> marksByStudent;
         Map<UUID, Marksheet> records;
+        Map<UUID, Integer> ranks = Map.of();
         GradingScheme scheme;
         List<GradeBoundary> boundaries;
         School school;
+    }
+
+    private record ScoredStudent(UUID id, BigDecimal percent) {
     }
 
     private record TeacherScope(Set<UUID> sections) {
