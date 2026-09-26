@@ -22,6 +22,7 @@ import com.schoolms.academics.TeacherSectionRepository;
 import com.schoolms.common.enums.Gender;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
+import com.schoolms.exam.dto.MarksheetActionRequest;
 import com.schoolms.exam.dto.MarksheetDto;
 import com.schoolms.exam.dto.MarksheetExportRequest;
 import com.schoolms.exam.dto.MarksheetPublishRequest;
@@ -188,7 +189,7 @@ class MarksheetServiceTest {
         when(teacherSectionRepository.findByTeacherIdAndSchoolId(teacherId, TestSecurity.SCHOOL_ID))
                 .thenReturn(List.of(assignment));
 
-        assertThrows(AuthException.class, () -> service.roster(yearId, classId, sectionId, "TERM", null));
+        assertThrows(AuthException.class, () -> service.roster(yearId, classId, sectionId, "TERM", null, null));
     }
 
     @Test
@@ -196,9 +197,9 @@ class MarksheetServiceTest {
         stubSectionGraph();
         stubRosterWithoutRecord();
 
-        List<MarksheetStudentDto> all = service.roster(yearId, classId, sectionId, "TERM", null);
-        List<MarksheetStudentDto> filtered = service.roster(yearId, classId, sectionId, "TERM", "adm0001");
-        List<MarksheetStudentDto> none = service.roster(yearId, classId, sectionId, "TERM", "zzz");
+        List<MarksheetStudentDto> all = service.roster(yearId, classId, sectionId, "TERM", null, null);
+        List<MarksheetStudentDto> filtered = service.roster(yearId, classId, sectionId, "TERM", "adm0001", null);
+        List<MarksheetStudentDto> none = service.roster(yearId, classId, sectionId, "TERM", "zzz", null);
 
         assertEquals(1, all.size());
         assertEquals(1, filtered.size());
@@ -206,18 +207,45 @@ class MarksheetServiceTest {
     }
 
     @Test
-    void publishLocksMarksheet() {
+    void publishRequiresPendingApproval() {
         stubSectionGraph();
         stubRosterWithoutRecord();
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.publish(new MarksheetPublishRequest(
+                yearId, "TERM", classId, sectionId, List.of(studentId), true, true)));
+        assertEquals("marksheet.invalid_transition", ex.getCode());
+    }
+
+    @Test
+    void approvePublishesAndLocks() {
+        stubSectionGraph();
+        stubRosterWithoutRecord();
+        when(marksheetRepository.findBySchoolIdAndAcademicYearIdAndSectionIdAndExamTerm(
+                TestSecurity.SCHOOL_ID, yearId, sectionId, "TERM")).thenReturn(List.of(stored("PENDING_APPROVAL")));
         when(marksheetRepository.save(org.mockito.ArgumentMatchers.any(Marksheet.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        List<MarksheetStudentDto> rows = service.publish(new MarksheetPublishRequest(
-                yearId, "TERM", classId, sectionId, List.of(studentId), true, true));
+        List<MarksheetStudentDto> rows = service.approve(new MarksheetActionRequest(
+                yearId, "TERM", classId, sectionId, List.of(studentId), null, true));
 
         assertEquals(1, rows.size());
         assertTrue(rows.get(0).published());
         assertTrue(rows.get(0).locked());
+        assertEquals("PUBLISHED", rows.get(0).status());
+        assertEquals(1, rows.get(0).classRank());
+    }
+
+    @Test
+    void studentUnpublishedCardIsRedacted() {
+        loginStudent();
+        stubCardGraph(false, Gender.MALE, "90", "A", "4.00");
+
+        MarksheetDto card = service.mine(yearId, "TERM");
+
+        assertFalse(card.published());
+        assertEquals("DRAFT", card.status());
+        assertTrue(card.subjects().isEmpty());
+        assertEquals("0", card.percentage().stripTrailingZeros().toPlainString());
     }
 
     private void loginStudent() {
@@ -244,7 +272,8 @@ class MarksheetServiceTest {
         when(examMarkRepository.findBySchoolIdAndExamEntryIdIn(eq(TestSecurity.SCHOOL_ID), anyList()))
                 .thenReturn(List.of(mark(studentId, percent, label)));
         when(marksheetRepository.findBySchoolIdAndAcademicYearIdAndSectionIdAndExamTerm(
-                TestSecurity.SCHOOL_ID, yearId, sectionId, "TERM")).thenReturn(List.of(stored(published)));
+                TestSecurity.SCHOOL_ID, yearId, sectionId, "TERM"))
+                .thenReturn(List.of(stored(published ? "PUBLISHED" : "DRAFT")));
         stubScheme(label, gpa, percent);
         when(schoolRepository.findById(TestSecurity.SCHOOL_ID)).thenReturn(Optional.of(school()));
     }
@@ -377,13 +406,14 @@ class MarksheetServiceTest {
         return mark;
     }
 
-    private Marksheet stored(boolean published) {
+    private Marksheet stored(String status) {
         Marksheet row = new Marksheet();
         row.setStudentId(studentId);
         row.setAcademicYearId(yearId);
         row.setExamTerm("TERM");
         row.setSerialNo("MS-2025-26-ADM0001-TERM");
-        row.setPublished(published);
+        row.setStatus(status);
+        row.setPublished("PUBLISHED".equals(status));
         row.setLocked(false);
         row.setIssuedAt(LocalDate.of(2026, 3, 31));
         return row;

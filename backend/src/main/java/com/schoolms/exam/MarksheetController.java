@@ -1,6 +1,7 @@
 package com.schoolms.exam;
 
 import com.schoolms.common.api.ApiResponse;
+import com.schoolms.exam.dto.MarksheetActionRequest;
 import com.schoolms.exam.dto.MarksheetDto;
 import com.schoolms.exam.dto.MarksheetExportRequest;
 import com.schoolms.exam.dto.MarksheetOptionsDto;
@@ -49,8 +50,9 @@ public class MarksheetController {
             @RequestParam String examTerm,
             @RequestParam(required = false) UUID classId,
             @RequestParam(required = false) UUID sectionId,
-            @RequestParam(required = false) String query) {
-        return ApiResponse.ok(marksheetService.roster(academicYearId, classId, sectionId, examTerm, query));
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String status) {
+        return ApiResponse.ok(marksheetService.roster(academicYearId, classId, sectionId, examTerm, query, status));
     }
 
     @Operation(summary = "Current student or parent marksheet")
@@ -60,6 +62,27 @@ public class MarksheetController {
             @RequestParam(required = false) UUID academicYearId,
             @RequestParam(defaultValue = "TERM") String examTerm) {
         return ApiResponse.ok(marksheetService.mine(academicYearId, examTerm));
+    }
+
+    @Operation(summary = "Submit marksheets for administrative approval")
+    @PreAuthorize("hasAnyAuthority('EXAM_MARK', 'MARKSHEET_MANAGE')")
+    @PostMapping("/submit")
+    public ApiResponse<List<MarksheetStudentDto>> submit(@Valid @RequestBody MarksheetActionRequest request) {
+        return ApiResponse.ok(marksheetService.submit(request));
+    }
+
+    @Operation(summary = "Approve and publish marksheets")
+    @PreAuthorize("hasAuthority('MARKSHEET_MANAGE')")
+    @PostMapping("/approve")
+    public ApiResponse<List<MarksheetStudentDto>> approve(@Valid @RequestBody MarksheetActionRequest request) {
+        return ApiResponse.ok(marksheetService.approve(request));
+    }
+
+    @Operation(summary = "Reject marksheets back to teachers")
+    @PreAuthorize("hasAuthority('MARKSHEET_MANAGE')")
+    @PostMapping("/reject")
+    public ApiResponse<List<MarksheetStudentDto>> reject(@Valid @RequestBody MarksheetActionRequest request) {
+        return ApiResponse.ok(marksheetService.reject(request));
     }
 
     @Operation(summary = "Publish or lock marksheets")

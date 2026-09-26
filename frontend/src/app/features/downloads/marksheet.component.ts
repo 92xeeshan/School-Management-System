@@ -14,6 +14,7 @@ interface MarksheetOptions {
   examTerms: string[];
   studentView: boolean;
   canManage: boolean;
+  canSubmit: boolean;
   defaultStudentId: string | null;
   defaultClassId: string | null;
   defaultSectionId: string | null;
@@ -26,8 +27,11 @@ interface MarksheetStudent {
   gender: string | null;
   photoUrl: string | null;
   ready: boolean;
+  status: string;
   published: boolean;
   locked: boolean;
+  classRank: number | null;
+  rejectionReason: string | null;
   percentage: number | null;
   gpa: number | null;
   overallGrade: string | null;
@@ -62,8 +66,11 @@ interface Marksheet {
   academicYearName: string;
   examTerm: string;
   ready: boolean;
+  status: string;
   published: boolean;
   locked: boolean;
+  classRank: number | null;
+  rejectionReason: string | null;
   serialNo: string;
   issueDate: string | null;
   schoolName: string;
@@ -123,6 +130,11 @@ interface Marksheet {
               <option [value]="section.id">{{ section.name }}</option>
             }
           </select>
+          <select [value]="statusFilter" (change)="onStatusChange($event)">
+            @for (status of statusOptions; track status) {
+              <option [value]="status">{{ statusLabel(status) | translate }}</option>
+            }
+          </select>
           <input class="search" type="search"
                  [value]="query"
                  (input)="onQueryChange($event)"
@@ -138,12 +150,20 @@ interface Marksheet {
           </label>
           <span class="muted">{{ 'downloads.marksheetPage.selected' | translate:{ count: selectedIds.size } }}</span>
           <span class="spacer"></span>
-          @if (canManage) {
-            <button class="btn" type="button" [disabled]="selectedIds.size === 0 || publishing" (click)="publish(true, false)">
-              {{ 'downloads.marksheetPage.publish' | translate }}
+          @if (canSubmit) {
+            <button class="btn" type="button" [disabled]="!canSubmitSelected || publishing" (click)="submitForApproval()">
+              {{ 'downloads.marksheetPage.submit' | translate }}
             </button>
-            <button class="btn" type="button" [disabled]="selectedIds.size === 0 || publishing" (click)="publish(true, true)">
-              {{ 'downloads.marksheetPage.lock' | translate }}
+          }
+          @if (canManage) {
+            <button class="btn btn-primary" type="button" [disabled]="!canApproveSelected || publishing" (click)="approve(false)">
+              {{ 'downloads.marksheetPage.approve' | translate }}
+            </button>
+            <button class="btn" type="button" [disabled]="!canApproveSelected || publishing" (click)="approve(true)">
+              {{ 'downloads.marksheetPage.approveLock' | translate }}
+            </button>
+            <button class="btn" type="button" [disabled]="!canApproveSelected || publishing" (click)="rejectSelected()">
+              {{ 'downloads.marksheetPage.reject' | translate }}
             </button>
             <button class="btn" type="button" [disabled]="selectedIds.size === 0 || publishing" (click)="publish(false, false)">
               {{ 'downloads.marksheetPage.unlock' | translate }}
@@ -170,6 +190,7 @@ interface Marksheet {
                 <th>{{ 'downloads.marksheetPage.roll' | translate }}</th>
                 <th>{{ 'downloads.marksheetPage.percentage' | translate }}</th>
                 <th>{{ 'downloads.marksheetPage.gpa' | translate }}</th>
+                <th>{{ 'downloads.marksheetPage.rank' | translate }}</th>
                 <th>{{ 'downloads.marksheetPage.result' | translate }}</th>
                 <th>{{ 'downloads.marksheetPage.status' | translate }}</th>
                 <th></th>
@@ -187,13 +208,20 @@ interface Marksheet {
                   <td>{{ row.rollNumber ?? '—' }}</td>
                   <td>{{ row.percentage == null ? '—' : row.percentage + '%' }}</td>
                   <td>{{ row.gpa == null ? '—' : row.gpa }}</td>
+                  <td>{{ row.classRank ?? '—' }}</td>
                   <td>{{ row.result || '—' }}</td>
                   <td>
-                    <span class="badge" [class.badge-success]="row.published" [class.badge-muted]="!row.published">
-                      {{ (row.published ? 'downloads.marksheetPage.published' : 'downloads.marksheetPage.draft') | translate }}
+                    <span class="badge" [class.badge-success]="row.status === 'PUBLISHED'"
+                          [class.badge-warn]="row.status === 'PENDING_APPROVAL'"
+                          [class.badge-lock]="row.status === 'REJECTED'"
+                          [class.badge-muted]="row.status === 'DRAFT'">
+                      {{ statusLabel(row.status) | translate }}
                     </span>
                     @if (row.locked) {
                       <span class="badge badge-lock">{{ 'downloads.marksheetPage.locked' | translate }}</span>
+                    }
+                    @if (row.rejectionReason) {
+                      <div class="muted">{{ row.rejectionReason }}</div>
                     }
                   </td>
                   <td>
@@ -204,7 +232,7 @@ interface Marksheet {
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="9" class="center muted">{{ 'downloads.marksheetPage.empty' | translate }}</td>
+                  <td colspan="10" class="center muted">{{ 'downloads.marksheetPage.empty' | translate }}</td>
                 </tr>
               }
             </tbody>
@@ -227,10 +255,11 @@ interface Marksheet {
         </div>
         @if (!myCard.published) {
           <p class="banner warn">{{ 'downloads.marksheetPage.notPublished' | translate }}</p>
+        } @else {
+          <div class="preview-wrap">
+            <ng-container *ngTemplateOutlet="cardTpl; context: { $implicit: myCard }"></ng-container>
+          </div>
         }
-        <div class="preview-wrap">
-          <ng-container *ngTemplateOutlet="cardTpl; context: { $implicit: myCard }"></ng-container>
-        </div>
       }
     </div>
 
@@ -321,6 +350,7 @@ interface Marksheet {
           <div><dt>{{ 'downloads.marksheetPage.percentage' | translate }}</dt><dd>{{ card.percentage }}%</dd></div>
           <div><dt>{{ 'downloads.marksheetPage.gpa' | translate }}</dt><dd>{{ card.gpa ?? '—' }}</dd></div>
           <div><dt>{{ 'downloads.marksheetPage.result' | translate }}</dt><dd>{{ card.result }} / {{ card.overallGrade || '—' }}</dd></div>
+          <div><dt>{{ 'downloads.marksheetPage.rank' | translate }}</dt><dd>{{ card.classRank ?? '—' }}</dd></div>
         </dl>
         <div class="security">
           <div>
@@ -358,6 +388,7 @@ interface Marksheet {
     .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .7rem; font-weight: 600; margin-right: 4px; }
     .badge-success { background: #d1fae5; color: #047857; }
     .badge-muted { background: #e2e8f0; color: #475569; }
+    .badge-warn { background: #fef3c7; color: #92400e; }
     .badge-lock { background: #fee2e2; color: #b91c1c; }
     .check { display: flex; align-items: center; gap: 8px; }
     .modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(15, 23, 42, .5); overflow: auto; padding: 24px; }
@@ -402,8 +433,11 @@ export class MarksheetComponent implements OnInit {
   sectionId = '';
   examTerm = 'TERM';
   query = '';
+  statusFilter = 'ALL';
   studentView = false;
   canManage = false;
+  canSubmit = false;
+  readonly statusOptions = ['ALL', 'DRAFT', 'PENDING_APPROVAL', 'PUBLISHED', 'REJECTED'];
   loading = false;
   exporting = false;
   publishing = false;
@@ -436,6 +470,20 @@ export class MarksheetComponent implements OnInit {
     return this.cards.length > 0 && this.cards.every((card) => card.published);
   }
 
+  get selectedRows(): MarksheetStudent[] {
+    return this.students.filter((row) => this.selectedIds.has(row.studentId));
+  }
+
+  get canSubmitSelected(): boolean {
+    return this.selectedRows.length > 0
+      && this.selectedRows.every((row) => row.ready && (row.status === 'DRAFT' || row.status === 'REJECTED'));
+  }
+
+  get canApproveSelected(): boolean {
+    return this.selectedRows.length > 0
+      && this.selectedRows.every((row) => row.status === 'PENDING_APPROVAL');
+  }
+
   ngOnInit(): void {
     this.canManage = this.auth.hasPermission('MARKSHEET_MANAGE');
     this.loadOptions();
@@ -457,6 +505,21 @@ export class MarksheetComponent implements OnInit {
 
   genderLabel(gender: string | null | undefined): string {
     return gender || '—';
+  }
+
+  statusLabel(status: string | null | undefined): string {
+    switch (status) {
+      case 'PENDING_APPROVAL':
+        return 'downloads.marksheetPage.statusPending';
+      case 'PUBLISHED':
+        return 'downloads.marksheetPage.statusPublished';
+      case 'REJECTED':
+        return 'downloads.marksheetPage.statusRejected';
+      case 'DRAFT':
+        return 'downloads.marksheetPage.statusDraft';
+      default:
+        return 'downloads.marksheetPage.statusAll';
+    }
   }
 
   previewMine(): void {
@@ -488,6 +551,11 @@ export class MarksheetComponent implements OnInit {
 
   onSectionChange(event: Event): void {
     this.sectionId = (event.target as HTMLSelectElement).value;
+    this.reload();
+  }
+
+  onStatusChange(event: Event): void {
+    this.statusFilter = (event.target as HTMLSelectElement).value;
     this.reload();
   }
 
@@ -557,6 +625,33 @@ export class MarksheetComponent implements OnInit {
     this.download(kind, ids);
   }
 
+  submitForApproval(): void {
+    if (!this.canSubmitSelected) {
+      return;
+    }
+    this.postAction('/api/marksheets/submit', {});
+  }
+
+  approve(locked: boolean): void {
+    if (!this.canManage || !this.canApproveSelected) {
+      return;
+    }
+    this.postAction('/api/marksheets/approve', { locked });
+  }
+
+  rejectSelected(): void {
+    if (!this.canManage || !this.canApproveSelected) {
+      return;
+    }
+    const reason = window.prompt('Return these results to teachers. Enter a reason.') ?? '';
+    if (!reason.trim()) {
+      this.pageError = 'Enter a reason when returning results to teachers.';
+      this.cdr.markForCheck();
+      return;
+    }
+    this.postAction('/api/marksheets/reject', { reason: reason.trim() });
+  }
+
   publish(published: boolean, locked: boolean): void {
     if (!this.canManage || this.selectedIds.size === 0) {
       return;
@@ -570,6 +665,27 @@ export class MarksheetComponent implements OnInit {
       studentIds: [...this.selectedIds],
       published,
       locked,
+    }).subscribe({
+      next: () => {
+        this.publishing = false;
+        this.reload();
+      },
+      error: (err) => {
+        this.publishing = false;
+        this.fail(err);
+      },
+    });
+  }
+
+  private postAction(url: string, extra: Record<string, unknown>): void {
+    this.publishing = true;
+    this.http.post<ApiResponse<MarksheetStudent[]>>(url, {
+      academicYearId: this.yearId,
+      examTerm: this.examTerm,
+      classId: this.classId || null,
+      sectionId: this.sectionId || null,
+      studentIds: [...this.selectedIds],
+      ...extra,
     }).subscribe({
       next: () => {
         this.publishing = false;
@@ -608,6 +724,7 @@ export class MarksheetComponent implements OnInit {
         this.options = res.data;
         this.studentView = res.data.studentView;
         this.canManage = res.data.canManage || this.auth.hasPermission('MARKSHEET_MANAGE');
+        this.canSubmit = res.data.canSubmit || this.canManage;
         this.yearId = res.data.academicYears.find((year) => year.current)?.id ?? res.data.academicYears[0]?.id ?? '';
         this.classId = res.data.defaultClassId ?? '';
         this.sectionId = res.data.defaultSectionId ?? '';
@@ -713,6 +830,9 @@ export class MarksheetComponent implements OnInit {
     }
     if (this.query.trim()) {
       params = params.set('query', this.query.trim());
+    }
+    if (!this.studentView && this.statusFilter && this.statusFilter !== 'ALL') {
+      params = params.set('status', this.statusFilter);
     }
     return params;
   }
