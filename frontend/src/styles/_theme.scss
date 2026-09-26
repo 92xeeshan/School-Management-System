@@ -1,0 +1,60 @@
+@use '@angular/material' as mat;
+
+$light-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$violet-palette,
+    tertiary: mat.$cyan-palette,
+  ),
+  typography: (
+    brand-family: '"Inter", "Segoe UI", system-ui, sans-serif',
+    plain-family: '"Inter", "Segoe UI", system-ui, sans-serif',
+  ),
+  density: (
+    scale: -1,
+  ),
+));
+
+$dark-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: mat.$violet-palette,
+    tertiary: mat.$cyan-palette,
+  ),
+  typography: (
+    brand-family: '"Inter", "Segoe UI", system-ui, sans-serif',
+    plain-family: '"Inter", "Segoe UI", system-ui, sans-serif',
+  ),
+  density: (
+    scale: -1,
+  ),
+));
+
+// Maps an M3 theme's color roles onto the flat --color-* custom properties
+// the rest of the app (plain CSS, non-Material components) is written against.
+// Applied once for :root (light) and again scoped under html.theme-dark.
+@mixin theme-tokens($theme) {
+  $is-dark: mat.get-theme-type($theme) == dark;
+
+  --color-primary: #{mat.get-theme-color($theme, primary, 40)};
+  --color-on-primary: #{mat.get-theme-color($theme, primary, 100)};
+  --color-secondary: #{mat.get-theme-color($theme, tertiary, 40)};
+
+  --color-bg: #{mat.get-theme-color($theme, neutral, if($is-dark, 6, 99))};
+  --color-surface: #{mat.get-theme-color($theme, neutral, if($is-dark, 10, 100))};
+  --color-surface-container: #{mat.get-theme-color($theme, neutral, if($is-dark, 17, 94))};
+
+  --color-text: #{mat.get-theme-color($theme, neutral, if($is-dark, 90, 10))};
+  --color-muted: #{mat.get-theme-color($theme, neutral-variant, if($is-dark, 80, 30))};
+  --color-border: #{mat.get-theme-color($theme, neutral-variant, if($is-dark, 30, 80))};
+  --color-outline: #{mat.get-theme-color($theme, neutral-variant, if($is-dark, 60, 50))};
+
+  --color-sidebar: #{mat.get-theme-color($theme, primary, if($is-dark, 10, 20))};
+  --color-sidebar-text: #{mat.get-theme-color($theme, primary, 90)};
+
+  --color-error: #{mat.get-theme-color($theme, error, 40)};
+  --color-danger: var(--color-error);
+  --color-success: #{if($is-dark, #4ade80, #15803d)};
+  --color-warning: #{if($is-dark, #fbbf24, #b45309)};
+  --color-primary-soft: #{mat.get-theme-color($theme, primary, if($is-dark, 20, 90))};
+}

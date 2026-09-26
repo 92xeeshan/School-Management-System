@@ -79,7 +79,6 @@ interface BackendTeacher {
     <div class="tab-page">
       <div class="page-header">
         <div>
-          <h2>{{ 'academics.classesPage.title' | translate }}</h2>
           <p class="muted">{{ 'academics.classesPage.subtitle' | translate }}</p>
         </div>
         @if (canCreate) {

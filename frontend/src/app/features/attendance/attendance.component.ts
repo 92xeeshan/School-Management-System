@@ -334,7 +334,7 @@ export class AttendanceComponent implements OnInit {
           }));
           this.rows = this.students.map((s) => ({
             studentId: s.id,
-            studentName: `${s.firstName} ${s.lastName}`,
+            studentName: `${s.firstName} ${s.lastName ? s.lastName : ""}`,
             admissionNo: s.admissionNo,
             status: 'PRESENT',
           }));
