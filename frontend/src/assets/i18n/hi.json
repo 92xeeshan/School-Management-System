@@ -814,5 +814,16 @@
       "STUDENT": "छात्र",
       "PARENT": "अभिभावक"
     }
+  },
+  "notifications": {
+    "title": "सूचनाएँ",
+    "markAllRead": "सभी को पढ़ा हुआ चिह्नित करें",
+    "empty": "अभी कोई सूचना नहीं है।",
+    "justNow": "अभी",
+    "minutesAgo": "{{count}} मि पहले",
+    "hoursAgo": "{{count}} घं पहले",
+    "daysAgo": "{{count}} दि पहले",
+    "unread": "अपठित",
+    "open": "सूचनाएँ खोलें"
   }
 }

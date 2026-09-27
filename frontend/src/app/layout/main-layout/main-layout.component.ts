@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { AuthUser } from '../../core/auth/auth.model';
 import { LocaleService } from '../../i18n/locale.service';
 import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
+import { NotificationBellComponent } from '../notifications/notification-bell.component';
 
 interface NavItem {
   route: string;
@@ -17,7 +18,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslateModule, AsyncPipe, SlicePipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslateModule, AsyncPipe, SlicePipe, NotificationBellComponent],
   template: `
     <div class="layout">
       <aside class="sidebar">
@@ -49,6 +50,7 @@ interface NavItem {
                 }
               </select>
             </div>
+            <app-notification-bell />
             <div class="user-chip">
               <span class="avatar">{{ (user$ | async)?.displayName | slice: 0 : 1 }}</span>
               <span class="user-name">{{ (user$ | async)?.displayName || (user$ | async)?.username }}</span>

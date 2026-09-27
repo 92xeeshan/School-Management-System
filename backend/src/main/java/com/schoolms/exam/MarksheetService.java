@@ -30,6 +30,7 @@ import com.schoolms.exam.dto.MarksheetPublishRequest;
 import com.schoolms.exam.dto.MarksheetStudentDto;
 import com.schoolms.exam.dto.MarksheetSubjectDto;
 import com.schoolms.file.MinioService;
+import com.schoolms.notification.NotificationTriggerService;
 import com.schoolms.school.School;
 import com.schoolms.school.SchoolRepository;
 import com.schoolms.security.SecurityUtils;
@@ -88,6 +89,7 @@ public class MarksheetService {
     private final StudentGuardianRepository studentGuardianRepository;
     private final MinioService minioService;
     private final MarksheetPdfService pdfService;
+    private final NotificationTriggerService notificationTriggerService;
 
     @Transactional(readOnly = true)
     public MarksheetOptionsDto options() {
@@ -242,6 +244,8 @@ public class MarksheetService {
             marksheetRepository.save(stored);
             ctx.records.put(student.getId(), stored);
         }
+        notificationTriggerService.onMarksheetSubmitted(
+                ctx.schoolId, ctx.klass.getName(), ctx.section.getName(), actor);
         return students.stream().map(student -> toStudentDto(assemble(ctx, student))).toList();
     }
 
@@ -270,6 +274,8 @@ public class MarksheetService {
             marksheetRepository.save(stored);
             ctx.records.put(student.getId(), stored);
         }
+        notificationTriggerService.onMarksheetPublished(
+                ctx.schoolId, ctx.term, students.stream().map(Student::getId).toList());
         return students.stream().map(student -> toStudentDto(assemble(ctx, student))).toList();
     }
 
@@ -309,6 +315,14 @@ public class MarksheetService {
             ctx.records.put(student.getId(), stored);
             resetMarksToDraft(ctx, student.getId());
         }
+        UUID submittedBy = students.stream()
+                .map(student -> ctx.records.get(student.getId()))
+                .filter(stored -> stored != null && stored.getSubmittedBy() != null)
+                .map(Marksheet::getSubmittedBy)
+                .findFirst()
+                .orElse(null);
+        notificationTriggerService.onMarksheetRejected(
+                ctx.schoolId, ctx.klass.getName(), ctx.section.getName(), submittedBy, ctx.section.getId(), reason);
         return students.stream().map(student -> toStudentDto(assemble(ctx, student))).toList();
     }
 
@@ -359,6 +373,10 @@ public class MarksheetService {
             }
             marksheetRepository.save(stored);
             ctx.records.put(student.getId(), stored);
+        }
+        if (request.published()) {
+            notificationTriggerService.onMarksheetPublished(
+                    ctx.schoolId, ctx.term, students.stream().map(Student::getId).toList());
         }
         return students.stream().map(student -> toStudentDto(assemble(ctx, student))).toList();
     }
