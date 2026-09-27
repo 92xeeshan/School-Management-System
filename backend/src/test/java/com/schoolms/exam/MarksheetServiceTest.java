@@ -28,6 +28,7 @@ import com.schoolms.exam.dto.MarksheetExportRequest;
 import com.schoolms.exam.dto.MarksheetPublishRequest;
 import com.schoolms.exam.dto.MarksheetStudentDto;
 import com.schoolms.file.MinioService;
+import com.schoolms.notification.NotificationTriggerService;
 import com.schoolms.school.School;
 import com.schoolms.school.SchoolRepository;
 import com.schoolms.student.GuardianRepository;
@@ -77,6 +78,7 @@ class MarksheetServiceTest {
     @Mock private StudentGuardianRepository studentGuardianRepository;
     @Mock private MinioService minioService;
     @Mock private MarksheetPdfService pdfService;
+    @Mock private NotificationTriggerService notificationTriggerService;
 
     private MarksheetService service;
     private final UUID yearId = UUID.fromString("30000000-0000-0000-0000-000000000001");
@@ -95,7 +97,7 @@ class MarksheetServiceTest {
                 studentRepository, enrollmentRepository, examEntryRepository, examMarkRepository,
                 marksheetRepository, schemeRepository, boundaryRepository, teacherRepository,
                 teacherSectionRepository, schoolRepository, guardianRepository, studentGuardianRepository,
-                minioService, pdfService);
+                minioService, pdfService, notificationTriggerService);
         TestSecurity.login(TestSecurity.USER_ID, TestSecurity.SCHOOL_ID, List.of("ADMIN"),
                 Set.of("MARKSHEET_READ", "MARKSHEET_MANAGE"));
     }

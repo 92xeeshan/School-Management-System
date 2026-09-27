@@ -21,4 +21,14 @@ public interface FeeInstallmentRepository extends JpaRepository<FeeInstallment, 
             where i.schoolId = :schoolId and i.dueDate < :today and i.amountDue > i.amountPaid
             """)
     BigDecimal sumOverdue(@Param("schoolId") UUID schoolId, @Param("today") LocalDate today);
+
+    @Query("""
+            select i from FeeInstallment i
+            where i.schoolId = :schoolId
+              and i.dueDate between :from and :to
+              and i.amountDue > i.amountPaid
+            """)
+    List<FeeInstallment> findDueBetween(@Param("schoolId") UUID schoolId,
+                                        @Param("from") LocalDate from,
+                                        @Param("to") LocalDate to);
 }

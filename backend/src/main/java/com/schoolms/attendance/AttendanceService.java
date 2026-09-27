@@ -8,6 +8,7 @@ import com.schoolms.common.enums.AttendanceSessionStatus;
 import com.schoolms.common.enums.AttendanceStatus;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
+import com.schoolms.notification.NotificationTriggerService;
 import com.schoolms.security.SecurityUtils;
 import com.schoolms.student.Student;
 import com.schoolms.student.StudentRepository;
@@ -32,6 +33,7 @@ public class AttendanceService {
     private final StudentRepository studentRepository;
     private final com.schoolms.academics.SectionRepository sectionRepository;
     private final com.schoolms.academics.AcademicYearRepository academicYearRepository;
+    private final NotificationTriggerService notificationTriggerService;
 
     @Transactional(readOnly = true)
     public List<AttendanceSessionDto> listSessions(UUID sectionId, UUID academicYearId,
@@ -83,6 +85,7 @@ public class AttendanceService {
             session.setMarkedBy(userId);
             session.setMarkedAt(Instant.now());
             sessionRepository.save(session);
+            notificationTriggerService.onAttendanceMarked(schoolId, request.academicYearId(), students.keySet());
         }
     }
 

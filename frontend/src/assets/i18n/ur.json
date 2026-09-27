@@ -814,5 +814,16 @@
       "STUDENT": "طلباء",
       "PARENT": "والدین"
     }
+  },
+  "notifications": {
+    "title": "اطلاعات",
+    "markAllRead": "سب کو پڑھا ہوا نشان زد کریں",
+    "empty": "ابھی کوئی اطلاع نہیں۔",
+    "justNow": "ابھی",
+    "minutesAgo": "{{count}} منٹ پہلے",
+    "hoursAgo": "{{count}} گھنٹے پہلے",
+    "daysAgo": "{{count}} دن پہلے",
+    "unread": "غیر پڑھ شدہ",
+    "open": "اطلاعات کھولیں"
   }
 }

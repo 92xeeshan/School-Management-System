@@ -814,5 +814,16 @@
       "STUDENT": "Students",
       "PARENT": "Parents"
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "You have no notifications yet.",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "unread": "Unread",
+    "open": "Open notifications"
   }
 }
