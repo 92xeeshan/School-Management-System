@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
+import { AuthService } from '../../core/auth/auth.service';
+import { CertificateService } from '../../core/certificates/certificate.service';
+import { CertificateIssued, CertificateType } from '../../core/certificates/certificate.model';
 
 interface AttendanceSummary {
   present: number;
@@ -64,7 +67,7 @@ interface SectionOption {
 
 @Component({
   selector: 'app-student-profile',
-  imports: [TranslateModule, ReactiveFormsModule, RouterLink],
+  imports: [TranslateModule, ReactiveFormsModule, FormsModule, RouterLink],
   template: `
     <div class="page">
       <div class="page-header">
@@ -73,9 +76,14 @@ interface SectionOption {
           <h1>{{ profile?.displayName || ('students.profileTitle' | translate) }}</h1>
           <p class="muted">{{ 'students.profileSubtitle' | translate }}</p>
         </div>
-        @if (profile?.canEdit && !editing) {
-          <button class="btn btn-primary" type="button" (click)="startEdit()">{{ 'common.edit' | translate }}</button>
-        }
+        <div class="header-actions">
+          @if (canGenerate && !editing) {
+            <button class="btn" type="button" (click)="openCertificateModal()">{{ 'certificates.generate' | translate }}</button>
+          }
+          @if (profile?.canEdit && !editing) {
+            <button class="btn btn-primary" type="button" (click)="startEdit()">{{ 'common.edit' | translate }}</button>
+          }
+        </div>
       </div>
 
       @if (loading) {
@@ -253,11 +261,50 @@ interface SectionOption {
             </div>
           }
         </form>
+
+        @if (showCertModal) {
+          <div class="modal-backdrop" (click)="closeCertificateModal()">
+            <div class="modal" (click)="$event.stopPropagation()">
+              <h2>{{ 'certificates.generate' | translate }}</h2>
+              <p class="muted">{{ profile.displayName }} · {{ profile.admissionNo }} · {{ profile.className }} {{ profile.sectionName }}</p>
+              <div class="field">
+                <label>{{ 'certificates.type' | translate }}</label>
+                <select [(ngModel)]="certType">
+                  <option value="BONAFIDE">{{ 'certificates.types.BONAFIDE' | translate }}</option>
+                  <option value="TC">{{ 'certificates.types.TC' | translate }}</option>
+                </select>
+              </div>
+              @if (certType === 'TC') {
+                <div class="field">
+                  <label>{{ 'certificates.reason' | translate }} *</label>
+                  <input type="text" [(ngModel)]="certReason" />
+                </div>
+              }
+              <div class="field">
+                <label>{{ 'certificates.conduct' | translate }}</label>
+                <textarea rows="3" [(ngModel)]="certConduct"></textarea>
+              </div>
+              @if (certError) {
+                <p class="error">{{ certError | translate }}</p>
+              }
+              @if (certSuccess) {
+                <p class="banner success">{{ certSuccess | translate }}</p>
+              }
+              <div class="form-actions">
+                <button class="btn" type="button" (click)="closeCertificateModal()">{{ 'common.cancel' | translate }}</button>
+                <button class="btn btn-primary" type="button" [disabled]="generatingCert" (click)="submitCertificate()">
+                  {{ generatingCert ? ('common.loading' | translate) : ('certificates.generate' | translate) }}
+                </button>
+              </div>
+            </div>
+          </div>
+        }
       }
     </div>
   `,
   styles: `
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 16px; }
+    .header-actions { display: flex; gap: 8px; }
     h1 { font-size: 1.5rem; margin: 4px 0; }
     h2 { font-size: 1.05rem; margin: 0 0 16px; }
     .muted { color: var(--color-muted); }
@@ -277,6 +324,8 @@ interface SectionOption {
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
     .stats div { display: flex; flex-direction: column; gap: 4px; background: var(--color-bg); padding: 12px; border-radius: 8px; }
     .error { color: #b91c1c; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px; }
+    .modal { background: #fff; border-radius: 12px; padding: 24px; width: min(520px, 100%); display: flex; flex-direction: column; gap: 12px; }
     @media (max-width: 720px) {
       .form-grid, .stats { grid-template-columns: 1fr; }
       .span-2 { grid-column: span 1; }
@@ -293,6 +342,13 @@ export class StudentProfileComponent implements OnInit {
   error = '';
   saveError = '';
   successMessage = '';
+  showCertModal = false;
+  certType: CertificateType = 'BONAFIDE';
+  certReason = '';
+  certConduct = '';
+  generatingCert = false;
+  certError = '';
+  certSuccess = '';
   private readonly phonePattern = Validators.pattern(/^(?:[+0-9][0-9\s-]{6,29})?$/);
 
   readonly form = new FormGroup({
@@ -324,7 +380,13 @@ export class StudentProfileComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private certificates: CertificateService,
   ) {}
+
+  get canGenerate(): boolean {
+    return !!this.profile?.canEdit && this.auth.hasPermission('CERTIFICATE_GENERATE');
+  }
 
   get sectionsForClass(): SectionOption[] {
     const classId = this.form.getRawValue().classId;
@@ -366,6 +428,54 @@ export class StudentProfileComponent implements OnInit {
 
   onClassChange(): void {
     this.form.patchValue({ sectionId: '' });
+  }
+
+  openCertificateModal(): void {
+    this.showCertModal = true;
+    this.certType = 'BONAFIDE';
+    this.certReason = '';
+    this.certConduct = '';
+    this.certError = '';
+    this.certSuccess = '';
+    this.cdr.markForCheck();
+  }
+
+  closeCertificateModal(): void {
+    this.showCertModal = false;
+    this.generatingCert = false;
+    this.cdr.markForCheck();
+  }
+
+  submitCertificate(): void {
+    if (!this.profile) {
+      return;
+    }
+    if (this.certType === 'TC' && !this.certReason.trim()) {
+      this.certError = 'certificates.reasonRequired';
+      this.cdr.markForCheck();
+      return;
+    }
+    this.generatingCert = true;
+    this.certError = '';
+    this.certSuccess = '';
+    this.certificates.generate({
+      studentId: this.profile.id,
+      templateType: this.certType,
+      reason: this.certReason.trim() || null,
+      conductRemarks: this.certConduct.trim() || null,
+    }).subscribe({
+      next: (issued: CertificateIssued) => {
+        this.generatingCert = false;
+        this.certSuccess = issued.status === 'ISSUED' ? 'certificates.issued' : 'certificates.submitted';
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.generatingCert = false;
+        const api = err.error as ApiError | undefined;
+        this.certError = api?.message || 'certificates.saveFailed';
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   onSave(): void {

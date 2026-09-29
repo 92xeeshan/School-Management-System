@@ -36,6 +36,7 @@ interface DownloadsTab {
 export class DownloadsTabsComponent {
   readonly tabs: DownloadsTab[] = [
     { path: 'marksheet', labelKey: 'downloads.tabs.marksheet', permissions: ['MARKSHEET_READ'] },
+    { path: 'certificates', labelKey: 'downloads.tabs.certificates', permissions: ['CERTIFICATE_READ'] },
   ];
 
   constructor(private auth: AuthService) {}

@@ -43,7 +43,8 @@
     "notices": "Notices",
     "staff": "Staff Management",
     "calendar": "Calendar",
-    "downloads": "Downloads"
+    "downloads": "Downloads",
+    "certificates": "Certificates"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -694,7 +695,12 @@
     "title": "Downloads",
     "subtitle": "Official examination documents and credentials",
     "tabs": {
-      "marksheet": "Marksheet"
+      "marksheet": "Marksheet",
+      "certificates": "Certificates"
+    },
+    "certificatesPage": {
+      "title": "My Certificates",
+      "subtitle": "Download issued transfer and bonafide certificates"
     },
     "marksheetPage": {
       "title": "Marksheet",
@@ -813,6 +819,46 @@
       "TEACHER": "Teachers",
       "STUDENT": "Students",
       "PARENT": "Parents"
+    }
+  },
+  "certificates": {
+    "title": "Certificate Register",
+    "subtitle": "Issue, approve and reprint transfer and bonafide certificates",
+    "generate": "Generate Certificate",
+    "templates": "Letterhead templates",
+    "header": "Header / school letterhead",
+    "footer": "Footer note",
+    "requiresApproval": "Class teacher requests need admin approval",
+    "type": "Certificate type",
+    "allTypes": "All types",
+    "allStatuses": "All statuses",
+    "search": "Search student, admission no. or certificate no.",
+    "number": "Certificate no.",
+    "student": "Student",
+    "issuedOn": "Issued on",
+    "issuedBy": "Issued by",
+    "approve": "Approve",
+    "download": "Download",
+    "reprint": "Reprint",
+    "duplicate": "Duplicate",
+    "reason": "Reason for leaving",
+    "conduct": "Conduct remarks",
+    "reasonRequired": "Reason for leaving is required for a transfer certificate",
+    "templateSaved": "Template saved",
+    "saveFailed": "Could not save the certificate",
+    "loadFailed": "Could not load certificates",
+    "approveFailed": "Could not approve the certificate",
+    "downloadFailed": "Could not download the certificate",
+    "submitted": "Submitted for admin approval",
+    "issued": "Certificate issued",
+    "types": {
+      "TC": "Transfer Certificate",
+      "BONAFIDE": "Bonafide Certificate"
+    },
+    "statuses": {
+      "DRAFT": "Pending approval",
+      "APPROVED": "Approved",
+      "ISSUED": "Issued"
     }
   },
   "notifications": {
