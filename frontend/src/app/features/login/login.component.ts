@@ -121,6 +121,9 @@ export class LoginComponent implements OnInit {
     if (error.status === 401 || code === 'auth.bad_credentials') {
       return 'login.invalidCredentials';
     }
+    if (code === 'auth.tc_deactivated') {
+      return 'login.tcDeactivated';
+    }
     if (error.status === 403 || code === 'auth.user_inactive') {
       return 'login.inactiveAccount';
     }
