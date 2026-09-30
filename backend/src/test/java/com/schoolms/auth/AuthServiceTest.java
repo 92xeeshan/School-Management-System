@@ -2,6 +2,7 @@ package com.schoolms.auth;
 
 import com.schoolms.auth.dto.AuthResponse;
 import com.schoolms.auth.dto.LoginRequest;
+import com.schoolms.certificate.CertificateLifecycleService;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.enums.UserStatus;
 import com.schoolms.config.JwtProperties;
@@ -45,6 +46,8 @@ class AuthServiceTest {
     private PermissionCacheService permissionCacheService;
     @Mock
     private JwtProperties jwtProperties;
+    @Mock
+    private CertificateLifecycleService certificateLifecycleService;
 
     private AuthService authService;
 
@@ -54,7 +57,7 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         authService = new AuthService(userRepository, refreshTokenRepository, passwordEncoder,
-                jwtService, permissionCacheService, jwtProperties);
+                jwtService, permissionCacheService, jwtProperties, certificateLifecycleService);
     }
 
     @AfterEach
@@ -105,9 +108,24 @@ class AuthServiceTest {
                 "hash", "LOCKED", "en");
         when(userRepository.findAuthUser("admin")).thenReturn(Optional.of(authUser));
         when(passwordEncoder.matches("Admin@123", "hash")).thenReturn(true);
+        when(certificateLifecycleService.deactivatedForTc(schoolId, userId)).thenReturn(false);
 
-        assertThrows(AuthException.class,
+        AuthException ex = assertThrows(AuthException.class,
                 () -> authService.login(new LoginRequest("admin", "Admin@123")));
+        assertEquals("auth.user_inactive", ex.getCode());
+    }
+
+    @Test
+    void loginWithTransferCertificateDeactivatedRejects() {
+        AuthUserView authUser = new StubAuthUser(userId, schoolId, "student",
+                "hash", "INACTIVE", "en");
+        when(userRepository.findAuthUser("student")).thenReturn(Optional.of(authUser));
+        when(passwordEncoder.matches("Admin@123", "hash")).thenReturn(true);
+        when(certificateLifecycleService.deactivatedForTc(schoolId, userId)).thenReturn(true);
+
+        AuthException ex = assertThrows(AuthException.class,
+                () -> authService.login(new LoginRequest("student", "Admin@123")));
+        assertEquals("auth.tc_deactivated", ex.getCode());
     }
 
     @Test

@@ -1,5 +1,11 @@
-export type CertificateType = 'TC' | 'BONAFIDE';
+export type CertificateType = 'TC' | 'BONAFIDE' | 'CHARACTER' | 'COURSE_COMPLETION';
 export type CertificateStatus = 'DRAFT' | 'APPROVED' | 'ISSUED';
+export type CertificateRequestStatus =
+  | 'SUBMITTED'
+  | 'TEACHER_REVIEWED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'ISSUED';
 
 export interface CertificateTemplate {
   id: string;
@@ -38,11 +44,62 @@ export interface CertificateIssued {
   canDownload: boolean;
 }
 
+export interface CertificateRequest {
+  id: string;
+  studentId: string;
+  studentName: string;
+  admissionNo: string;
+  rollNo: string;
+  className: string;
+  sectionName: string;
+  dateOfBirth: string;
+  guardianName: string;
+  certificateType: CertificateType;
+  status: CertificateRequestStatus;
+  reason: string | null;
+  conductRemarks: string | null;
+  academicProgress: string | null;
+  lastExamAttended: string | null;
+  duesLibrary: boolean | null;
+  duesAccounts: boolean | null;
+  duesSports: boolean | null;
+  teacherNotes: string | null;
+  rejectionReason: string | null;
+  supportingDocName: string | null;
+  issuedId: string | null;
+  certificateNo: string | null;
+  createdAt: string;
+  reviewedAt: string | null;
+  approvedAt: string | null;
+  canReview: boolean;
+  canCancel: boolean;
+  canApprove: boolean;
+  canReject: boolean;
+  canDownload: boolean;
+}
+
 export interface GenerateCertificateRequest {
   studentId: string;
   templateType: CertificateType;
   reason?: string | null;
   conductRemarks?: string | null;
+  academicProgress?: string | null;
+  lastExamAttended?: string | null;
+  duesLibrary?: boolean | null;
+  duesAccounts?: boolean | null;
+  duesSports?: boolean | null;
+  duplicate?: boolean;
+}
+
+export interface ReviewCertificateRequest {
+  conductRemarks?: string | null;
+  academicProgress?: string | null;
+  lastExamAttended?: string | null;
+  reason?: string | null;
+  teacherNotes?: string | null;
+  duesLibrary?: boolean | null;
+  duesAccounts?: boolean | null;
+  duesSports?: boolean | null;
 }
 
 export interface CertificateTemplateRequest {

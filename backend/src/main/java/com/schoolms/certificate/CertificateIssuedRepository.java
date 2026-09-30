@@ -50,4 +50,14 @@ public interface CertificateIssuedRepository extends JpaRepository<CertificateIs
     long countNumbered(@Param("schoolId") UUID schoolId,
                        @Param("type") CertificateType type,
                        @Param("year") int year);
+
+    @Query("""
+            select c from CertificateIssued c
+            where c.certificateType = com.schoolms.certificate.CertificateType.TC
+              and c.status = com.schoolms.certificate.CertificateStatus.ISSUED
+              and c.deactivationScheduledAt is not null
+              and c.deactivationScheduledAt <= :today
+              and c.deactivatedAt is null
+            """)
+    List<CertificateIssued> findDueForDeactivation(@Param("today") java.time.LocalDate today);
 }

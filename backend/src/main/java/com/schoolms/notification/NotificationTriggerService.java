@@ -102,6 +102,55 @@ public class NotificationTriggerService {
     }
 
     @Transactional
+    public void onCertificateRequested(UUID schoolId, UUID sectionId, String studentName, String typeLabel) {
+        notificationService.notifyUsers(
+                schoolId,
+                recipients.classTeachers(schoolId, sectionId),
+                "Certificate request submitted",
+                studentName + " requested a " + typeLabel + ".",
+                "CERTIFICATE",
+                "/certificates",
+                null);
+    }
+
+    @Transactional
+    public void onCertificateForwarded(UUID schoolId, String studentName, String typeLabel) {
+        notificationService.notifyUsers(
+                schoolId,
+                recipients.adminReviewers(schoolId),
+                "Certificate ready for approval",
+                studentName + " — " + typeLabel + " forwarded by class teacher.",
+                "CERTIFICATE",
+                "/certificates",
+                null);
+    }
+
+    @Transactional
+    public void onCertificateDecision(UUID schoolId, UUID studentId, UUID sectionId, boolean approved, String typeLabel) {
+        String title = approved ? "Certificate approved" : "Certificate rejected";
+        String message = approved
+                ? typeLabel + " has been issued and is ready to download."
+                : typeLabel + " request was rejected.";
+        Set<UUID> ids = new LinkedHashSet<>(recipients.studentAndParents(schoolId, studentId));
+        ids.addAll(recipients.classTeachers(schoolId, sectionId));
+        notificationService.notifyUsers(schoolId, ids, title, message, "CERTIFICATE",
+                approved ? "/downloads/certificates" : "/downloads/certificates", null);
+    }
+
+    @Transactional
+    public void onTransferCertificateIssued(UUID schoolId, UUID studentId, String deactivationDate) {
+        notificationService.notifyUsers(
+                schoolId,
+                recipients.studentAndParents(schoolId, studentId),
+                "Transfer certificate issued",
+                "Your Transfer Certificate has been issued. Your portal account will be deactivated on "
+                        + deactivationDate + ".",
+                "CERTIFICATE",
+                "/downloads/certificates",
+                null);
+    }
+
+    @Transactional
     public void onAttendanceMarked(UUID schoolId, UUID academicYearId, Collection<UUID> studentIds) {
         if (studentIds == null || studentIds.isEmpty()) {
             return;

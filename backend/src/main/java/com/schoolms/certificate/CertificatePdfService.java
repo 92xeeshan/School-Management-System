@@ -78,7 +78,7 @@ public class CertificatePdfService {
         addCentered(table, val(fields, "headerHtml", val(fields, "schoolName", "School")), TITLE);
         addCentered(table, val(fields, "schoolAddress", ""), MUTED);
         addCentered(table, val(fields, "schoolPhone", ""), MUTED);
-        addCentered(table, type == CertificateType.TC ? "TRANSFER CERTIFICATE" : "BONAFIDE CERTIFICATE", SUBTITLE);
+        addCentered(table, titleFor(type), SUBTITLE);
         String duplicate = val(fields, "duplicate", "");
         if (!duplicate.isBlank()) {
             addCentered(table, duplicate, WATERMARK);
@@ -98,23 +98,53 @@ public class CertificatePdfService {
         addLine(table, "Class / Section", (val(fields, "className", "") + " " + val(fields, "sectionName", "")).trim());
         addLine(table, "Guardian", val(fields, "guardianName", ""));
         addLine(table, "Academic Year", val(fields, "academicYear", ""));
+        addParagraph(table, narrative(type, fields));
         if (type == CertificateType.TC) {
-            addParagraph(table, "This is to certify that the student named above was enrolled in this school and is hereby granted a transfer certificate.");
             addLine(table, "Reason for leaving", val(fields, "reason", ""));
-        } else {
-            addParagraph(table, "This is to certify that " + val(fields, "studentName", "the student")
-                    + " (Admission No. " + val(fields, "admissionNo", "—")
-                    + "), date of birth " + val(fields, "dateOfBirth", "—")
-                    + ", child of " + val(fields, "guardianName", "—")
-                    + ", is a bonafide student of this school studying in "
-                    + (val(fields, "className", "") + " " + val(fields, "sectionName", "")).trim()
-                    + " during the academic year " + val(fields, "academicYear", "") + ".");
+        } else if (!val(fields, "reason", "").isBlank()) {
+            addLine(table, "Reason for request", val(fields, "reason", ""));
         }
         String conduct = val(fields, "conductRemarks", "");
         if (!conduct.isBlank()) {
             addLine(table, "Conduct remarks", conduct);
         }
+        String progress = val(fields, "academicProgress", "");
+        if (!progress.isBlank()) {
+            addLine(table, "Academic progress", progress);
+        }
+        String lastExam = val(fields, "lastExamAttended", "");
+        if (!lastExam.isBlank()) {
+            addLine(table, "Last exam attended", lastExam);
+        }
         return table;
+    }
+
+    private static String titleFor(CertificateType type) {
+        return switch (type) {
+            case TC -> "TRANSFER CERTIFICATE";
+            case CHARACTER -> "CHARACTER CERTIFICATE";
+            case COURSE_COMPLETION -> "COURSE COMPLETION CERTIFICATE";
+            default -> "BONAFIDE CERTIFICATE";
+        };
+    }
+
+    private static String narrative(CertificateType type, Map<String, Object> fields) {
+        String name = val(fields, "studentName", "the student");
+        String klass = (val(fields, "className", "") + " " + val(fields, "sectionName", "")).trim();
+        String year = val(fields, "academicYear", "");
+        return switch (type) {
+            case TC -> "This is to certify that the student named above was enrolled in this school and is hereby granted a transfer certificate.";
+            case CHARACTER -> "This is to certify that " + name + " is a student of this school studying in " + klass
+                    + " during the academic year " + year + ". The student's conduct and character have been found satisfactory.";
+            case COURSE_COMPLETION -> "This is to certify that " + name + " has satisfactorily completed the course of study in "
+                    + klass + " during the academic year " + year + ".";
+            default -> "This is to certify that " + name
+                    + " (Admission No. " + val(fields, "admissionNo", "—")
+                    + "), date of birth " + val(fields, "dateOfBirth", "—")
+                    + ", child of " + val(fields, "guardianName", "—")
+                    + ", is a bonafide student of this school studying in " + klass
+                    + " during the academic year " + year + ".";
+        };
     }
 
     private PdfPTable signatures(Map<String, Object> fields) {

@@ -68,4 +68,31 @@ public class CertificateIssued extends BaseEntity {
 
     @Column(name = "is_duplicate", nullable = false)
     private boolean duplicate;
+
+    @Column(name = "request_id")
+    private UUID requestId;
+
+    @Column(name = "academic_progress", length = 500)
+    private String academicProgress;
+
+    @Column(name = "last_exam_attended", length = 200)
+    private String lastExamAttended;
+
+    @Column(name = "dues_library")
+    private Boolean duesLibrary;
+
+    @Column(name = "dues_accounts")
+    private Boolean duesAccounts;
+
+    @Column(name = "dues_sports")
+    private Boolean duesSports;
+
+    @Column(name = "tc_issued_at")
+    private Instant tcIssuedAt;
+
+    @Column(name = "deactivation_scheduled_at")
+    private LocalDate deactivationScheduledAt;
+
+    @Column(name = "deactivated_at")
+    private Instant deactivatedAt;
 }

@@ -272,6 +272,8 @@ interface SectionOption {
                 <select [(ngModel)]="certType">
                   <option value="BONAFIDE">{{ 'certificates.types.BONAFIDE' | translate }}</option>
                   <option value="TC">{{ 'certificates.types.TC' | translate }}</option>
+                  <option value="CHARACTER">{{ 'certificates.types.CHARACTER' | translate }}</option>
+                  <option value="COURSE_COMPLETION">{{ 'certificates.types.COURSE_COMPLETION' | translate }}</option>
                 </select>
               </div>
               @if (certType === 'TC') {

@@ -14,6 +14,7 @@ import com.schoolms.security.JwtService;
 import com.schoolms.security.SecurityUtils;
 import com.schoolms.security.UserPrincipal;
 import com.schoolms.tenant.TenantContext;
+import com.schoolms.certificate.CertificateLifecycleService;
 import com.schoolms.user.User;
 import com.schoolms.user.UserRepository;
 import io.jsonwebtoken.Claims;
@@ -38,6 +39,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final PermissionCacheService permissionCacheService;
     private final JwtProperties jwtProperties;
+    private final CertificateLifecycleService certificateLifecycleService;
 
     public AuthResponse login(LoginRequest request) {
         AuthUserViewDto authUser = userRepository.findAuthUser(request.username())
@@ -48,6 +50,9 @@ public class AuthService {
             throw AuthException.badCredentials();
         }
         if (authUser.status() != UserStatus.ACTIVE) {
+            if (certificateLifecycleService.deactivatedForTc(authUser.schoolId(), authUser.id())) {
+                throw AuthException.transferCertificateInactive();
+            }
             throw AuthException.inactive();
         }
         return issueTokens(authUser.id(), authUser.schoolId(), authUser.username(), authUser.locale());

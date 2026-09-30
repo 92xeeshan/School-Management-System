@@ -77,6 +77,7 @@ class CertificateServiceTest {
     @Mock private SchoolRepository schoolRepository;
     @Mock private UserRepository userRepository;
     @Mock private CertificatePdfService pdfService;
+    @Mock private CertificateLifecycleService lifecycleService;
 
     private CertificateService service;
 
@@ -86,7 +87,7 @@ class CertificateServiceTest {
                 templateRepository, issuedRepository, studentRepository, enrollmentRepository,
                 academicYearRepository, sectionRepository, classRepository, teacherRepository,
                 teacherSectionRepository, studentGuardianRepository, guardianRepository,
-                schoolRepository, userRepository, pdfService, new ObjectMapper());
+                schoolRepository, userRepository, pdfService, lifecycleService, new ObjectMapper());
     }
 
     @AfterEach
@@ -150,10 +151,8 @@ class CertificateServiceTest {
         when(studentRepository.findByIdAndSchoolId(STUDENT_A, TestSecurity.SCHOOL_ID))
                 .thenReturn(Optional.of(student(STUDENT_A, "Aarav")));
         CertificateTemplate template = template(true);
-        when(templateRepository.findBySchoolIdAndType(TestSecurity.SCHOOL_ID, CertificateType.TC))
+        when(templateRepository.findBySchoolIdAndType(eq(TestSecurity.SCHOOL_ID), any(CertificateType.class)))
                 .thenReturn(Optional.of(template));
-        when(templateRepository.findBySchoolIdAndType(TestSecurity.SCHOOL_ID, CertificateType.BONAFIDE))
-                .thenReturn(Optional.of(template(true)));
 
         BusinessException ex = assertThrows(BusinessException.class, () ->
                 service.generate(new GenerateCertificateRequest(STUDENT_A, CertificateType.TC, "  ", "Good")));
@@ -215,9 +214,7 @@ class CertificateServiceTest {
             stubClassTeacherScope();
         }
         CertificateTemplate template = template(true);
-        when(templateRepository.findBySchoolIdAndType(TestSecurity.SCHOOL_ID, CertificateType.TC))
-                .thenReturn(Optional.of(template));
-        when(templateRepository.findBySchoolIdAndType(TestSecurity.SCHOOL_ID, CertificateType.BONAFIDE))
+        when(templateRepository.findBySchoolIdAndType(eq(TestSecurity.SCHOOL_ID), any(CertificateType.class)))
                 .thenReturn(Optional.of(template));
         stubSnapshotLookups(sectionId);
     }

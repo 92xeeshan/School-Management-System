@@ -30,6 +30,7 @@
     "submit": "Sign In",
     "invalidCredentials": "Invalid username or password",
     "inactiveAccount": "This account is inactive or locked.",
+    "tcDeactivated": "Account deactivated due to Transfer Certificate issuance.",
     "serverError": "Unable to reach the server. Please try again.",
     "welcomeBack": "Welcome back, please sign in to continue."
   },
@@ -700,7 +701,7 @@
     },
     "certificatesPage": {
       "title": "My Certificates",
-      "subtitle": "Download issued transfer and bonafide certificates"
+      "subtitle": "Request certificates and download issued copies"
     },
     "marksheetPage": {
       "title": "Marksheet",
@@ -823,8 +824,9 @@
   },
   "certificates": {
     "title": "Certificate Register",
-    "subtitle": "Issue, approve and reprint transfer and bonafide certificates",
+    "subtitle": "Review student requests, issue certificates and reprint duplicates",
     "generate": "Generate Certificate",
+    "issueDuplicate": "Issue duplicate",
     "templates": "Letterhead templates",
     "header": "Header / school letterhead",
     "footer": "Footer note",
@@ -838,27 +840,53 @@
     "issuedOn": "Issued on",
     "issuedBy": "Issued by",
     "approve": "Approve",
+    "reject": "Reject",
+    "forward": "Forward to principal",
+    "sendBack": "Send back",
     "download": "Download",
     "reprint": "Reprint",
     "duplicate": "Duplicate",
     "reason": "Reason for leaving",
-    "conduct": "Conduct remarks",
-    "reasonRequired": "Reason for leaving is required for a transfer certificate",
+    "requestReason": "Reason for request",
+    "conduct": "Conduct / behaviour",
+    "academicProgress": "Academic progress",
+    "lastExam": "Last exam attended",
+    "dues": "Dues cleared",
+    "duesLibrary": "Library",
+    "duesAccounts": "Accounts",
+    "duesSports": "Sports",
+    "teacherNotes": "Teacher notes",
+    "rejectionReason": "Rejection reason",
+    "supportingDoc": "Supporting document",
+    "reasonRequired": "Reason is required for a transfer certificate",
+    "rejectReasonRequired": "A rejection reason is required",
     "templateSaved": "Template saved",
     "saveFailed": "Could not save the certificate",
     "loadFailed": "Could not load certificates",
     "approveFailed": "Could not approve the certificate",
     "downloadFailed": "Could not download the certificate",
-    "submitted": "Submitted for admin approval",
+    "submitted": "Submitted for class teacher review",
     "issued": "Certificate issued",
+    "requestTitle": "Request Certificate",
+    "history": "Application history",
+    "queue": "Request queue",
+    "register": "Issued register",
+    "studentDetails": "Student details",
+    "rollNo": "Roll no.",
     "types": {
       "TC": "Transfer Certificate",
-      "BONAFIDE": "Bonafide Certificate"
+      "BONAFIDE": "Bonafide Certificate",
+      "CHARACTER": "Character Certificate",
+      "COURSE_COMPLETION": "Course Completion Certificate"
     },
     "statuses": {
       "DRAFT": "Pending approval",
       "APPROVED": "Approved",
-      "ISSUED": "Issued"
+      "ISSUED": "Issued",
+      "SUBMITTED": "Submitted",
+      "TEACHER_REVIEWED": "Teacher reviewed",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
     }
   },
   "notifications": {

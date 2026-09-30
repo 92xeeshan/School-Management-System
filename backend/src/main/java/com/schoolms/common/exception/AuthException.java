@@ -29,6 +29,10 @@ public class AuthException extends RuntimeException {
         return new AuthException(HttpStatus.FORBIDDEN, "auth.user_inactive");
     }
 
+    public static AuthException transferCertificateInactive() {
+        return new AuthException(HttpStatus.FORBIDDEN, "auth.tc_deactivated");
+    }
+
     public static AuthException accessDenied() {
         return new AuthException(HttpStatus.FORBIDDEN, "auth.access_denied");
     }

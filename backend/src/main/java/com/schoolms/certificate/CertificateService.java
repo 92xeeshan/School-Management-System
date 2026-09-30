@@ -72,6 +72,7 @@ public class CertificateService {
     private final SchoolRepository schoolRepository;
     private final UserRepository userRepository;
     private final CertificatePdfService pdfService;
+    private final CertificateLifecycleService lifecycleService;
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
@@ -140,8 +141,13 @@ public class CertificateService {
         issued.setIssuedByUserId(principal.id());
         issued.setReason(blankToNull(request.reason()));
         issued.setConductRemarks(blankToNull(request.conductRemarks()));
+        issued.setAcademicProgress(blankToNull(request.academicProgress()));
+        issued.setLastExamAttended(blankToNull(request.lastExamAttended()));
+        issued.setDuesLibrary(request.duesLibrary());
+        issued.setDuesAccounts(request.duesAccounts());
+        issued.setDuesSports(request.duesSports());
         issued.setDataJson(writeJson(snapshot.fields()));
-        issued.setDuplicate(false);
+        issued.setDuplicate(Boolean.TRUE.equals(request.duplicate()));
 
         boolean autoIssue = canApprove(principal) || !template.isRequiresApproval();
         if (autoIssue) {
@@ -149,7 +155,56 @@ public class CertificateService {
         } else {
             issued.setStatus(CertificateStatus.DRAFT);
         }
-        return toIssuedDto(issuedRepository.save(issued), snapshot, principal);
+        CertificateIssued saved = issuedRepository.save(issued);
+        if (saved.getStatus() == CertificateStatus.ISSUED) {
+            lifecycleService.onIssued(saved, student);
+            saved = issuedRepository.save(saved);
+        }
+        return toIssuedDto(saved, snapshot, principal);
+    }
+
+    @Transactional
+    public CertificateIssuedDto generateFromRequest(CertificateRequest request) {
+        UUID schoolId = request.getSchoolId();
+        UserPrincipal principal = SecurityUtils.currentPrincipal();
+        Student student = studentRepository.findByIdAndSchoolId(request.getStudentId(), schoolId)
+                .orElseThrow(() -> ResourceNotFoundException.of("student", request.getStudentId()));
+        ensureTemplates(schoolId);
+        CertificateTemplate template = templateRepository.findBySchoolIdAndType(schoolId, request.getCertificateType())
+                .orElseThrow(() -> new BusinessException("certificate.template_not_found"));
+        GenerateCertificateRequest generate = new GenerateCertificateRequest(
+                student.getId(),
+                request.getCertificateType(),
+                request.getReason(),
+                request.getConductRemarks(),
+                request.getAcademicProgress(),
+                request.getLastExamAttended(),
+                request.getDuesLibrary(),
+                request.getDuesAccounts(),
+                request.getDuesSports(),
+                false);
+        Snapshot snapshot = snapshot(schoolId, student, template, generate);
+        CertificateIssued issued = new CertificateIssued();
+        issued.setSchoolId(schoolId);
+        issued.setStudentId(student.getId());
+        issued.setTemplateId(template.getId());
+        issued.setCertificateType(request.getCertificateType());
+        issued.setIssuedByUserId(principal.id());
+        issued.setReason(blankToNull(request.getReason()));
+        issued.setConductRemarks(blankToNull(request.getConductRemarks()));
+        issued.setAcademicProgress(blankToNull(request.getAcademicProgress()));
+        issued.setLastExamAttended(blankToNull(request.getLastExamAttended()));
+        issued.setDuesLibrary(request.getDuesLibrary());
+        issued.setDuesAccounts(request.getDuesAccounts());
+        issued.setDuesSports(request.getDuesSports());
+        issued.setRequestId(request.getId());
+        issued.setDataJson(writeJson(snapshot.fields()));
+        issued.setDuplicate(false);
+        issue(issued, snapshot, principal.id());
+        CertificateIssued saved = issuedRepository.save(issued);
+        lifecycleService.onIssued(saved, student);
+        saved = issuedRepository.save(saved);
+        return toIssuedDto(saved, snapshot, principal);
     }
 
     @Transactional
@@ -172,7 +227,10 @@ public class CertificateService {
         issue(issued, snapshot, principal.id());
         issued.setApprovedByUserId(principal.id());
         issued.setApprovedAt(Instant.now());
-        return toIssuedDto(issuedRepository.save(issued), snapshot, principal);
+        CertificateIssued saved = issuedRepository.save(issued);
+        lifecycleService.onIssued(saved, student);
+        saved = issuedRepository.save(saved);
+        return toIssuedDto(saved, snapshot, principal);
     }
 
     @Transactional(readOnly = true)
@@ -348,6 +406,8 @@ public class CertificateService {
         fields.put("academicYear", academicYearName);
         fields.put("reason", nullToEmpty(request.reason()));
         fields.put("conductRemarks", nullToEmpty(request.conductRemarks()));
+        fields.put("academicProgress", nullToEmpty(request.academicProgress()));
+        fields.put("lastExamAttended", nullToEmpty(request.lastExamAttended()));
         fields.put("certificateNo", "");
         fields.put("issuedDate", "");
         fields.put("duplicate", "");
@@ -396,6 +456,8 @@ public class CertificateService {
         fields.put("academicYear", academicYearName);
         fields.put("reason", firstNonBlank(issued.getReason(), stringVal(stored.get("reason"))));
         fields.put("conductRemarks", firstNonBlank(issued.getConductRemarks(), stringVal(stored.get("conductRemarks"))));
+        fields.put("academicProgress", firstNonBlank(issued.getAcademicProgress(), stringVal(stored.get("academicProgress"))));
+        fields.put("lastExamAttended", firstNonBlank(issued.getLastExamAttended(), stringVal(stored.get("lastExamAttended"))));
         fields.put("certificateNo", firstNonBlank(issued.getCertificateNo(), stringVal(stored.get("certificateNo"))));
         fields.put("issuedDate", issued.getIssuedDate() == null ? stringVal(stored.get("issuedDate")) : DATE.format(issued.getIssuedDate()));
         fields.put("duplicate", issued.isDuplicate() ? "DUPLICATE" : "");
