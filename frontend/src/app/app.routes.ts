@@ -201,11 +201,18 @@ export const routes: Routes = [
         data: { permissions: ['EVENT_READ'] },
       },
       {
+        path: 'certificates',
+        loadComponent: () =>
+          import('./features/certificates/certificates.component').then((m) => m.CertificatesComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['CERTIFICATE_READ', 'CERTIFICATE_GENERATE'] },
+      },
+      {
         path: 'downloads',
         loadComponent: () =>
           import('./features/downloads/downloads-shell.component').then((m) => m.DownloadsShellComponent),
         canActivate: [PermissionGuard],
-        data: { permissions: ['MARKSHEET_READ'] },
+        data: { permissions: ['MARKSHEET_READ', 'CERTIFICATE_READ'] },
         children: [
           { path: '', redirectTo: 'marksheet', pathMatch: 'full' },
           {
@@ -214,6 +221,13 @@ export const routes: Routes = [
               import('./features/downloads/marksheet.component').then((m) => m.MarksheetComponent),
             canActivate: [PermissionGuard],
             data: { permissions: ['MARKSHEET_READ'] },
+          },
+          {
+            path: 'certificates',
+            loadComponent: () =>
+              import('./features/downloads/certificates.component').then((m) => m.DownloadCertificatesComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['CERTIFICATE_READ'] },
           },
         ],
       },

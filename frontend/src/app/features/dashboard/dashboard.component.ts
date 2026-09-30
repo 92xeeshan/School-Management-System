@@ -883,6 +883,7 @@ export class DashboardComponent implements OnInit {
       { key: 'admitCards', labelKey: 'examinations.tabs.admitCards', icon: '🎫', route: '/examinations/admit-cards', permissions: ['ADMIT_CARD_READ'] },
       { key: 'reportCards', labelKey: 'examinations.tabs.reportCards', icon: '📄', route: '/examinations/report-cards', permissions: ['REPORT_CARD_READ'] },
       { key: 'marksheets', labelKey: 'downloads.tabs.marksheet', icon: '📥', route: '/downloads/marksheet', permissions: ['MARKSHEET_READ'] },
+      { key: 'certificates', labelKey: 'nav.certificates', icon: '📜', route: '/certificates', permissions: ['CERTIFICATE_GENERATE', 'CERTIFICATE_APPROVE'] },
     ];
     return actions.filter((action) => this.auth.hasAnyPermission(action.permissions));
   }
