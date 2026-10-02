@@ -30,6 +30,10 @@ export class LocaleService {
     return this.localeSubject.value;
   }
 
+  get dir(): 'ltr' | 'rtl' {
+    return LOCALE_META[this.current].dir;
+  }
+
   private apply(locale: SupportedLocale): Promise<unknown> {
     const meta = LOCALE_META[locale];
     document.documentElement.lang = locale;

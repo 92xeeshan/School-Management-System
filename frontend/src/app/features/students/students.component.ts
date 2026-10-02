@@ -6,6 +6,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { finalize } from 'rxjs';
 import { ApiError, ApiResponse, PagedResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 interface Student {
   id: string;
@@ -124,25 +126,28 @@ interface StudentReportCard {
 
 @Component({
   selector: 'app-students',
-  imports: [TranslateModule, ReactiveFormsModule],
+  imports: [TranslateModule, ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent],
   template: `
     <div class="page">
-      <div class="page-header">
-        <div>
-          <h1>{{ 'students.title' | translate }}</h1>
-          <p class="muted">{{ 'students.subtitle' | translate }}</p>
-        </div>
+      <app-page-header [title]="'students.title' | translate" [subtitle]="'students.subtitle' | translate">
         @if (canCreate) {
           <button class="btn btn-primary" (click)="openAddModal()">{{ 'students.addStudent' | translate }}</button>
         }
-      </div>
+      </app-page-header>
 
       <div class="card">
-        <div class="table-toolbar">
+        <div class="card-toolbar">
           <input class="search" type="search" [placeholder]="'common.search' | translate" (input)="filter = $any($event.target).value" />
         </div>
-        <div class="table-wrap">
-          <table>
+        @if (filteredStudents.length === 0) {
+          <app-empty-state icon="school" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate">
+            @if (canCreate) {
+              <button class="btn btn-primary" type="button" (click)="openAddModal()">{{ 'students.addStudent' | translate }}</button>
+            }
+          </app-empty-state>
+        } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>{{ 'students.studentId' | translate }}</th>
@@ -166,7 +171,7 @@ interface StudentReportCard {
                   <td>{{ student.section }}</td>
                   <td>{{ student.rollNumber }}</td>
                   <td>{{ student.gender }}</td>
-                  <td><span class="badge" [class.badge-success]="student.status === 'ACTIVE'" [class.badge-muted]="student.status !== 'ACTIVE'">{{ student.status }}</span></td>
+                  <td><span class="badge status-pill" [class.badge-success]="student.status === 'ACTIVE'" [class.badge-muted]="student.status !== 'ACTIVE'">{{ student.status }}</span></td>
                   @if (showActions) {
                   <td>
                     <div class="row-actions">
@@ -207,12 +212,11 @@ interface StudentReportCard {
                   </td>
                   }
                 </tr>
-              } @empty {
-                <tr><td [attr.colspan]="showActions ? 8 : 7" class="center">{{ 'common.noData' | translate }}</td></tr>
               }
             </tbody>
           </table>
         </div>
+        }
       </div>
     </div>
 
@@ -443,22 +447,13 @@ interface StudentReportCard {
     }
   `,
   styles: `
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    h1 { font-size: 1.5rem; margin: 0 0 4px; }
     .muted { color: var(--color-muted); }
-    .table-toolbar { padding: 14px 16px; border-bottom: 1px solid var(--color-border); }
     .search {
       padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px;
-      width: 260px; font: inherit;
+      width: 260px; font: inherit; background: var(--color-surface); color: var(--color-text);
     }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--color-border); font-size: .92rem; }
-    th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; background: var(--color-bg); }
-    tbody tr:hover { background: #f8fafc; }
     tbody tr.clickable { cursor: pointer; }
     .strong { font-weight: 600; }
-    .center { text-align: center; color: var(--color-muted); padding: 28px; }
 
     .modal-backdrop {
       position: fixed; inset: 0; z-index: 100;
@@ -467,9 +462,7 @@ interface StudentReportCard {
       padding: 40px 16px; overflow-y: auto;
     }
     .modal {
-      background: #fff; border-radius: var(--radius);
       padding: 24px; width: 560px; max-width: 100%;
-      box-shadow: 0 20px 50px rgba(0,0,0,.25);
     }
     .modal h2 { margin: 0 0 18px; font-size: 1.2rem; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -483,7 +476,7 @@ interface StudentReportCard {
     .icon-btn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; padding: 0; border-radius: 8px;
-      border: 1px solid var(--color-border); background: #fff; color: #334155;
+      border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text);
       cursor: pointer;
     }
     .icon-btn svg { width: 16px; height: 16px; display: block; }

@@ -3,8 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { ApiResponse, PagedResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
+import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 
 interface StudentOption {
   id: string;
@@ -54,31 +60,34 @@ const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
 
 @Component({
   selector: 'app-fees',
-  imports: [TranslateModule, ReactiveFormsModule, NgClass],
+  imports: [
+    TranslateModule,
+    ReactiveFormsModule,
+    NgClass,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+  ],
   template: `
     <div class="page">
-      <div class="page-header">
-        <div>
-          <h1>{{ 'fees.title' | translate }}</h1>
-          <p class="muted">{{ 'fees.subtitle' | translate }}</p>
-        </div>
-      </div>
+      <app-page-header [title]="'fees.title' | translate" [subtitle]="'fees.subtitle' | translate" />
 
       <div class="card">
-        <div class="toolbar">
-          <div class="field">
-            <label>{{ 'students.name' | translate }}</label>
-            <select [formControl]="studentControl" (change)="onStudentChange()">
-              <option value="" disabled selected>{{ 'common.all' | translate }}</option>
+        <div class="card-toolbar">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="toolbar-field">
+            <mat-label>{{ 'fees.selectStudent' | translate }}</mat-label>
+            <mat-select [formControl]="studentControl" (selectionChange)="onStudentChange()">
               @for (student of students; track student.id) {
-                <option [value]="student.id">{{ student.admissionNo }} — {{ student.displayName }}</option>
+                <mat-option [value]="student.id">{{ student.admissionNo }} — {{ student.displayName }}</mat-option>
               }
-            </select>
-          </div>
-          <div class="field field-btn">
-            <label>&nbsp;</label>
-            <button class="btn" (click)="refresh()">{{ 'common.refresh' | translate }}</button>
-          </div>
+            </mat-select>
+          </mat-form-field>
+          <button mat-stroked-button type="button" (click)="refresh()" [disabled]="!selectedStudent">
+            {{ 'common.refresh' | translate }}
+          </button>
         </div>
       </div>
 
@@ -99,37 +108,34 @@ const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
         </div>
 
         @if (canCollect) {
-        <div class="card">
+        <div class="card collect-card">
           <h3 class="card-title">{{ 'fees.collectFee' | translate }}</h3>
           <form [formGroup]="paymentForm" (ngSubmit)="onCollect()">
-            <div class="form-row">
-              <div class="field">
-                <label>{{ 'fees.amount' | translate }}</label>
-                <input type="number" min="1" formControlName="amount" />
-              </div>
-              <div class="field">
-                <label>{{ 'fees.method' | translate }}</label>
-                <select formControlName="method">
+            <div class="card-toolbar">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="toolbar-field">
+                <mat-label>{{ 'fees.amount' | translate }}</mat-label>
+                <input matInput type="number" min="1" formControlName="amount" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="toolbar-field">
+                <mat-label>{{ 'fees.method' | translate }}</mat-label>
+                <mat-select formControlName="method">
                   @for (method of paymentMethods; track method) {
-                    <option [value]="method">{{ method }}</option>
+                    <mat-option [value]="method">{{ method }}</mat-option>
                   }
-                </select>
-              </div>
-              <div class="field">
-                <label>{{ 'fees.installment' | translate }}</label>
-                <select formControlName="assignmentId">
-                  <option [value]="''" disabled selected>{{ 'common.all' | translate }}</option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="toolbar-field wide">
+                <mat-label>{{ 'fees.installment' | translate }}</mat-label>
+                <mat-select formControlName="assignmentId">
+                  <mat-option value="">{{ 'common.all' | translate }}</mat-option>
                   @for (assignment of assignments; track assignment.id) {
-                    <option [value]="assignment.id">{{ assignment.feeStructureName }} ({{ formatMoney(assignmentAmount(assignment)) }})</option>
+                    <mat-option [value]="assignment.id">{{ assignment.feeStructureName }} ({{ formatMoney(assignmentAmount(assignment)) }})</mat-option>
                   }
-                </select>
-              </div>
-              <div class="field field-btn">
-                <label>&nbsp;</label>
-                <button class="btn btn-primary" type="submit" [disabled]="paymentForm.invalid || collecting">
-                  {{ collecting ? ('common.loading' | translate) : ('fees.collectFee' | translate) }}
-                </button>
-              </div>
+                </mat-select>
+              </mat-form-field>
+              <button mat-flat-button color="primary" type="submit" [disabled]="paymentForm.invalid || collecting">
+                {{ collecting ? ('common.loading' | translate) : ('fees.collectFee' | translate) }}
+              </button>
             </div>
           </form>
         </div>
@@ -137,101 +143,90 @@ const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
 
         <div class="card">
           <h3 class="card-title">{{ 'fees.installments' | translate }}</h3>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>{{ 'fees.feeStructure' | translate }}</th>
-                  <th>{{ 'fees.dueDate' | translate }}</th>
-                  <th>{{ 'fees.amount' | translate }}</th>
-                  <th>{{ 'fees.paidOn' | translate }}</th>
-                  <th>{{ 'fees.pendingAmount' | translate }}</th>
-                  <th>{{ 'common.status' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (assignment of assignments; track assignment.id) {
-                  @for (inst of assignment.installments; track inst.id) {
+          @if (installmentRows.length === 0) {
+            <app-empty-state icon="payments" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate" />
+          } @else {
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'fees.feeStructure' | translate }}</th>
+                    <th>{{ 'fees.dueDate' | translate }}</th>
+                    <th>{{ 'fees.amount' | translate }}</th>
+                    <th>{{ 'fees.paidOn' | translate }}</th>
+                    <th>{{ 'fees.pendingAmount' | translate }}</th>
+                    <th>{{ 'common.status' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of installmentRows; track row.id) {
                     <tr>
-                      <td class="strong">{{ assignment.feeStructureName }}</td>
-                      <td>{{ inst.dueDate }}</td>
-                      <td>{{ formatMoney(inst.amountDue) }}</td>
-                      <td>{{ inst.amountPaid > 0 ? formatMoney(inst.amountPaid) : '—' }}</td>
-                      <td>{{ formatMoney(inst.balance) }}</td>
-                      <td><span class="badge" [ngClass]="badgeClass(inst.status)">{{ inst.status }}</span></td>
+                      <td class="strong">{{ row.feeStructureName }}</td>
+                      <td>{{ row.dueDate }}</td>
+                      <td>{{ formatMoney(row.amountDue) }}</td>
+                      <td>{{ row.amountPaid > 0 ? formatMoney(row.amountPaid) : '—' }}</td>
+                      <td>{{ formatMoney(row.balance) }}</td>
+                      <td><span class="badge status-pill" [ngClass]="badgeClass(row.status)">{{ row.status }}</span></td>
                     </tr>
-                  } @empty {
-                    <tr><td colspan="6" class="center">—</td></tr>
                   }
-                } @empty {
-                  <tr><td colspan="6" class="center">{{ 'common.noData' | translate }}</td></tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
 
         <div class="card">
           <h3 class="card-title">{{ 'fees.collections' | translate }}</h3>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>{{ 'common.status' | translate }} #</th>
-                  <th>{{ 'fees.amount' | translate }}</th>
-                  <th>{{ 'fees.paidOn' | translate }}</th>
-                  <th>{{ 'fees.method' | translate }}</th>
-                  <th>{{ 'fees.installment' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (payment of payments; track payment.id) {
+          @if (payments.length === 0) {
+            <app-empty-state icon="receipt_long" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate" />
+          } @else {
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
                   <tr>
-                    <td class="strong">{{ payment.receiptNo }}</td>
-                    <td>{{ formatMoney(payment.amountPaid) }}</td>
-                    <td>{{ payment.paidAt ? formatDate(payment.paidAt) : '—' }}</td>
-                    <td>{{ payment.paymentMethod }}</td>
-                    <td>{{ payment.referenceNo || '—' }}</td>
+                    <th>{{ 'common.status' | translate }} #</th>
+                    <th>{{ 'fees.amount' | translate }}</th>
+                    <th>{{ 'fees.paidOn' | translate }}</th>
+                    <th>{{ 'fees.method' | translate }}</th>
+                    <th>{{ 'fees.installment' | translate }}</th>
                   </tr>
-                } @empty {
-                  <tr><td colspan="5" class="center">{{ 'common.noData' | translate }}</td></tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  @for (payment of payments; track payment.id) {
+                    <tr>
+                      <td class="strong">{{ payment.receiptNo }}</td>
+                      <td>{{ formatMoney(payment.amountPaid) }}</td>
+                      <td>{{ payment.paidAt ? formatDate(payment.paidAt) : '—' }}</td>
+                      <td>{{ payment.paymentMethod }}</td>
+                      <td>{{ payment.referenceNo || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
       } @else {
-        <div class="card empty-state">
-          <p class="muted">{{ 'common.noData' | translate }}</p>
+        <div class="card">
+          <app-empty-state
+            icon="person_search"
+            [title]="'fees.selectStudent' | translate"
+            [hint]="'fees.selectStudentHint' | translate" />
         </div>
       }
     </div>
   `,
   styles: `
-    .page-header { margin-bottom: 20px; }
-    h1 { font-size: 1.5rem; margin: 0 0 4px; }
-    .muted { color: var(--color-muted); }
-    .toolbar { display: flex; gap: 16px; flex-wrap: wrap; padding: 16px; }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label { font-weight: 500; font-size: .85rem; color: var(--color-muted); }
-    select, input {
-      padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; min-width: 180px;
-    }
-    .field-btn { justify-content: flex-end; }
+    .card { margin-bottom: 24px; }
+    .toolbar-field { min-width: 220px; }
+    .toolbar-field.wide { min-width: 280px; flex: 1; }
+    .collect-card { padding-bottom: 8px; }
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .stat { padding: 20px; }
     .stat-value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
     .stat-label { color: var(--color-muted); font-size: .9rem; }
-    .card-title { margin: 0 0 14px; font-size: 1.05rem; }
-    .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--color-border); font-size: .92rem; }
-    th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; background: var(--color-bg); }
+    .card-title { margin: 0; padding: 16px 16px 0; font-size: 1.05rem; }
     .strong { font-weight: 600; }
-    .center { text-align: center; color: var(--color-muted); padding: 28px; }
-    .empty-state { padding: 32px; text-align: center; }
-    .card { margin-bottom: 24px; }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -274,6 +269,12 @@ export class FeesComponent implements OnInit {
 
   get overdueCount(): number {
     return this.assignments.reduce((sum, a) => sum + a.installments.filter((i) => i.status === 'OVERDUE').length, 0);
+  }
+
+  get installmentRows(): Array<Installment & { feeStructureName: string }> {
+    return this.assignments.flatMap((assignment) =>
+      assignment.installments.map((inst) => ({ ...inst, feeStructureName: assignment.feeStructureName }))
+    );
   }
 
   ngOnInit(): void {

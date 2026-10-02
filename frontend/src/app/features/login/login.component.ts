@@ -63,7 +63,7 @@ import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
     }
     .login-card {
       width: 380px; max-width: 100%;
-      background: #fff; border-radius: 16px;
+      background: var(--color-surface); border-radius: 16px; color: var(--color-text);
       padding: 36px 32px;
       box-shadow: 0 20px 50px rgba(0,0,0,.25);
     }
@@ -76,6 +76,7 @@ import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
     input {
       width: 100%; padding: 10px 12px;
       border: 1px solid var(--color-border); border-radius: 8px;
+      background: var(--color-surface); color: var(--color-text);
       font: inherit;
     }
     input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
@@ -83,7 +84,7 @@ import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
     .lang-switcher { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
     .lang-pill {
       padding: 6px 12px; border-radius: 20px;
-      border: 1px solid var(--color-border); background: #fff;
+      border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text);
       cursor: pointer; font: inherit; font-size: .85rem;
     }
     .lang-pill.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }

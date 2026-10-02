@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 type TimetableView = 'class' | 'teacher' | 'room';
 
@@ -78,7 +79,7 @@ const DAYS = [1, 2, 3, 4, 5, 6];
 
 @Component({
   selector: 'app-academics-timetable',
-  imports: [TranslateModule, ReactiveFormsModule],
+  imports: [TranslateModule, ReactiveFormsModule, EmptyStateComponent],
   template: `
     <div class="tab-page">
       <div class="page-header">
@@ -143,7 +144,9 @@ const DAYS = [1, 2, 3, 4, 5, 6];
       </div>
 
       @if (!hasSelection) {
-        <div class="card empty-card">{{ promptKey | translate }}</div>
+        <div class="card">
+          <app-empty-state icon="calendar_view_week" [title]="'common.selectToContinue' | translate" [hint]="promptKey | translate" />
+        </div>
       } @else {
         <div class="card grid-card">
           <div class="table-wrap">
@@ -308,11 +311,11 @@ const DAYS = [1, 2, 3, 4, 5, 6];
     .view-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
     .view-tab {
       padding: 8px 14px; border-radius: 20px; border: 1px solid var(--color-border);
-      background: #fff; font: inherit; cursor: pointer;
+      background: var(--color-surface); color: var(--color-text); font: inherit; cursor: pointer;
     }
     .view-tab.active { background: var(--color-primary-soft); color: var(--color-primary); border-color: var(--color-primary); font-weight: 600; }
     .filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filters select { padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; background: #fff; min-width: 180px; }
+    .filters select { padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; background: var(--color-surface); color: var(--color-text); min-width: 180px; }
     .empty-card { padding: 28px; text-align: center; color: var(--color-muted); }
     .table-wrap { overflow-x: auto; }
     table.grid { width: 100%; border-collapse: collapse; min-width: 760px; }
@@ -336,7 +339,7 @@ const DAYS = [1, 2, 3, 4, 5, 6];
       display: flex; align-items: flex-start; justify-content: center;
       padding: 40px 16px; overflow-y: auto;
     }
-    .modal { background: #fff; border-radius: var(--radius); padding: 24px; width: 560px; max-width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+    .modal { padding: 24px; width: 560px; max-width: 100%; }
     .modal-sm { width: 420px; }
     .modal h2 { margin: 0 0 18px; font-size: 1.2rem; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }

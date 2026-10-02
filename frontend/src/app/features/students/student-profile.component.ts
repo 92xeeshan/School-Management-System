@@ -7,6 +7,7 @@ import { ApiError, ApiResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { CertificateService } from '../../core/certificates/certificate.service';
 import { CertificateIssued, CertificateType } from '../../core/certificates/certificate.model';
+import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 
 interface AttendanceSummary {
   present: number;
@@ -67,24 +68,20 @@ interface SectionOption {
 
 @Component({
   selector: 'app-student-profile',
-  imports: [TranslateModule, ReactiveFormsModule, FormsModule, RouterLink],
+  imports: [TranslateModule, ReactiveFormsModule, FormsModule, RouterLink, PageHeaderComponent],
   template: `
     <div class="page">
-      <div class="page-header">
-        <div>
-          <a class="back" routerLink="/students">{{ 'common.back' | translate }}</a>
-          <h1>{{ profile?.displayName || ('students.profileTitle' | translate) }}</h1>
-          <p class="muted">{{ 'students.profileSubtitle' | translate }}</p>
-        </div>
-        <div class="header-actions">
-          @if (canGenerate && !editing) {
-            <button class="btn" type="button" (click)="openCertificateModal()">{{ 'certificates.generate' | translate }}</button>
-          }
-          @if (profile?.canEdit && !editing) {
-            <button class="btn btn-primary" type="button" (click)="startEdit()">{{ 'common.edit' | translate }}</button>
-          }
-        </div>
-      </div>
+      <app-page-header
+        [title]="profile?.displayName || ('students.profileTitle' | translate)"
+        [subtitle]="'students.profileSubtitle' | translate">
+        <a class="back" routerLink="/students">{{ 'common.back' | translate }}</a>
+        @if (canGenerate && !editing) {
+          <button class="btn" type="button" (click)="openCertificateModal()">{{ 'certificates.generate' | translate }}</button>
+        }
+        @if (profile?.canEdit && !editing) {
+          <button class="btn btn-primary" type="button" (click)="startEdit()">{{ 'common.edit' | translate }}</button>
+        }
+      </app-page-header>
 
       @if (loading) {
         <div class="card pad">{{ 'common.loading' | translate }}</div>
@@ -305,29 +302,18 @@ interface SectionOption {
     </div>
   `,
   styles: `
-    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 16px; }
-    .header-actions { display: flex; gap: 8px; }
-    h1 { font-size: 1.5rem; margin: 4px 0; }
     h2 { font-size: 1.05rem; margin: 0 0 16px; }
     .muted { color: var(--color-muted); }
-    .back { color: var(--color-primary, #2563eb); text-decoration: none; font-size: .9rem; }
-    .card { background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+    .back { color: var(--color-primary); text-decoration: none; font-size: .9rem; }
+    .card { padding: 20px; margin-bottom: 16px; }
     .pad { padding: 28px; }
-    .banner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
-    .banner.success { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
-    .field-error { color: #b91c1c; font-size: .8rem; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .span-2 { grid-column: span 2; }
-    .field label { font-weight: 500; font-size: .85rem; color: var(--color-muted); }
+    .field-error { color: var(--color-danger); font-size: .8rem; }
     input, select { padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; }
-    input:disabled, select:disabled { background: #f8fafc; color: #475569; }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin: 8px 0 24px; }
     .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
     .stats div { display: flex; flex-direction: column; gap: 4px; background: var(--color-bg); padding: 12px; border-radius: 8px; }
-    .error { color: #b91c1c; }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px; }
-    .modal { background: #fff; border-radius: 12px; padding: 24px; width: min(520px, 100%); display: flex; flex-direction: column; gap: 12px; }
+    .error { color: var(--color-danger); }
+    .modal { width: min(520px, 100%); display: flex; flex-direction: column; gap: 12px; }
     @media (max-width: 720px) {
       .form-grid, .stats { grid-template-columns: 1fr; }
       .span-2 { grid-column: span 1; }

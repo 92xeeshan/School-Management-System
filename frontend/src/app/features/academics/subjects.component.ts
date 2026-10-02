@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 interface SubjectClass {
   id: string;
@@ -43,7 +44,7 @@ interface TeacherOption {
 
 @Component({
   selector: 'app-academics-subjects',
-  imports: [TranslateModule, ReactiveFormsModule],
+  imports: [TranslateModule, ReactiveFormsModule, EmptyStateComponent],
   template: `
     <div class="tab-page">
       <div class="page-header">
@@ -65,23 +66,29 @@ interface TeacherOption {
         <p class="banner error">{{ pageError }}</p>
       }
 
-      <div class="filters">
-        <input type="search" [value]="search" (input)="onSearch($event)" [placeholder]="'common.search' | translate" />
-        <select [value]="typeFilter" (change)="onTypeFilter($event)">
-          <option value="">{{ 'academics.allTypes' | translate }}</option>
-          <option value="CORE">{{ 'academics.typeCore' | translate }}</option>
-          <option value="ELECTIVE">{{ 'academics.typeElective' | translate }}</option>
-        </select>
-        <select [value]="statusFilter" (change)="onStatusFilter($event)">
-          <option value="">{{ 'academics.allStatuses' | translate }}</option>
-          <option value="ACTIVE">{{ 'academics.statusActive' | translate }}</option>
-          <option value="INACTIVE">{{ 'academics.statusInactive' | translate }}</option>
-        </select>
-      </div>
-
       <div class="card">
-        <div class="table-wrap">
-          <table>
+        <div class="card-toolbar">
+          <input type="search" [value]="search" (input)="onSearch($event)" [placeholder]="'common.search' | translate" />
+          <select [value]="typeFilter" (change)="onTypeFilter($event)">
+            <option value="">{{ 'academics.allTypes' | translate }}</option>
+            <option value="CORE">{{ 'academics.typeCore' | translate }}</option>
+            <option value="ELECTIVE">{{ 'academics.typeElective' | translate }}</option>
+          </select>
+          <select [value]="statusFilter" (change)="onStatusFilter($event)">
+            <option value="">{{ 'academics.allStatuses' | translate }}</option>
+            <option value="ACTIVE">{{ 'academics.statusActive' | translate }}</option>
+            <option value="INACTIVE">{{ 'academics.statusInactive' | translate }}</option>
+          </select>
+        </div>
+        @if (filteredRows.length === 0) {
+          <app-empty-state icon="menu_book" [title]="loading ? ('common.loading' | translate) : ('common.noData' | translate)" [hint]="'common.emptyHint' | translate">
+            @if (canCreate && !loading) {
+              <button class="btn btn-primary" type="button" (click)="openAddModal()">{{ 'academics.addSubject' | translate }}</button>
+            }
+          </app-empty-state>
+        } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>{{ 'academics.subjectName' | translate }}</th>
@@ -103,7 +110,7 @@ interface TeacherOption {
                   <td class="strong">{{ row.name }}</td>
                   <td><span class="muted code">{{ row.code || '—' }}</span></td>
                   <td>
-                    <span class="badge" [class.badge-success]="row.type === 'CORE'" [class.badge-muted]="row.type !== 'CORE'">
+                    <span class="badge status-pill" [class.badge-success]="row.type === 'CORE'" [class.badge-muted]="row.type !== 'CORE'">
                       {{ typeLabel(row.type) | translate }}
                     </span>
                   </td>
@@ -120,7 +127,7 @@ interface TeacherOption {
                   <td>{{ row.weeklyPeriods ?? '—' }}</td>
                   <td>{{ row.practical ? ('academics.yes' | translate) : ('academics.no' | translate) }}</td>
                   <td>
-                    <span class="badge" [class.badge-success]="row.status === 'ACTIVE'" [class.badge-muted]="row.status !== 'ACTIVE'">
+                    <span class="badge status-pill" [class.badge-success]="row.status === 'ACTIVE'" [class.badge-muted]="row.status !== 'ACTIVE'">
                       {{ statusLabel(row.status) | translate }}
                     </span>
                   </td>
@@ -132,16 +139,11 @@ interface TeacherOption {
                     </td>
                   }
                 </tr>
-              } @empty {
-                <tr>
-                  <td [attr.colspan]="canUpdate ? 9 : 8" class="center">
-                    {{ loading ? ('common.loading' | translate) : ('common.noData' | translate) }}
-                  </td>
-                </tr>
               }
             </tbody>
           </table>
         </div>
+        }
       </div>
     </div>
 
@@ -225,15 +227,9 @@ interface TeacherOption {
     h2 { font-size: 1.2rem; margin: 0 0 4px; }
     .muted { color: var(--color-muted); }
     .code { font-size: .8rem; font-weight: 400; }
-    .filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filters input, .filters select { padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; background: #fff; }
-    .filters input { min-width: 220px; flex: 1; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--color-border); font-size: .92rem; vertical-align: top; }
-    th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; background: var(--color-bg); }
+    .card-toolbar input, .card-toolbar select { padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; background: var(--color-surface); color: var(--color-text); }
+    .card-toolbar input { min-width: 220px; flex: 1; }
     .strong { font-weight: 600; }
-    .center { text-align: center; color: var(--color-muted); padding: 28px; }
     .subject-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .tag { padding: 3px 10px; border-radius: 6px; background: var(--color-bg); border: 1px solid var(--color-border); font-size: .82rem; }
     .banner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
@@ -248,7 +244,7 @@ interface TeacherOption {
       padding: 40px 16px; overflow-y: auto;
     }
     .modal {
-      background: #fff; border-radius: var(--radius);
+      background: var(--color-surface); border-radius: var(--radius);
       padding: 24px; width: 560px; max-width: 100%;
       box-shadow: 0 20px 50px rgba(0,0,0,.25);
     }
@@ -266,7 +262,7 @@ interface TeacherOption {
     .multi-select {
       display: flex; flex-wrap: wrap; gap: 8px;
       padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px;
-      max-height: 160px; overflow-y: auto; background: #fff;
+      max-height: 160px; overflow-y: auto; background: var(--color-surface);
     }
     .check-item {
       display: flex; align-items: center; gap: 6px;

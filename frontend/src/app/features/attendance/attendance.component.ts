@@ -4,6 +4,8 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 interface AcademicYear {
   id: string;
@@ -49,18 +51,13 @@ const STATUSES: Status[] = ['PRESENT', 'ABSENT', 'LATE', 'LEAVE'];
 
 @Component({
   selector: 'app-attendance',
-  imports: [TranslateModule, ReactiveFormsModule],
+  imports: [TranslateModule, ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent],
   template: `
     <div class="page">
-      <div class="page-header">
-        <div>
-          <h1>{{ 'attendance.title' | translate }}</h1>
-          <p class="muted">{{ 'attendance.subtitle' | translate }}</p>
-        </div>
-      </div>
+      <app-page-header [title]="'attendance.title' | translate" [subtitle]="'attendance.subtitle' | translate" />
 
       <div class="card">
-        <div class="toolbar">
+        <div class="card-toolbar">
           <div class="field">
             <label>{{ 'attendance.selectClass' | translate }}</label>
             <select [formControl]="classControl" (change)="onClassChange()">
@@ -101,8 +98,11 @@ const STATUSES: Status[] = ['PRESENT', 'ABSENT', 'LATE', 'LEAVE'];
           <span class="muted year">{{ academicYearLabel }}</span>
         </div>
 
-        <div class="table-wrap">
-          <table>
+        @if (rows.length === 0) {
+          <app-empty-state icon="fact_check" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate" />
+        } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>{{ 'students.rollNumber' | translate }}</th>
@@ -135,24 +135,21 @@ const STATUSES: Status[] = ['PRESENT', 'ABSENT', 'LATE', 'LEAVE'];
                     }
                   </td>
                 </tr>
-              } @empty {
-                <tr><td colspan="4" class="center">{{ 'common.noData' | translate }}</td></tr>
               }
             </tbody>
           </table>
         </div>
+        }
       </div>
     </div>
   `,
   styles: `
-    .page-header { margin-bottom: 20px; }
-    h1 { font-size: 1.5rem; margin: 0 0 4px; }
     .muted { color: var(--color-muted); }
-    .toolbar { display: flex; gap: 16px; flex-wrap: wrap; padding: 16px; }
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field label { font-weight: 500; font-size: .85rem; color: var(--color-muted); }
     select, input {
       padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; min-width: 150px;
+      background: var(--color-surface); color: var(--color-text);
     }
     .field-btn { justify-content: flex-end; }
     .summary { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 16px; border-bottom: 1px solid var(--color-border); }
@@ -162,16 +159,11 @@ const STATUSES: Status[] = ['PRESENT', 'ABSENT', 'LATE', 'LEAVE'];
     .chip-absent { background: #fee2e2; color: #b91c1c; }
     .chip-late { background: #fef3c7; color: #b45309; }
     .chip-leave { background: #e0e7ff; color: #4338ca; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--color-border); font-size: .92rem; }
-    th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; background: var(--color-bg); }
     .strong { font-weight: 600; }
-    .center { text-align: center; color: var(--color-muted); padding: 28px; }
     .status-group { display: flex; gap: 6px; flex-wrap: wrap; }
     .status-btn {
       padding: 5px 12px; border-radius: 8px; border: 1px solid var(--color-border);
-      background: #fff; cursor: pointer; font-size: .82rem; transition: all .12s ease;
+      background: var(--color-surface); color: var(--color-text); cursor: pointer; font-size: .82rem; transition: all .12s ease;
     }
     .status-btn:hover { border-color: var(--color-primary); }
     .status-btn.selected[data-status="PRESENT"] { background: #15803d; color: #fff; border-color: #15803d; }

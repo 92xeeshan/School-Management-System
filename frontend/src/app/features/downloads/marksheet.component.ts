@@ -4,6 +4,7 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 interface YearOption { id: string; name: string; current: boolean }
 interface SectionOption { id: string; name: string }
@@ -89,7 +90,7 @@ interface Marksheet {
 
 @Component({
   selector: 'app-marksheet',
-  imports: [TranslateModule, NgTemplateOutlet],
+  imports: [TranslateModule, NgTemplateOutlet, EmptyStateComponent],
   template: `
     <div class="tab-page">
       <div class="page-header">
@@ -181,62 +182,64 @@ interface Marksheet {
         </div>
 
         <div class="card">
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                <th>{{ 'downloads.marksheetPage.student' | translate }}</th>
-                <th>{{ 'downloads.marksheetPage.admissionNo' | translate }}</th>
-                <th>{{ 'downloads.marksheetPage.roll' | translate }}</th>
-                <th>{{ 'downloads.marksheetPage.percentage' | translate }}</th>
-                <th>{{ 'downloads.marksheetPage.gpa' | translate }}</th>
-                <th>{{ 'downloads.marksheetPage.rank' | translate }}</th>
-                <th>{{ 'downloads.marksheetPage.result' | translate }}</th>
-                <th>{{ 'downloads.marksheetPage.status' | translate }}</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of students; track row.studentId) {
+          @if (!loading && students.length === 0) {
+            <app-empty-state icon="description" [title]="'downloads.marksheetPage.empty' | translate" [hint]="'common.emptyHint' | translate" />
+          } @else {
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
                 <tr>
-                  <td>
-                    <input type="checkbox" [checked]="selectedIds.has(row.studentId)"
-                           (change)="toggleStudent(row.studentId, $event)" />
-                  </td>
-                  <td>{{ row.studentName }}</td>
-                  <td>{{ row.admissionNo }}</td>
-                  <td>{{ row.rollNumber ?? '—' }}</td>
-                  <td>{{ row.percentage == null ? '—' : row.percentage + '%' }}</td>
-                  <td>{{ row.gpa == null ? '—' : row.gpa }}</td>
-                  <td>{{ row.classRank ?? '—' }}</td>
-                  <td>{{ row.result || '—' }}</td>
-                  <td>
-                    <span class="badge" [class.badge-success]="row.status === 'PUBLISHED'"
-                          [class.badge-warn]="row.status === 'PENDING_APPROVAL'"
-                          [class.badge-lock]="row.status === 'REJECTED'"
-                          [class.badge-muted]="row.status === 'DRAFT'">
-                      {{ statusLabel(row.status) | translate }}
-                    </span>
-                    @if (row.locked) {
-                      <span class="badge badge-lock">{{ 'downloads.marksheetPage.locked' | translate }}</span>
-                    }
-                    @if (row.rejectionReason) {
-                      <div class="muted">{{ row.rejectionReason }}</div>
-                    }
-                  </td>
-                  <td>
-                    <button class="btn" type="button" (click)="previewOne(row.studentId)">
-                      {{ 'downloads.marksheetPage.preview' | translate }}
-                    </button>
-                  </td>
+                  <th></th>
+                  <th>{{ 'downloads.marksheetPage.student' | translate }}</th>
+                  <th>{{ 'downloads.marksheetPage.admissionNo' | translate }}</th>
+                  <th>{{ 'downloads.marksheetPage.roll' | translate }}</th>
+                  <th>{{ 'downloads.marksheetPage.percentage' | translate }}</th>
+                  <th>{{ 'downloads.marksheetPage.gpa' | translate }}</th>
+                  <th>{{ 'downloads.marksheetPage.rank' | translate }}</th>
+                  <th>{{ 'downloads.marksheetPage.result' | translate }}</th>
+                  <th>{{ 'downloads.marksheetPage.status' | translate }}</th>
+                  <th></th>
                 </tr>
-              } @empty {
-                <tr>
-                  <td colspan="10" class="center muted">{{ 'downloads.marksheetPage.empty' | translate }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (row of students; track row.studentId) {
+                  <tr>
+                    <td>
+                      <input type="checkbox" [checked]="selectedIds.has(row.studentId)"
+                             (change)="toggleStudent(row.studentId, $event)" />
+                    </td>
+                    <td>{{ row.studentName }}</td>
+                    <td>{{ row.admissionNo }}</td>
+                    <td>{{ row.rollNumber ?? '—' }}</td>
+                    <td>{{ row.percentage == null ? '—' : row.percentage + '%' }}</td>
+                    <td>{{ row.gpa == null ? '—' : row.gpa }}</td>
+                    <td>{{ row.classRank ?? '—' }}</td>
+                    <td>{{ row.result || '—' }}</td>
+                    <td>
+                      <span class="badge status-pill" [class.badge-success]="row.status === 'PUBLISHED'"
+                            [class.badge-warn]="row.status === 'PENDING_APPROVAL'"
+                            [class.badge-lock]="row.status === 'REJECTED'"
+                            [class.badge-muted]="row.status === 'DRAFT'">
+                        {{ statusLabel(row.status) | translate }}
+                      </span>
+                      @if (row.locked) {
+                        <span class="badge badge-lock">{{ 'downloads.marksheetPage.locked' | translate }}</span>
+                      }
+                      @if (row.rejectionReason) {
+                        <div class="muted">{{ row.rejectionReason }}</div>
+                      }
+                    </td>
+                    <td>
+                      <button class="btn" type="button" (click)="previewOne(row.studentId)">
+                        {{ 'downloads.marksheetPage.preview' | translate }}
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          }
           @if (loading) {
             <p class="center muted">{{ 'common.loading' | translate }}</p>
           }
@@ -376,20 +379,11 @@ interface Marksheet {
     h2 { font-size: 1.2rem; margin: 0 0 4px; }
     .muted { color: var(--color-muted); margin: 0; }
     .filters, .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-    select, .search { padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; background: #fff; min-width: 160px; }
+    select, .search { padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; background: var(--color-surface); color: var(--color-text); min-width: 160px; }
     .search { min-width: 220px; }
     .spacer { flex: 1; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--color-border); font-size: .9rem; }
     .center { text-align: center; padding: 18px; }
-    .banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
-    .banner.error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
-    .banner.warn { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .7rem; font-weight: 600; margin-right: 4px; }
-    .badge-success { background: #d1fae5; color: #047857; }
-    .badge-muted { background: #e2e8f0; color: #475569; }
-    .badge-warn { background: #fef3c7; color: #92400e; }
-    .badge-lock { background: #fee2e2; color: #b91c1c; }
+    .badge-lock { background: var(--color-danger-soft); color: var(--color-danger); }
     .check { display: flex; align-items: center; gap: 8px; }
     .modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(15, 23, 42, .5); overflow: auto; padding: 24px; }
     .modal { background: #fff; border-radius: var(--radius); padding: 20px; max-width: 920px; margin: 0 auto; }

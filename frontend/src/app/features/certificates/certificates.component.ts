@@ -14,20 +14,17 @@ import {
   ReviewCertificateRequest,
 } from '../../core/certificates/certificate.model';
 import { ApiError } from '../../core/models/api.model';
+import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_COMPLETION'];
 
 @Component({
   selector: 'app-certificates',
-  imports: [TranslateModule, FormsModule],
+  imports: [TranslateModule, FormsModule, PageHeaderComponent, EmptyStateComponent],
   template: `
     <div class="page">
-      <div class="page-header">
-        <div>
-          <h1>{{ 'certificates.title' | translate }}</h1>
-          <p class="muted">{{ 'certificates.subtitle' | translate }}</p>
-        </div>
-      </div>
+      <app-page-header [title]="'certificates.title' | translate" [subtitle]="'certificates.subtitle' | translate" />
 
       @if (canManage) {
         <div class="card">
@@ -70,7 +67,7 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
 
       <div class="card">
         <h2>{{ 'certificates.queue' | translate }}</h2>
-        <div class="toolbar">
+        <div class="card-toolbar">
           <select [(ngModel)]="requestTypeFilter" (ngModelChange)="loadRequests()">
             <option value="">{{ 'certificates.allTypes' | translate }}</option>
             @for (t of types; track t) {
@@ -90,57 +87,59 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
         @if (requestError) {
           <p class="error">{{ requestError | translate }}</p>
         }
-        <table>
-          <thead>
-            <tr>
-              <th>{{ 'certificates.student' | translate }}</th>
-              <th>{{ 'certificates.type' | translate }}</th>
-              <th>{{ 'common.status' | translate }}</th>
-              <th>{{ 'certificates.requestReason' | translate }}</th>
-              <th>{{ 'common.actions' | translate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of requests; track row.id) {
+        @if (requests.length === 0) {
+          <app-empty-state icon="assignment" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate" />
+        } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
               <tr>
-                <td>
-                  <strong>{{ row.studentName }}</strong>
-                  <div class="muted">{{ row.admissionNo }} · {{ row.className }} {{ row.sectionName }}</div>
-                  <div class="muted">{{ 'certificates.rollNo' | translate }}: {{ row.rollNo || '—' }}</div>
-                </td>
-                <td>{{ ('certificates.types.' + row.certificateType) | translate }}</td>
-                <td>{{ ('certificates.statuses.' + row.status) | translate }}</td>
-                <td>{{ row.reason || '—' }}</td>
-                <td class="actions">
-                  @if (row.canReview) {
-                    <button class="btn btn-primary" type="button" (click)="openReview(row)">{{ 'certificates.forward' | translate }}</button>
-                  }
-                  @if (row.canApprove) {
-                    <button class="btn btn-primary" type="button" (click)="approveRequest(row)">{{ 'certificates.approve' | translate }}</button>
-                  }
-                  @if (row.canReject) {
-                    <button class="btn" type="button" (click)="openReject(row)">{{ 'certificates.reject' | translate }}</button>
-                  }
-                  @if (row.canCancel) {
-                    <button class="btn" type="button" (click)="sendBack(row)">{{ 'certificates.sendBack' | translate }}</button>
-                  }
-                  @if (row.canDownload && row.issuedId) {
-                    <button class="btn" type="button" (click)="downloadIssued(row.issuedId, row.certificateNo, false)">{{ 'certificates.download' | translate }}</button>
-                  }
-                </td>
+                <th>{{ 'certificates.student' | translate }}</th>
+                <th>{{ 'certificates.type' | translate }}</th>
+                <th>{{ 'common.status' | translate }}</th>
+                <th>{{ 'certificates.requestReason' | translate }}</th>
+                <th>{{ 'common.actions' | translate }}</th>
               </tr>
-            } @empty {
-              <tr>
-                <td colspan="5" class="center muted">{{ 'common.noData' | translate }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (row of requests; track row.id) {
+                <tr>
+                  <td>
+                    <strong>{{ row.studentName }}</strong>
+                    <div class="muted">{{ row.admissionNo }} · {{ row.className }} {{ row.sectionName }}</div>
+                    <div class="muted">{{ 'certificates.rollNo' | translate }}: {{ row.rollNo || '—' }}</div>
+                  </td>
+                  <td>{{ ('certificates.types.' + row.certificateType) | translate }}</td>
+                  <td><span class="badge status-pill">{{ ('certificates.statuses.' + row.status) | translate }}</span></td>
+                  <td>{{ row.reason || '—' }}</td>
+                  <td class="actions">
+                    @if (row.canReview) {
+                      <button class="btn btn-primary" type="button" (click)="openReview(row)">{{ 'certificates.forward' | translate }}</button>
+                    }
+                    @if (row.canApprove) {
+                      <button class="btn btn-primary" type="button" (click)="approveRequest(row)">{{ 'certificates.approve' | translate }}</button>
+                    }
+                    @if (row.canReject) {
+                      <button class="btn" type="button" (click)="openReject(row)">{{ 'certificates.reject' | translate }}</button>
+                    }
+                    @if (row.canCancel) {
+                      <button class="btn" type="button" (click)="sendBack(row)">{{ 'certificates.sendBack' | translate }}</button>
+                    }
+                    @if (row.canDownload && row.issuedId) {
+                      <button class="btn" type="button" (click)="downloadIssued(row.issuedId, row.certificateNo, false)">{{ 'certificates.download' | translate }}</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        }
       </div>
 
       <div class="card">
         <h2>{{ 'certificates.register' | translate }}</h2>
-        <div class="toolbar">
+        <div class="card-toolbar">
           <input type="text" [(ngModel)]="query" (keyup.enter)="load()" [placeholder]="'certificates.search' | translate" />
           <select [(ngModel)]="typeFilter" (ngModelChange)="load()">
             <option value="">{{ 'certificates.allTypes' | translate }}</option>
@@ -158,52 +157,54 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
         @if (error) {
           <p class="error">{{ error | translate }}</p>
         }
-        <table>
-          <thead>
-            <tr>
-              <th>{{ 'certificates.number' | translate }}</th>
-              <th>{{ 'certificates.student' | translate }}</th>
-              <th>{{ 'certificates.type' | translate }}</th>
-              <th>{{ 'common.status' | translate }}</th>
-              <th>{{ 'certificates.issuedOn' | translate }}</th>
-              <th>{{ 'certificates.issuedBy' | translate }}</th>
-              <th>{{ 'common.actions' | translate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of rows; track row.id) {
+        @if (rows.length === 0) {
+          <app-empty-state icon="workspace_premium" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate" />
+        } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
               <tr>
-                <td>{{ row.certificateNo || '—' }}</td>
-                <td>
-                  <strong>{{ row.studentName }}</strong>
-                  <div class="muted">{{ row.admissionNo }} · {{ row.className }} {{ row.sectionName }}</div>
-                </td>
-                <td>{{ ('certificates.types.' + row.certificateType) | translate }}</td>
-                <td>
-                  {{ ('certificates.statuses.' + row.status) | translate }}
-                  @if (row.duplicate) {
-                    <span class="badge">{{ 'certificates.duplicate' | translate }}</span>
-                  }
-                </td>
-                <td>{{ row.issuedDate || '—' }}</td>
-                <td>{{ row.issuedByName || '—' }}</td>
-                <td class="actions">
-                  @if (row.canApprove) {
-                    <button class="btn btn-primary" type="button" (click)="approve(row)">{{ 'certificates.approve' | translate }}</button>
-                  }
-                  @if (row.canDownload) {
-                    <button class="btn" type="button" (click)="download(row, false)">{{ 'certificates.download' | translate }}</button>
-                    <button class="btn" type="button" (click)="download(row, true)">{{ 'certificates.reprint' | translate }}</button>
-                  }
-                </td>
+                <th>{{ 'certificates.number' | translate }}</th>
+                <th>{{ 'certificates.student' | translate }}</th>
+                <th>{{ 'certificates.type' | translate }}</th>
+                <th>{{ 'common.status' | translate }}</th>
+                <th>{{ 'certificates.issuedOn' | translate }}</th>
+                <th>{{ 'certificates.issuedBy' | translate }}</th>
+                <th>{{ 'common.actions' | translate }}</th>
               </tr>
-            } @empty {
-              <tr>
-                <td colspan="7" class="center muted">{{ 'common.noData' | translate }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (row of rows; track row.id) {
+                <tr>
+                  <td>{{ row.certificateNo || '—' }}</td>
+                  <td>
+                    <strong>{{ row.studentName }}</strong>
+                    <div class="muted">{{ row.admissionNo }} · {{ row.className }} {{ row.sectionName }}</div>
+                  </td>
+                  <td>{{ ('certificates.types.' + row.certificateType) | translate }}</td>
+                  <td>
+                    <span class="badge status-pill">{{ ('certificates.statuses.' + row.status) | translate }}</span>
+                    @if (row.duplicate) {
+                      <span class="badge">{{ 'certificates.duplicate' | translate }}</span>
+                    }
+                  </td>
+                  <td>{{ row.issuedDate || '—' }}</td>
+                  <td>{{ row.issuedByName || '—' }}</td>
+                  <td class="actions">
+                    @if (row.canApprove) {
+                      <button class="btn btn-primary" type="button" (click)="approve(row)">{{ 'certificates.approve' | translate }}</button>
+                    }
+                    @if (row.canDownload) {
+                      <button class="btn" type="button" (click)="download(row, false)">{{ 'certificates.download' | translate }}</button>
+                      <button class="btn" type="button" (click)="download(row, true)">{{ 'certificates.reprint' | translate }}</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        }
       </div>
     </div>
 
@@ -280,14 +281,12 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
     }
   `,
   styles: `
-    .page-header { margin-bottom: 16px; }
-    h1 { font-size: 1.5rem; margin: 0 0 4px; }
     h2 { font-size: 1.05rem; margin: 0 0 16px; }
     .muted { color: var(--color-muted); margin: 0; }
-    .card { background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
-    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-    .toolbar input, .toolbar select, input, select, textarea {
+    .card { padding: 20px; margin-bottom: 16px; }
+    .card-toolbar input, .card-toolbar select, input, select, textarea {
       padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit;
+      background: var(--color-surface); color: var(--color-text);
     }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
@@ -297,15 +296,12 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
     .dues { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0 16px; }
     .dues .check { margin: 0; }
     .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
     .actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .badge { display: inline-block; margin-left: 6px; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 999px; font-size: .75rem; }
-    .center { text-align: center; }
     .error { color: #b91c1c; }
     .banner.success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; padding: 10px 14px; border-radius: 8px; }
     .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, .45); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px; }
-    .modal { background: #fff; border-radius: 12px; padding: 20px; width: min(560px, 100%); max-height: 90vh; overflow: auto; }
+    .modal { width: min(560px, 100%); max-height: 90vh; overflow: auto; }
     @media (max-width: 720px) { .form-grid { grid-template-columns: 1fr; } .span-2 { grid-column: span 1; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

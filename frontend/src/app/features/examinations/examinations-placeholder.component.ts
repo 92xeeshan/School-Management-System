@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-examinations-placeholder',
-  imports: [TranslateModule],
+  imports: [TranslateModule, EmptyStateComponent],
   template: `
     <div class="tab-page">
       <div class="page-header">
@@ -12,18 +13,14 @@ import { TranslateModule } from '@ngx-translate/core';
           <p class="muted">{{ subtitleKey | translate }}</p>
         </div>
       </div>
-      <div class="card placeholder">
-        <p class="placeholder-title">{{ 'examinations.comingSoon' | translate }}</p>
-        <p class="muted">{{ bodyKey | translate }}</p>
+      <div class="card">
+        <app-empty-state icon="construction" [title]="'examinations.comingSoon' | translate" [hint]="bodyKey | translate" />
       </div>
     </div>
   `,
   styles: `
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     h2 { font-size: 1.2rem; margin: 0 0 4px; }
     .muted { color: var(--color-muted); margin: 0; }
-    .placeholder { padding: 28px 24px; }
-    .placeholder-title { font-weight: 600; margin: 0 0 8px; }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

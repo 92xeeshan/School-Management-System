@@ -1,0 +1,19 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$violet-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: 'Inter',
+      density: 0,
+    )
+  );
+}
+
+html.theme-dark {
+  color-scheme: dark;
+}

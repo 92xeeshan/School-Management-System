@@ -2,27 +2,19 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { StaffTabsComponent } from './staff-tabs.component';
+import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 
 @Component({
   selector: 'app-staff-shell',
-  imports: [RouterOutlet, TranslateModule, StaffTabsComponent],
+  imports: [RouterOutlet, TranslateModule, StaffTabsComponent, PageHeaderComponent],
   template: `
     <div class="page">
-      <div class="page-header">
-        <div>
-          <h1>{{ 'staff.title' | translate }}</h1>
-          <p class="muted">{{ 'staff.subtitle' | translate }}</p>
-        </div>
-      </div>
+      <app-page-header [title]="'staff.title' | translate" [subtitle]="'staff.subtitle' | translate" />
       <app-staff-tabs />
       <router-outlet />
     </div>
   `,
-  styles: `
-    .page-header { margin-bottom: 16px; }
-    h1 { font-size: 1.5rem; margin: 0 0 4px; }
-    .muted { color: var(--color-muted); margin: 0; }
-  `,
+  styles: ``,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffShellComponent {}
