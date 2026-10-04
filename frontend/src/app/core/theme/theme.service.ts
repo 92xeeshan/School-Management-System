@@ -12,6 +12,7 @@ export class ThemeService {
 
   constructor() {
     this.apply(this.themeSubject.value);
+    this.listenToSystemPreference();
   }
 
   get current(): ThemeMode {
@@ -29,7 +30,9 @@ export class ThemeService {
   }
 
   private apply(theme: ThemeMode): void {
-    document.documentElement.classList.toggle('theme-dark', theme === 'dark');
+    const root = document.documentElement;
+    root.classList.toggle('theme-dark', theme === 'dark');
+    root.style.colorScheme = theme;
   }
 
   private storedTheme(): ThemeMode {
@@ -38,5 +41,18 @@ export class ThemeService {
       return stored;
     }
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  private listenToSystemPreference(): void {
+    const media = window.matchMedia?.('(prefers-color-scheme: dark)');
+    media?.addEventListener('change', (event) => {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === 'dark' || stored === 'light') {
+        return;
+      }
+      const theme: ThemeMode = event.matches ? 'dark' : 'light';
+      this.themeSubject.next(theme);
+      this.apply(theme);
+    });
   }
 }

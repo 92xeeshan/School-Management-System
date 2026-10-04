@@ -1,0 +1,20 @@
+:root {
+  --color-primary: var(--mat-sys-primary);
+  --color-primary-soft: var(--mat-sys-primary-container);
+  --color-sidebar: #1e1b4b;
+  --color-sidebar-text: #c7d2fe;
+  --color-bg: var(--mat-sys-surface-container-low);
+  --color-surface: var(--mat-sys-surface);
+  --color-border: var(--mat-sys-outline-variant);
+  --color-muted: var(--mat-sys-on-surface-variant);
+  --color-text: var(--mat-sys-on-surface);
+  --color-danger: var(--mat-sys-error);
+  --color-success: light-dark(#16a34a, #4ade80);
+  --color-warning: light-dark(#d97706, #fbbf24);
+  --color-info: light-dark(#1d4ed8, #93c5fd);
+  --color-danger-soft: light-dark(#fee2e2, #401b1b);
+  --color-success-soft: light-dark(#dcfce7, #14361f);
+  --color-warning-soft: light-dark(#fef3c7, #3d2c0a);
+  --color-info-soft: light-dark(#dbeafe, #1e3a5f);
+  --radius: 12px;
+}

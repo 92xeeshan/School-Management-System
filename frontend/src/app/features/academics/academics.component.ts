@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 interface SchoolClass {
   id: string;
@@ -74,7 +75,7 @@ interface BackendTeacher {
 
 @Component({
   selector: 'app-academics',
-  imports: [TranslateModule, ReactiveFormsModule],
+  imports: [TranslateModule, ReactiveFormsModule, EmptyStateComponent],
   template: `
     <div class="tab-page">
       <div class="page-header">
@@ -97,8 +98,15 @@ interface BackendTeacher {
       }
 
       <div class="card">
-        <div class="table-wrap">
-          <table>
+        @if (classRows.length === 0) {
+          <app-empty-state icon="class" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate">
+            @if (canCreate) {
+              <button class="btn btn-primary" type="button" (click)="openAddModal()">{{ 'academics.addClass' | translate }}</button>
+            }
+          </app-empty-state>
+        } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>{{ 'academics.className' | translate }}</th>
@@ -152,12 +160,11 @@ interface BackendTeacher {
                     </td>
                   }
                 </tr>
-              } @empty {
-                <tr><td [attr.colspan]="canUpdate ? 7 : 6" class="center">{{ 'common.noData' | translate }}</td></tr>
               }
             </tbody>
           </table>
         </div>
+        }
       </div>
     </div>
 
@@ -249,12 +256,7 @@ interface BackendTeacher {
     h2 { font-size: 1.2rem; margin: 0 0 4px; }
     .muted { color: var(--color-muted); }
     .code { font-size: .8rem; font-weight: 400; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--color-border); font-size: .92rem; vertical-align: top; }
-    th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; background: var(--color-bg); }
     .strong { font-weight: 600; }
-    .center { text-align: center; color: var(--color-muted); padding: 28px; }
     .section-chip {
       padding: 4px 10px; border-radius: 20px; font-size: .82rem;
       background: var(--color-primary-soft); color: var(--color-primary); font-weight: 600;
@@ -278,7 +280,7 @@ interface BackendTeacher {
       padding: 40px 16px; overflow-y: auto;
     }
     .modal {
-      background: #fff; border-radius: var(--radius);
+      background: var(--color-surface); border-radius: var(--radius);
       padding: 24px; width: 560px; max-width: 100%;
       box-shadow: 0 20px 50px rgba(0,0,0,.25);
     }
@@ -295,7 +297,7 @@ interface BackendTeacher {
     .multi-select {
       display: flex; flex-wrap: wrap; gap: 8px;
       padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px;
-      max-height: 160px; overflow-y: auto; background: #fff;
+      max-height: 160px; overflow-y: auto; background: var(--color-surface);
     }
     .check-item {
       display: flex; align-items: center; gap: 6px;

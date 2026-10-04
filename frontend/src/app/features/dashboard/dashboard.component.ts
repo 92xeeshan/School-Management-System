@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
-import { ThemeService } from '../../core/theme/theme.service';
 import { AttendanceTrendComponent } from './attendance-trend.component';
 import { DashboardService } from './dashboard.service';
 import { GenderDonutComponent } from './gender-donut.component';
@@ -101,13 +100,6 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
               </div>
             }
           </div>
-
-          <button type="button" class="icon-btn"
-                  (click)="toggleTheme()"
-                  [attr.aria-label]="(theme.current === 'dark' ? 'dashboard.theme.light' : 'dashboard.theme.dark') | translate"
-                  [title]="(theme.current === 'dark' ? 'dashboard.theme.light' : 'dashboard.theme.dark') | translate">
-            {{ theme.current === 'dark' ? '☀' : '☾' }}
-          </button>
 
           <button type="button" class="icon-btn"
                   (click)="showCustomize = !showCustomize"
@@ -603,11 +595,10 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
       gap: 12px;
       padding: 12px 16px;
       border-radius: 10px;
-      background: #fee2e2;
-      border: 1px solid #fecaca;
-      color: #b91c1c;
+      background: var(--color-danger-soft);
+      border: 1px solid color-mix(in srgb, var(--color-danger) 35%, transparent);
+      color: var(--color-danger);
     }
-    html.theme-dark .alert-banner { background: #401b1b; border-color: #7f1d1d; color: #fca5a5; }
     .alert-icon { font-size: 1.2rem; }
     .alert-body { flex: 1; display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
     .alert-link { color: inherit; font-weight: 600; }
@@ -627,10 +618,10 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
       background: var(--color-primary-soft);
       flex-shrink: 0;
     }
-    .kpi.tone-emerald .kpi-icon { background: #d1fae5; }
-    .kpi.tone-amber .kpi-icon { background: #fef3c7; }
-    .kpi.tone-rose .kpi-icon { background: #ffe4e6; }
-    .kpi.tone-sky .kpi-icon { background: #e0f2fe; }
+    .kpi.tone-emerald .kpi-icon { background: var(--color-success-soft); }
+    .kpi.tone-amber .kpi-icon { background: var(--color-warning-soft); }
+    .kpi.tone-rose .kpi-icon { background: var(--color-danger-soft); }
+    .kpi.tone-sky .kpi-icon { background: var(--color-info-soft); }
     .kpi-body { display: flex; flex-direction: column; min-width: 0; }
     .kpi-value { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
     .kpi-label { font-size: .82rem; color: var(--color-muted); }
@@ -642,9 +633,9 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
     .card-head .card-title { margin: 0; }
     .head-stats { display: flex; gap: 6px; }
     .pill { font-size: .72rem; padding: 3px 9px; border-radius: 20px; background: var(--color-bg); color: var(--color-muted); }
-    .pill.present { background: #dcfce7; color: #15803d; }
-    .pill.absent { background: #fee2e2; color: #b91c1c; }
-    .pill.warn { background: #fef3c7; color: #b45309; }
+    .pill.present { background: var(--color-success-soft); color: var(--color-success); }
+    .pill.absent { background: var(--color-danger-soft); color: var(--color-danger); }
+    .pill.warn { background: var(--color-warning-soft); color: var(--color-warning); }
     .link { font-size: .82rem; text-decoration: none; font-weight: 600; }
 
     .insight-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
@@ -791,7 +782,6 @@ export class DashboardComponent implements OnInit {
   constructor(
     private dashboardService: DashboardService,
     private auth: AuthService,
-    readonly theme: ThemeService,
     private fb: FormBuilder,
     private router: Router,
     private cdr: ChangeDetectorRef
@@ -983,10 +973,6 @@ export class DashboardComponent implements OnInit {
   onDateSelected(date: string): void {
     this.selectedDate = date;
     this.cdr.markForCheck();
-  }
-
-  toggleTheme(): void {
-    this.theme.toggle();
   }
 
   widgetVisible(id: WidgetId): boolean {

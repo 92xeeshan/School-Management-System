@@ -15,6 +15,8 @@ import {
   EVENT_TYPES,
 } from './calendar.model';
 import { CalendarService } from './calendar.service';
+import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 interface MonthCell {
   iso: string;
@@ -26,25 +28,19 @@ interface MonthCell {
 
 @Component({
   selector: 'app-calendar',
-  imports: [TranslateModule, ReactiveFormsModule, DatePipe],
+  imports: [TranslateModule, ReactiveFormsModule, DatePipe, PageHeaderComponent, EmptyStateComponent],
   template: `
     <div class="page">
-      <div class="page-header">
-        <div>
-          <h1>{{ 'calendar.title' | translate }}</h1>
-          <p class="muted">{{ 'calendar.subtitle' | translate }}</p>
-        </div>
-        <div class="header-actions">
-          @if (canManage) {
-            <button class="btn" type="button" [disabled]="exporting" (click)="exportHolidays()">
-              {{ 'calendar.exportHolidays' | translate }}
-            </button>
-            <button class="btn btn-primary" type="button" (click)="openCreate()">
-              + {{ 'calendar.addEvent' | translate }}
-            </button>
-          }
-        </div>
-      </div>
+      <app-page-header [title]="'calendar.title' | translate" [subtitle]="'calendar.subtitle' | translate">
+        @if (canManage) {
+          <button class="btn" type="button" [disabled]="exporting" (click)="exportHolidays()">
+            {{ 'calendar.exportHolidays' | translate }}
+          </button>
+          <button class="btn btn-primary" type="button" (click)="openCreate()">
+            + {{ 'calendar.addEvent' | translate }}
+          </button>
+        }
+      </app-page-header>
 
       @if (error) {
         <p class="banner error">{{ error }}</p>
@@ -126,7 +122,7 @@ interface MonthCell {
       @if (currentView === 'agenda') {
         <div class="card agenda">
           @if (agendaEvents.length === 0 && !loading) {
-            <p class="muted empty">{{ 'calendar.noEvents' | translate }}</p>
+            <app-empty-state icon="event_busy" [title]="'calendar.noEvents' | translate" [hint]="'common.emptyHint' | translate" />
           }
           @for (event of agendaEvents; track event.id) {
             <article class="agenda-row">
@@ -311,12 +307,10 @@ interface MonthCell {
     }
   `,
   styles: `
-    .page-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
     .header-actions, .toolbar, .views, .nav, .modal-actions, .row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .muted { color: var(--color-muted); }
-    .toolbar { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-    .btn.active, .btn-primary { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-    .btn-danger { color: #b91c1c; }
+    .toolbar { justify-content: space-between; margin-bottom: 16px; }
+    .btn.active { background: var(--color-primary); color: var(--mat-sys-on-primary); border-color: var(--color-primary); }
     .filter { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
     .filter select, .field input, .field select, .field textarea {
       padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; width: 100%;
@@ -332,7 +326,7 @@ interface MonthCell {
     .cell.out { opacity: .45; }
     .cell.today { border-color: var(--color-primary); }
     .num { font-weight: 700; font-size: .85rem; }
-    .chip { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: .72rem; font-weight: 600; background: #eef2ff; color: #3730a3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .chip { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: .72rem; font-weight: 600; background: var(--color-primary-soft); color: var(--color-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .chip.block { display: flex; flex-direction: column; width: 100%; text-align: left; border: 0; cursor: pointer; margin-bottom: 6px; }
     .type-holiday { background: #fee2e2; color: #b91c1c; }
     .type-exam { background: #ffedd5; color: #c2410c; }

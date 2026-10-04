@@ -4,6 +4,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 interface Notice {
   id: string;
@@ -39,15 +41,10 @@ function toNotice(n: BackendNotice): Notice {
 
 @Component({
   selector: 'app-notices',
-  imports: [TranslateModule, ReactiveFormsModule],
+  imports: [TranslateModule, ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent],
   template: `
     <div class="page">
-      <div class="page-header">
-        <div>
-          <h1>{{ 'notices.title' | translate }}</h1>
-          <p class="muted">{{ 'notices.subtitle' | translate }}</p>
-        </div>
-      </div>
+      <app-page-header [title]="'notices.title' | translate" [subtitle]="'notices.subtitle' | translate" />
 
       @if (canCreate) {
       <div class="card composer">
@@ -90,8 +87,11 @@ function toNotice(n: BackendNotice): Notice {
       }
 
       <div class="card">
-        <div class="table-wrap">
-          <table>
+        @if (notices.length === 0) {
+          <app-empty-state icon="campaign" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate" />
+        } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>{{ 'notices.titleField' | translate }}</th>
@@ -109,21 +109,18 @@ function toNotice(n: BackendNotice): Notice {
                   <td>{{ notice.publishedOn ?? '—' }}</td>
                   <td>{{ notice.expiresOn ?? '—' }}</td>
                   <td>
-                    <span class="badge" [class.badge-success]="notice.status === 'PUBLISHED'" [class.badge-muted]="notice.status === 'DRAFT'">{{ notice.status }}</span>
+                    <span class="badge status-pill" [class.badge-success]="notice.status === 'PUBLISHED'" [class.badge-muted]="notice.status === 'DRAFT'">{{ notice.status }}</span>
                   </td>
                 </tr>
-              } @empty {
-                <tr><td colspan="5" class="center">{{ 'common.noData' | translate }}</td></tr>
               }
             </tbody>
           </table>
         </div>
+        }
       </div>
     </div>
   `,
   styles: `
-    .page-header { margin-bottom: 20px; }
-    h1 { font-size: 1.5rem; margin: 0 0 4px; }
     .muted { color: var(--color-muted); }
     .composer { margin-bottom: 24px; padding: 20px; }
     .card-title { margin: 0 0 16px; font-size: 1.05rem; }
@@ -133,15 +130,11 @@ function toNotice(n: BackendNotice): Notice {
     .field label { font-weight: 500; font-size: .85rem; color: var(--color-muted); }
     input, select, textarea {
       padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit;
+      background: var(--color-surface); color: var(--color-text);
     }
     textarea { resize: vertical; }
     .form-actions { margin-top: 16px; display: flex; justify-content: flex-end; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--color-border); font-size: .92rem; }
-    th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; background: var(--color-bg); }
     .strong { font-weight: 600; }
-    .center { text-align: center; color: var(--color-muted); padding: 28px; }
     @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } .span-2 { grid-column: span 1; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

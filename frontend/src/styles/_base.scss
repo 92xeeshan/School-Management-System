@@ -1,0 +1,30 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+html.rtl body,
+html.rtl .rtl-font {
+  font-family: 'Noto Nastaliq Urdu', 'Segoe UI', system-ui, sans-serif;
+}
+
+h1, h2, h3, h4 { color: var(--color-text); }
+
+a { color: var(--color-primary); }
+
+input, select, textarea {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+input:disabled, select:disabled, textarea:disabled {
+  background: var(--color-bg);
+  color: var(--color-muted);
+}

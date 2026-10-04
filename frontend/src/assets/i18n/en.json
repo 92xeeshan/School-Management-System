@@ -14,6 +14,8 @@
     "status": "Status",
     "all": "All",
     "noData": "No records found",
+    "emptyHint": "Try adjusting your filters or refresh the list.",
+    "selectToContinue": "Select an option above to continue.",
     "error": "Something went wrong",
     "retry": "Retry",
     "export": "Export",
@@ -21,7 +23,13 @@
     "welcome": "Welcome",
     "logout": "Log Out",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "themeToggle": "Toggle color theme",
+    "themeLight": "Switch to light theme",
+    "themeDark": "Switch to dark theme",
+    "language": "Language",
+    "collapseNav": "Collapse navigation",
+    "expandNav": "Expand navigation"
   },
   "login": {
     "title": "Sign In",
@@ -45,7 +53,15 @@
     "staff": "Staff Management",
     "calendar": "Calendar",
     "downloads": "Downloads",
-    "certificates": "Certificates"
+    "certificates": "Certificates",
+    "menu": "Open navigation"
+  },
+  "roles": {
+    "SUPER_ADMIN": "Super Admin",
+    "ADMIN": "Admin",
+    "TEACHER": "Teacher",
+    "PARENT": "Parent",
+    "STUDENT": "Student"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -626,6 +642,8 @@
   "fees": {
     "title": "Fees",
     "subtitle": "Track fee collection and dues",
+    "selectStudent": "Select student",
+    "selectStudentHint": "Choose a student to view dues, installments and collections.",
     "collectFee": "Collect Fee",
     "feeStructure": "Fee Structure",
     "collections": "Collections",

@@ -59,12 +59,12 @@ import { AppNotification } from '../../core/notifications/notification.model';
       width: 36px; height: 36px;
       border: 1px solid var(--color-border);
       border-radius: 50%;
-      background: #fff;
-      color: #334155;
+      background: var(--color-surface);
+      color: var(--color-text);
       display: inline-flex; align-items: center; justify-content: center;
       cursor: pointer;
     }
-    .bell-btn:hover { background: #f8fafc; }
+    .bell-btn:hover { background: var(--color-bg); }
     .bell-icon { width: 18px; height: 18px; }
     .badge {
       position: absolute; top: -4px; right: -4px;
@@ -76,7 +76,8 @@ import { AppNotification } from '../../core/notifications/notification.model';
     .panel {
       position: absolute; right: 0; top: calc(100% + 8px);
       width: 360px; max-width: 92vw;
-      background: #fff;
+      background: var(--color-surface);
+      color: var(--color-text);
       border: 1px solid var(--color-border);
       border-radius: 12px;
       box-shadow: 0 12px 32px rgba(15, 23, 42, .12);
@@ -100,8 +101,8 @@ import { AppNotification } from '../../core/notifications/notification.model';
       border-bottom: 1px solid var(--color-border);
       cursor: pointer;
     }
-    .list li:hover { background: #f8fafc; }
-    .list li.unread { background: #eff6ff; }
+    .list li:hover { background: var(--color-bg); }
+    .list li.unread { background: var(--color-primary-soft); }
     .cat { font-size: 1.05rem; line-height: 1.4; }
     .body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .title { font-weight: 600; font-size: .92rem; }

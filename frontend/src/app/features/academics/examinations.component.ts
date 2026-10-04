@@ -4,6 +4,7 @@ import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } fr
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 interface AcademicYear {
   id: string;
@@ -58,7 +59,7 @@ const ASSESSMENT_TYPES = ['QUIZ', 'ASSIGNMENT', 'MIDTERM', 'PRACTICAL', 'FINAL']
 
 @Component({
   selector: 'app-academics-examinations',
-  imports: [TranslateModule, ReactiveFormsModule],
+  imports: [TranslateModule, ReactiveFormsModule, EmptyStateComponent],
   template: `
     <div class="tab-page">
       <div class="page-header">
@@ -80,30 +81,36 @@ const ASSESSMENT_TYPES = ['QUIZ', 'ASSIGNMENT', 'MIDTERM', 'PRACTICAL', 'FINAL']
         <p class="banner error">{{ pageError }}</p>
       }
 
-      <div class="filters">
-        <input type="search" [value]="search" (input)="onSearch($event)" [placeholder]="'common.search' | translate" />
-        <select [value]="classFilter" (change)="onClassFilter($event)">
-          <option value="">{{ 'academics.allClasses' | translate }}</option>
-          @for (klass of classes; track klass.id) {
-            <option [value]="klass.id">{{ klass.name }}</option>
-          }
-        </select>
-        <select [value]="scaleFilter" (change)="onScaleFilter($event)">
-          <option value="">{{ 'academics.allScales' | translate }}</option>
-          @for (scale of scaleTypes; track scale) {
-            <option [value]="scale">{{ scaleLabel(scale) | translate }}</option>
-          }
-        </select>
-        <select [value]="statusFilter" (change)="onStatusFilter($event)">
-          <option value="">{{ 'academics.allStatuses' | translate }}</option>
-          <option value="ACTIVE">{{ 'academics.statusActive' | translate }}</option>
-          <option value="INACTIVE">{{ 'academics.statusInactive' | translate }}</option>
-        </select>
-      </div>
-
       <div class="card">
-        <div class="table-wrap">
-          <table>
+        <div class="card-toolbar">
+          <input type="search" [value]="search" (input)="onSearch($event)" [placeholder]="'common.search' | translate" />
+          <select [value]="classFilter" (change)="onClassFilter($event)">
+            <option value="">{{ 'academics.allClasses' | translate }}</option>
+            @for (klass of classes; track klass.id) {
+              <option [value]="klass.id">{{ klass.name }}</option>
+            }
+          </select>
+          <select [value]="scaleFilter" (change)="onScaleFilter($event)">
+            <option value="">{{ 'academics.allScales' | translate }}</option>
+            @for (scale of scaleTypes; track scale) {
+              <option [value]="scale">{{ scaleLabel(scale) | translate }}</option>
+            }
+          </select>
+          <select [value]="statusFilter" (change)="onStatusFilter($event)">
+            <option value="">{{ 'academics.allStatuses' | translate }}</option>
+            <option value="ACTIVE">{{ 'academics.statusActive' | translate }}</option>
+            <option value="INACTIVE">{{ 'academics.statusInactive' | translate }}</option>
+          </select>
+        </div>
+        @if (filteredRows.length === 0) {
+          <app-empty-state icon="grade" [title]="loading ? ('common.loading' | translate) : ('common.noData' | translate)" [hint]="'common.emptyHint' | translate">
+            @if (canManage && !loading) {
+              <button class="btn btn-primary" type="button" (click)="openAddModal()">{{ 'academics.addScheme' | translate }}</button>
+            }
+          </app-empty-state>
+        } @else {
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>{{ 'academics.schemeName' | translate }}</th>
@@ -131,7 +138,7 @@ const ASSESSMENT_TYPES = ['QUIZ', 'ASSIGNMENT', 'MIDTERM', 'PRACTICAL', 'FINAL']
                   <td>{{ scaleLabel(row.scaleType) | translate }}</td>
                   <td>{{ row.passMarks }} / {{ row.maxMarks }} ({{ row.passPercent }}%)</td>
                   <td>
-                    <span class="badge" [class.badge-success]="row.status === 'ACTIVE'" [class.badge-muted]="row.status !== 'ACTIVE'">
+                    <span class="badge status-pill" [class.badge-success]="row.status === 'ACTIVE'" [class.badge-muted]="row.status !== 'ACTIVE'">
                       {{ statusLabel(row.status) | translate }}
                     </span>
                   </td>
@@ -149,16 +156,11 @@ const ASSESSMENT_TYPES = ['QUIZ', 'ASSIGNMENT', 'MIDTERM', 'PRACTICAL', 'FINAL']
                     </div>
                   </td>
                 </tr>
-              } @empty {
-                <tr>
-                  <td colspan="8" class="center">
-                    {{ loading ? ('common.loading' | translate) : ('common.noData' | translate) }}
-                  </td>
-                </tr>
               }
             </tbody>
           </table>
         </div>
+        }
       </div>
     </div>
 
@@ -350,15 +352,9 @@ const ASSESSMENT_TYPES = ['QUIZ', 'ASSIGNMENT', 'MIDTERM', 'PRACTICAL', 'FINAL']
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
     h2 { font-size: 1.2rem; margin: 0 0 4px; }
     .muted { color: var(--color-muted); }
-    .filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filters input, .filters select { padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; background: #fff; }
-    .filters input { min-width: 220px; flex: 1; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--color-border); font-size: .92rem; vertical-align: top; }
-    th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; background: var(--color-bg); }
+    .card-toolbar input, .card-toolbar select { padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; background: var(--color-surface); color: var(--color-text); }
+    .card-toolbar input { min-width: 220px; flex: 1; }
     .strong { font-weight: 600; }
-    .center { text-align: center; color: var(--color-muted); padding: 28px; }
     .banner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
     .banner.success { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
     .banner.error { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
@@ -374,7 +370,7 @@ const ASSESSMENT_TYPES = ['QUIZ', 'ASSIGNMENT', 'MIDTERM', 'PRACTICAL', 'FINAL']
       padding: 40px 16px; overflow-y: auto;
     }
     .modal {
-      background: #fff; border-radius: var(--radius);
+      background: var(--color-surface); border-radius: var(--radius);
       padding: 24px; width: 760px; max-width: 100%;
       box-shadow: 0 20px 50px rgba(0,0,0,.25);
     }

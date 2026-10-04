@@ -6,17 +6,18 @@ import { AuthService } from '../../core/auth/auth.service';
 import { EMPLOYMENT_TYPES, GENDERS, StaffMember } from './staff.model';
 import { StaffService } from './staff.service';
 import { createStaffForm, staffFormToPayload, staffFormValue } from './staff-form.util';
+import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-non-teaching-staff',
-  imports: [TranslateModule, ReactiveFormsModule],
+  imports: [TranslateModule, ReactiveFormsModule, EmptyStateComponent],
   template: `
     @if (pageError) {
       <p class="banner error">{{ pageError }}</p>
     }
 
     <div class="card">
-      <div class="table-toolbar">
+      <div class="card-toolbar">
         <input class="search" type="search" [placeholder]="'common.search' | translate"
                (input)="filter = $any($event.target).value" />
         @if (canCreate) {
@@ -25,8 +26,15 @@ import { createStaffForm, staffFormToPayload, staffFormValue } from './staff-for
           </button>
         }
       </div>
-      <div class="table-wrap">
-        <table>
+      @if (filteredMembers.length === 0) {
+        <app-empty-state icon="badge" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate">
+          @if (canCreate) {
+            <button class="btn btn-primary" type="button" (click)="openAddModal()">{{ 'staff.addNonTeaching' | translate }}</button>
+          }
+        </app-empty-state>
+      } @else {
+      <div class="data-table-wrap">
+        <table class="data-table">
           <thead>
             <tr>
               <th>{{ 'staff.employeeNo' | translate }}</th>
@@ -62,7 +70,7 @@ import { createStaffForm, staffFormToPayload, staffFormValue } from './staff-for
                 </td>
                 <td>{{ member.phone || '—' }}</td>
                 <td>
-                  <span class="badge"
+                  <span class="badge status-pill"
                         [class.badge-success]="member.status === 'ACTIVE'"
                         [class.badge-muted]="member.status !== 'ACTIVE'">
                     {{ member.status }}
@@ -86,16 +94,11 @@ import { createStaffForm, staffFormToPayload, staffFormValue } from './staff-for
                   </td>
                 }
               </tr>
-            } @empty {
-              <tr>
-                <td [attr.colspan]="canUpdate || canDelete ? 8 : 7" class="center">
-                  {{ 'common.noData' | translate }}
-                </td>
-              </tr>
             }
           </tbody>
         </table>
       </div>
+      }
     </div>
 
     @if (showModal) {
@@ -201,20 +204,11 @@ import { createStaffForm, staffFormToPayload, staffFormValue } from './staff-for
   styles: `
     .banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: .9rem; }
     .banner.error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
-    .table-toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center;
-                     padding: 14px 16px; border-bottom: 1px solid var(--color-border); }
     .search { padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px;
-              width: 260px; font: inherit; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--color-border); font-size: .92rem; }
-    th { color: var(--color-muted); font-weight: 600; font-size: .8rem; text-transform: uppercase;
-         letter-spacing: .03em; background: var(--color-bg); }
-    tbody tr:hover { background: var(--color-primary-soft); }
+              width: 260px; font: inherit; background: var(--color-surface); color: var(--color-text); }
     .strong { font-weight: 600; }
     .sub { color: var(--color-muted); font-size: .8rem; }
     .badge-info { background: var(--color-primary-soft); color: var(--color-primary); }
-    .center { text-align: center; color: var(--color-muted); padding: 28px; }
 
     .modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(15, 23, 42, .5);
                       display: flex; align-items: flex-start; justify-content: center;

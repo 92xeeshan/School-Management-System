@@ -293,7 +293,7 @@ const ATTENDANCE = ['PRESENT', 'ABSENT', 'EXCUSED'] as const;
       padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; min-width: 140px;
     }
     .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-    .chip { padding: 6px 12px; border-radius: 20px; background: #fff; border: 1px solid var(--color-border); font-size: .82rem; }
+    .chip { padding: 6px 12px; border-radius: 20px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: .82rem; }
     .table-wrap { overflow-x: auto; }
     table.sheet { width: 100%; border-collapse: collapse; min-width: 980px; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--color-border); font-size: .9rem; }
