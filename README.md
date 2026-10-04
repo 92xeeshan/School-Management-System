@@ -1,73 +1,177 @@
 # School Management System
 
-Multi-tenant (RLS) school management system.
+Multi-tenant school operations platform: students, staff, academics, attendance, fees, exams, certificates, notices, and calendar.
 
-**Stack:** Spring Boot 3 / Java 21 / PostgreSQL 15 / Spring Security JWT / Caffeine / MinIO / JasperReports / Angular 19 + Material + ngx-translate / Flyway / Docker Compose.
+**Stack:** Spring Boot 3.5 / Java 21 / PostgreSQL 15 / Spring Security JWT / Caffeine / MinIO / JasperReports / Angular 19 + Material M3 + ngx-translate / Flyway / Docker Compose.
+
+Roles in code: `SUPER_ADMIN`, `ADMIN`, `TEACHER`, `PARENT`, `STUDENT`. There is no `PRINCIPAL` role.
+
+---
 
 ## Documentation
 
-| Topic          | File                                   |
-|----------------|----------------------------------------|
-| Backend setup  | `docs/README-BACKEND.md`               |
-| Frontend setup | `docs/README-FRONTEND.md`              |
-| UI flow        | `docs/UI-FLOW.md`                      |
-| Docker setup   | `docs/DOCKER-SETUP.md`                 |
-| DB scripts     | `db/01_create_tables.sql`, `db/02_insert_records.sql` |
-| Run scripts    | `scripts/run-linux.sh`, `scripts/run-windows.bat` |
+| Topic | Path |
+|---|---|
+| Business / product | `docs/product/BRD.md`, `docs/product/PRD.md`, `docs/product/USER_STORIES_SCOPE.md` |
+| Architecture | `docs/architecture/ARCHITECTURE.md`, `docs/architecture/DATABASE_SCHEMA.md` |
+| API | `docs/api/API_SPECIFICATION.md` (live: `/swagger-ui.html`) |
+| Contributing | `CONTRIBUTING.md` |
+| Deploy / runbook | `docs/devops/DEPLOYMENT.md`, `docs/devops/RUNBOOK.md` |
+| Security / RBAC | `docs/security/SECURITY.md` |
+| QA | `docs/qa/TEST_PLAN.md`, `docs/qa/TEST_CASES.md` |
+| End users | `docs/user-guides/USER_MANUAL.md`, `docs/user-guides/ADMIN_GUIDE.md` |
+| Changelog | `CHANGELOG.md` |
+| Backend setup | `docs/README-BACKEND.md` |
+| Frontend setup | `docs/README-FRONTEND.md` |
+| Docker | `docs/DOCKER-SETUP.md` |
+| UI flow (roles) | `docs/UI-FLOW.md` |
 
-## Modules
+---
 
-- Auth & user management (JWT + refresh tokens, RBAC with extensible role/permission model)
-- Multi-language UI (English, Hindi, Urdu with RTL) — switchable at runtime, stored per user
-- Student information system (profiles, guardians, class/section assignment, bulk CSV import)
-- Academics (class, section, subject, timetable)
-- Daily attendance with reports
-- Fees (structure per class/category, manual payments, PDF receipts)
-- Notices with role-based visibility
-- Role-specific dashboards (admin, teacher, parent, student)
+## 1. Prerequisites and tooling
 
-## Quick start (local dev with Docker Compose)
+| Software | Version | Purpose |
+|---|---|---|
+| Git | latest | Clone |
+| JDK | 21 LTS | Backend |
+| Maven | 3.9+ | Backend build |
+| Node.js | 20+ (npm 10+) | Frontend |
+| PostgreSQL | 15 | Database (if not using Compose) |
+| Docker Desktop / Docker Engine + Compose v2 | latest | Optional all-in-one |
+| MinIO | latest | Optional files/PDFs |
+
+Angular CLI global install is not required (`npx` / local `node_modules`).
+
+---
+
+## 2. Environment setup
 
 ```bash
+git clone https://github.com/92xeeshan/School-Management-System.git
+cd School-Management-System
 cp .env.example .env
+```
+
+`.env.example` keys: `POSTGRES_*`, `MINIO_ROOT_*`, `JWT_SECRET`. Defaults are fine for local demo. Change secrets before any real data.
+
+### PostgreSQL roles (non-Docker)
+
+```sql
+CREATE ROLE schoolms LOGIN PASSWORD 'schoolms';
+CREATE ROLE app_rls  LOGIN PASSWORD 'app_rls';
+CREATE ROLE app_admin LOGIN PASSWORD 'app_admin';
+CREATE DATABASE schoolms OWNER schoolms;
+```
+
+Flyway (user `schoolms`) creates tables, RLS, grants, and demo data on first backend start.
+
+Point at an external database with `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` or `SPRING_DATASOURCE_URL`. Optional: `scripts/apply-db.sh`.
+
+---
+
+## 3. Local run and build
+
+### Docker Compose (recommended)
+
+```bash
 docker compose up --build
 ```
 
-| Service  | URL                          |
-|----------|------------------------------|
-| Frontend | http://localhost:4200        |
-| Backend  | http://localhost:8080        |
-| Swagger  | http://localhost:8080/swagger-ui.html |
-| MinIO    | http://localhost:9001        |
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:4200 |
+| Backend | http://localhost:8080 |
+| Swagger | http://localhost:8080/swagger-ui.html |
+| Health | http://localhost:8080/actuator/health |
+| MinIO console | http://localhost:9001 (`minioadmin` / `minioadmin`) |
 
-## Running without Docker
+The frontend nginx proxies `/api/` to the backend. Stop with Ctrl+C or `docker compose down`.
 
-Requirements: JDK 21, Maven 3.9+, Node 20+, PostgreSQL 15.
+### Without Docker
 
 ```bash
-# database
-createdb schoolms
-
-# backend (dev profile)
-cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=dev
-
-# frontend
-cd frontend && npm install && npm start
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-Or use the bundled run scripts (`scripts/run-linux.sh` / `scripts/run-windows.bat`)
-to start both together.
+```bash
+cd frontend
+npm install
+npm start
+```
 
-Environment variables are provided via `application-dev.yml`/`application-prod.yml`; no secrets are hardcoded.
+Dev server proxies `/api` to `http://localhost:8080` (`frontend/src/proxy.conf.json`).
 
-To point the app at an external PostgreSQL instance (M2), copy `.env.example` to `.env` and set `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` (or `SPRING_DATASOURCE_URL`). Apply schema with `scripts/apply-db.sh` or let Flyway run on backend startup.
+Together: `scripts/run-linux.sh` or `scripts/run-windows.bat`.
 
-## Default accounts
+### Production-like build
 
-Seeded by Flyway (`V3__seed_demo_data.sql`). All accounts use the password `Admin@123`:
+```bash
+cd backend && mvn -DskipTests package
+java -jar target/schoolms-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=prod
+```
 
-## Architecture notes
+```bash
+cd frontend && npm run build
+```
 
-- Shared-DB multi-tenancy with a `school_id` discriminator on every tenant table and PostgreSQL Row-Level Security policies enforced at the database layer.
-- JWT access token (short-lived) + DB-backed refresh token. Authorities are resolved from the `role_permission` table and cached in Caffeine.
-- Backend and frontend messages are localized (Spring MessageSource / ngx-translate) for en/hi/ur.
+Output: `frontend/dist/frontend/browser`. Prod profile **requires** `JWT_SECRET` (and MinIO keys if used).
+
+---
+
+## 4. Testing
+
+```bash
+cd backend && mvn test
+cd frontend && npm run build
+cd frontend && npm test
+```
+
+`mvn test` is the meaningful automated gate (service unit tests). Frontend Karma tests are minimal. See `docs/qa/TEST_PLAN.md`.
+
+There is no `npm run lint` script.
+
+---
+
+## 5. Demo accounts
+
+Password for every seeded account: `Admin@123`.
+
+| Username | Role |
+|---|---|
+| `superadmin` | Super Admin (all schools, RLS bypass) |
+| `admin` | School Admin |
+| `teacher` | Teacher (Asha Sharma, EMP001, Class 5-A) |
+| `parent` | Parent of ADM0001 |
+| `student` | Student Aarav Kumar, ADM0001 |
+
+---
+
+## 6. Modules
+
+- Auth (JWT + refresh), RBAC permission codes, PostgreSQL RLS multi-tenancy
+- Students, guardians, enrollment, staff
+- Academics, timetable, grading schemes
+- Attendance, fees, notices, calendar
+- Exams, admit cards, report cards, marksheets (publish lock)
+- Certificates (generate, request, class-teacher review, admin approve)
+- Dashboards, in-app notifications
+- Light/dark Material M3 UI; en / hi / ur
+
+---
+
+## 7. Troubleshooting FAQ
+
+| Problem | Fix |
+|---|---|
+| Flyway `role "app_rls" does not exist` | Create roles in section 2 |
+| `Connection refused` port 5432 | Start PostgreSQL; check `POSTGRES_HOST` |
+| Frontend login fails | Backend must be on 8080; wait for Flyway; check `/actuator/health` |
+| 403 on API from the browser | Add the UI origin to `CORS_ALLOWED_ORIGINS` |
+| API 404 from the UI | Proxy `/api` not reaching backend (`proxy.conf.json` / nginx) |
+| Port 4200 or 8080 busy | Stop the other process or change Compose `ports` |
+| 401 after idle | Refresh token expired (30 days) or revoked; log in again |
+| JWT errors in prod | Set `JWT_SECRET` (32+ characters) |
+| PDFs/uploads fail | Start MinIO; set `MINIO_ENDPOINT` |
+
+More: `docs/README-BACKEND.md`, `docs/README-FRONTEND.md`, `docs/devops/RUNBOOK.md`.
