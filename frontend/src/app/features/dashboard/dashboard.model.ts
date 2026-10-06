@@ -138,6 +138,7 @@ export type WidgetId =
   | 'attendanceTrend'
   | 'starStudents'
   | 'roleInsights'
+  | 'expenseChart'
   | 'calendar'
   | 'agenda'
   | 'upcoming'

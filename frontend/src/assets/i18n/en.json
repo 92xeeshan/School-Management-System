@@ -49,6 +49,7 @@
     "examinations": "Examinations",
     "attendance": "Attendance",
     "fees": "Fees",
+    "payroll": "Payroll",
     "notices": "Notices",
     "staff": "Staff Management",
     "calendar": "Calendar",
@@ -77,6 +78,9 @@
     "recentNotices": "Recent Notices",
     "attendanceSummary": "Attendance Overview",
     "feesSummary": "Fees Overview",
+    "expenseChart": {
+      "title": "Expense trends"
+    },
     "gender": {
       "title": "Gender Ratio",
       "total": "Students",
@@ -185,6 +189,7 @@
         "attendanceTrend": "Attendance Trend",
         "starStudents": "Star Students",
         "roleInsights": "Insights",
+        "expenseChart": "Expense trends",
         "calendar": "Calendar",
         "agenda": "Daily Agenda",
         "upcoming": "Upcoming Events",
@@ -905,6 +910,65 @@
       "TEACHER_REVIEWED": "Teacher reviewed",
       "REJECTED": "Rejected",
       "CANCELLED": "Cancelled"
+    }
+  },
+  "payroll": {
+    "title": "Expense & Payroll",
+    "subtitle": "Record school expenses, process payroll, and view published payslips.",
+    "tabs": {
+      "expenses": "Expenses",
+      "runs": "Payroll runs",
+      "myPayslips": "My payslips"
+    },
+    "year": "Year",
+    "month": "Month",
+    "date": "Date",
+    "category": "Category",
+    "vendor": "Vendor",
+    "description": "Description",
+    "amount": "Amount",
+    "paymentMethod": "Payment method",
+    "addExpense": "Add expense",
+    "monthlySpend": "Monthly spend",
+    "byCategory": "By category",
+    "createRun": "Create payroll run",
+    "period": "Period",
+    "payslips": "Payslips",
+    "netTotal": "Net total",
+    "process": "Process",
+    "publishSlips": "Publish salary slips",
+    "markPaid": "Mark paid",
+    "viewPayslips": "View payslips",
+    "hidePayslips": "Hide payslips",
+    "employee": "Employee",
+    "employeeNo": "Employee no",
+    "gross": "Gross",
+    "net": "Net",
+    "viewPdf": "View PDF",
+    "downloadPdf": "Download PDF",
+    "pdfPreview": "Payslip preview",
+    "noPayslips": "No published payslips",
+    "noPayslipsHint": "Payslips appear here after admin publishes a payroll run.",
+    "exportFailed": "Could not generate the payslip PDF.",
+    "status": {
+      "DRAFT": "Draft",
+      "PROCESSED": "Processed",
+      "PUBLISHED": "Published",
+      "PAID": "Paid"
+    },
+    "months": {
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
     }
   },
   "notifications": {

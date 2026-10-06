@@ -49,6 +49,7 @@
     "examinations": "امتحانات",
     "attendance": "حاضری",
     "fees": "فیس",
+    "payroll": "پے رول",
     "notices": "اطلاعات",
     "staff": "عملے کا انتظام",
     "calendar": "کیلنڈر",
@@ -77,6 +78,9 @@
     "recentNotices": "حالیہ اطلاعات",
     "attendanceSummary": "حاضری کا جائزہ",
     "feesSummary": "فیس کا جائزہ",
+    "expenseChart": {
+      "title": "خرچ کے رجحانات"
+    },
     "gender": {
       "title": "صنفی تناسب",
       "total": "طلباء",
@@ -185,6 +189,7 @@
         "attendanceTrend": "حاضری کا رجحان",
         "starStudents": "نمایاں طلباء",
         "roleInsights": "بصیرت",
+        "expenseChart": "خرچ کے رجحانات",
         "calendar": "کیلنڈر",
         "agenda": "روزانہ ایجنڈا",
         "upcoming": "آنے والی تقریبات",
@@ -905,6 +910,65 @@
       "TEACHER_REVIEWED": "استاد کا جائزہ",
       "REJECTED": "مسترد",
       "CANCELLED": "منسوخ"
+    }
+  },
+  "payroll": {
+    "title": "خرچ اور پے رول",
+    "subtitle": "اسکول کے اخراجات درج کریں، پے رول پروسیس کریں اور شائع شدہ تنخواہ کی پرچیاں دیکھیں۔",
+    "tabs": {
+      "expenses": "اخراجات",
+      "runs": "پے رول رنز",
+      "myPayslips": "میری تنخواہ کی پرچیاں"
+    },
+    "year": "سال",
+    "month": "مہینہ",
+    "date": "تاریخ",
+    "category": "زمرہ",
+    "vendor": "فروش",
+    "description": "تفصیل",
+    "amount": "رقم",
+    "paymentMethod": "ادائیگی کا طریقہ",
+    "addExpense": "خرچ شامل کریں",
+    "monthlySpend": "ماہانہ خرچ",
+    "byCategory": "زمرے کے مطابق",
+    "createRun": "پے رول رن بنائیں",
+    "period": "مدت",
+    "payslips": "تنخواہ کی پرچیاں",
+    "netTotal": "خالص کل",
+    "process": "پروسیس",
+    "publishSlips": "تنخواہ کی پرچیاں شائع کریں",
+    "markPaid": "ادا شدہ نشان زد کریں",
+    "viewPayslips": "پرچیاں دیکھیں",
+    "hidePayslips": "پرچیاں چھپائیں",
+    "employee": "ملازم",
+    "employeeNo": "ملازم نمبر",
+    "gross": "مجموعی",
+    "net": "خالص",
+    "viewPdf": "پی ڈی ایف دیکھیں",
+    "downloadPdf": "پی ڈی ایف ڈاؤن لوڈ",
+    "pdfPreview": "تنخواہ پرچی کا پیش نظارہ",
+    "noPayslips": "کوئی شائع شدہ تنخواہ پرچی نہیں",
+    "noPayslipsHint": "ایڈمن پے رول شائع کرنے کے بعد پرچیاں یہاں نظر آئیں گی۔",
+    "exportFailed": "تنخواہ کی پرچی پی ڈی ایف تیار نہیں ہو سکی۔",
+    "status": {
+      "DRAFT": "ڈرافٹ",
+      "PROCESSED": "پروسیس شدہ",
+      "PUBLISHED": "شائع شدہ",
+      "PAID": "ادا شدہ"
+    },
+    "months": {
+      "1": "جنوری",
+      "2": "فروری",
+      "3": "مارچ",
+      "4": "اپریل",
+      "5": "مئی",
+      "6": "جون",
+      "7": "جولائی",
+      "8": "اگست",
+      "9": "ستمبر",
+      "10": "اکتوبر",
+      "11": "نومبر",
+      "12": "دسمبر"
     }
   },
   "notifications": {
