@@ -15,6 +15,9 @@ import {
 } from './dashboard.model';
 import { MiniCalendarComponent } from './mini-calendar.component';
 import { StarStudentsComponent } from './star-students.component';
+import { ExpenseChartComponent } from '../payroll/expense-chart.component';
+import { ExpenseChart } from '../payroll/payroll.model';
+import { PayrollService } from '../payroll/payroll.service';
 
 interface KpiCard {
   key: string;
@@ -47,6 +50,7 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
   attendanceTrend: true,
   starStudents: true,
   roleInsights: true,
+  expenseChart: true,
   calendar: true,
   agenda: true,
   upcoming: true,
@@ -64,6 +68,7 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
     AttendanceTrendComponent,
     StarStudentsComponent,
     MiniCalendarComponent,
+    ExpenseChartComponent,
   ],
   template: `
     <div class="dashboard">
@@ -199,6 +204,17 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
                 <div class="skeleton block"></div>
               } @else {
                 <app-gender-donut [breakdown]="summary?.gender ?? null" />
+              }
+            </div>
+          }
+
+          @if (showExpenseChart && widgetVisible('expenseChart')) {
+            <div class="card widget">
+              <h3 class="card-title">{{ 'dashboard.expenseChart.title' | translate }}</h3>
+              @if (loadingExpenses) {
+                <div class="skeleton block"></div>
+              } @else {
+                <app-expense-chart [chart]="expenseChart" />
               }
             </div>
           }
@@ -754,7 +770,9 @@ export class DashboardComponent implements OnInit {
   loadingEvents = true;
   loadingUpcoming = true;
   loadingNotices = true;
+  loadingExpenses = false;
   summaryError = false;
+  expenseChart: ExpenseChart | null = null;
 
   showCustomize = false;
   searchOpen = false;
@@ -769,6 +787,7 @@ export class DashboardComponent implements OnInit {
     { id: 'attendanceTrend', labelKey: 'dashboard.customize.widgets.attendanceTrend' },
     { id: 'starStudents', labelKey: 'dashboard.customize.widgets.starStudents' },
     { id: 'roleInsights', labelKey: 'dashboard.customize.widgets.roleInsights' },
+    { id: 'expenseChart', labelKey: 'dashboard.customize.widgets.expenseChart' },
     { id: 'calendar', labelKey: 'dashboard.customize.widgets.calendar' },
     { id: 'agenda', labelKey: 'dashboard.customize.widgets.agenda' },
     { id: 'upcoming', labelKey: 'dashboard.customize.widgets.upcoming' },
@@ -781,6 +800,7 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private dashboardService: DashboardService,
+    private payrollService: PayrollService,
     private auth: AuthService,
     private fb: FormBuilder,
     private router: Router,
@@ -801,6 +821,7 @@ export class DashboardComponent implements OnInit {
     this.loadEvents();
     this.loadUpcoming();
     this.loadNotices();
+    this.loadExpenses();
   }
 
   get displayName(): string {
@@ -825,6 +846,10 @@ export class DashboardComponent implements OnInit {
 
   get showFinance(): boolean {
     return this.auth.hasAnyPermission(['FEE_STRUCTURE_MANAGE', 'FEE_PAYMENT_RECORD']) || this.isAdmin;
+  }
+
+  get showExpenseChart(): boolean {
+    return this.auth.hasPermission('EXPENSE_READ');
   }
 
   get isParentOrStudent(): boolean {
@@ -967,6 +992,25 @@ export class DashboardComponent implements OnInit {
       this.notices = notices.slice(0, 6);
       this.loadingNotices = false;
       this.cdr.markForCheck();
+    });
+  }
+
+  loadExpenses(): void {
+    if (!this.showExpenseChart) {
+      return;
+    }
+    this.loadingExpenses = true;
+    this.cdr.markForCheck();
+    this.payrollService.chart(new Date().getFullYear()).subscribe({
+      next: (chart) => {
+        this.expenseChart = chart;
+        this.loadingExpenses = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.loadingExpenses = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 

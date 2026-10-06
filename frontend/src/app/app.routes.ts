@@ -187,6 +187,50 @@ export const routes: Routes = [
         data: { permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW'] },
       },
       {
+        path: 'payroll',
+        loadComponent: () =>
+          import('./features/payroll/payroll-shell.component').then((m) => m.PayrollShellComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['EXPENSE_READ', 'PAYROLL_READ', 'PAYSLIP_READ'] },
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            redirectTo: () => {
+              const auth = inject(AuthService);
+              if (auth.hasPermission('PAYROLL_READ')) {
+                return 'runs';
+              }
+              if (auth.hasPermission('EXPENSE_READ')) {
+                return 'expenses';
+              }
+              return 'my-payslips';
+            },
+          },
+          {
+            path: 'expenses',
+            loadComponent: () =>
+              import('./features/payroll/expenses.component').then((m) => m.ExpensesComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['EXPENSE_READ'] },
+          },
+          {
+            path: 'runs',
+            loadComponent: () =>
+              import('./features/payroll/payroll-runs.component').then((m) => m.PayrollRunsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['PAYROLL_READ'] },
+          },
+          {
+            path: 'my-payslips',
+            loadComponent: () =>
+              import('./features/payroll/my-payslips.component').then((m) => m.MyPayslipsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['PAYSLIP_READ'] },
+          },
+        ],
+      },
+      {
         path: 'notices',
         loadComponent: () =>
           import('./features/notices/notices.component').then((m) => m.NoticesComponent),

@@ -78,6 +78,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.FORBIDDEN, "auth.access_denied", null, null);
     }
 
+    @ExceptionHandler(RateLimitException.class)
+    public ResponseEntity<ApiErrorResponse> handleRateLimit(RateLimitException ex) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, "error.rate_limited", null, null);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
         log.warn("Data integrity violation", ex);
