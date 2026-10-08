@@ -1,5 +1,5 @@
 package com.schoolms.common.enums;
 
 public enum FeeFrequency {
-    MONTHLY, QUARTERLY, ANNUAL
+    ONE_TIME, MONTHLY, QUARTERLY, HALF_YEARLY, ANNUAL
 }

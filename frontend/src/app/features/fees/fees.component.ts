@@ -10,7 +10,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { ApiResponse, PagedResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
-import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 
 interface StudentOption {
   id: string;
@@ -64,7 +63,6 @@ const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
     TranslateModule,
     ReactiveFormsModule,
     NgClass,
-    PageHeaderComponent,
     EmptyStateComponent,
     MatButtonModule,
     MatFormFieldModule,
@@ -72,9 +70,7 @@ const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
     MatSelectModule,
   ],
   template: `
-    <div class="page">
-      <app-page-header [title]="'fees.title' | translate" [subtitle]="'fees.subtitle' | translate" />
-
+    <div class="stack">
       <div class="card">
         <div class="card-toolbar">
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="toolbar-field">
@@ -217,7 +213,8 @@ const PAYMENT_METHODS = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
     </div>
   `,
   styles: `
-    .card { margin-bottom: 24px; }
+    .stack { display: flex; flex-direction: column; gap: 16px; }
+    .card { margin-bottom: 0; }
     .toolbar-field { min-width: 220px; }
     .toolbar-field.wide { min-width: 280px; flex: 1; }
     .collect-card { padding-bottom: 8px; }

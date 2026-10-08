@@ -42,6 +42,9 @@ public class FeeStructure extends BaseEntity {
     @Column(name = "due_day")
     private Short dueDay;
 
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
     @Column(name = "applicable_from")
     private LocalDate applicableFrom;
 

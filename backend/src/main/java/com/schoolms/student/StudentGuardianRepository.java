@@ -23,4 +23,13 @@ public interface StudentGuardianRepository extends JpaRepository<StudentGuardian
 
     @Query("select sg from StudentGuardian sg where sg.guardian.schoolId = :schoolId and sg.guardian.id = :guardianId")
     List<StudentGuardian> findWithStudents(@Param("schoolId") UUID schoolId, @Param("guardianId") UUID guardianId);
+
+    @Query("""
+            select distinct sg2.student.id from StudentGuardian sg1
+            join StudentGuardian sg2 on sg2.guardian.id = sg1.guardian.id
+            where sg1.student.id = :studentId
+              and sg1.schoolId = :schoolId
+              and sg2.schoolId = :schoolId
+            """)
+    List<UUID> findSiblingStudentIds(@Param("schoolId") UUID schoolId, @Param("studentId") UUID studentId);
 }

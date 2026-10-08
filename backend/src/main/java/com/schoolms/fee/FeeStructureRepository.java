@@ -14,4 +14,12 @@ public interface FeeStructureRepository extends JpaRepository<FeeStructure, UUID
 
     boolean existsBySchoolIdAndClassIdAndAcademicYearIdAndCategoryId(
             UUID schoolId, UUID classId, UUID academicYearId, UUID categoryId);
+
+    boolean existsBySchoolIdAndClassIdAndAcademicYearIdAndCategoryIdAndIdNot(
+            UUID schoolId, UUID classId, UUID academicYearId, UUID categoryId, UUID id);
+
+    List<FeeStructure> findBySchoolIdAndAcademicYearIdAndClassId(
+            UUID schoolId, UUID academicYearId, UUID classId);
+
+    long countBySchoolIdAndAcademicYearId(UUID schoolId, UUID academicYearId);
 }

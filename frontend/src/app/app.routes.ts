@@ -182,9 +182,57 @@ export const routes: Routes = [
       {
         path: 'fees',
         loadComponent: () =>
-          import('./features/fees/fees.component').then((m) => m.FeesComponent),
+          import('./features/fees/fees-shell.component').then((m) => m.FeesShellComponent),
         canActivate: [PermissionGuard],
-        data: { permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW'] },
+        data: { permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW', 'FEE_STRUCTURE_MANAGE'] },
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            redirectTo: () => {
+              const auth = inject(AuthService);
+              if (auth.hasPermission('FEE_STRUCTURE_MANAGE')) {
+                return 'heads';
+              }
+              return 'collect';
+            },
+          },
+          {
+            path: 'heads',
+            loadComponent: () =>
+              import('./features/fees/fee-heads.component').then((m) => m.FeeHeadsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['FEE_STRUCTURE_MANAGE'] },
+          },
+          {
+            path: 'structures',
+            loadComponent: () =>
+              import('./features/fees/fee-structures.component').then((m) => m.FeeStructuresComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['FEE_STRUCTURE_MANAGE'] },
+          },
+          {
+            path: 'discounts',
+            loadComponent: () =>
+              import('./features/fees/fee-discounts.component').then((m) => m.FeeDiscountsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['FEE_STRUCTURE_MANAGE'] },
+          },
+          {
+            path: 'adhoc',
+            loadComponent: () =>
+              import('./features/fees/fee-adhoc.component').then((m) => m.FeeAdhocComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['FEE_STRUCTURE_MANAGE'] },
+          },
+          {
+            path: 'collect',
+            loadComponent: () =>
+              import('./features/fees/fees.component').then((m) => m.FeesComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW', 'FEE_PAYMENT_RECORD'] },
+          },
+        ],
       },
       {
         path: 'payroll',
