@@ -84,7 +84,7 @@ import { FeesService } from './fees.service';
                 <tr>
                   <td>{{ row.name }}</td>
                   <td>{{ row.code }}</td>
-                  <td>{{ 'fees.freq.' + row.frequency | translate }}</td>
+                  <td>{{ 'fees.freq.' + (row.frequency || 'MONTHLY') | translate }}</td>
                   <td>{{ row.optional ? ('fees.optional' | translate) : ('fees.mandatory' | translate) }}</td>
                   <td><span class="badge" [class.badge-success]="row.status === 'ACTIVE'" [class.badge-muted]="row.status !== 'ACTIVE'">{{ row.status }}</span></td>
                   @if (canManage) {

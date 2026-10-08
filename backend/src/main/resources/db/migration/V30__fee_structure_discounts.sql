@@ -129,20 +129,29 @@ SELECT '30000000-0000-0000-0000-0000000000a2', '20000000-0000-0000-0000-00000000
        '2026-27', DATE '2026-04-01', DATE '2027-03-31', false
 WHERE NOT EXISTS (SELECT 1 FROM academic_year y WHERE y.id = '30000000-0000-0000-0000-0000000000a2');
 
-INSERT INTO fee_structure (id, school_id, class_id, academic_year_id, category_id, amount, frequency, due_day, due_date)
-SELECT v.id, '20000000-0000-0000-0000-000000000001', v.class_id, v.year_id, v.cat_id, v.amount, v.freq, v.due_day, v.due_date
-FROM (VALUES
-    ('50000000-0000-0000-0000-0000000000b1'::uuid, '30000000-0000-0000-0000-000000000011'::uuid,
-     '30000000-0000-0000-0000-0000000000a1'::uuid, '50000000-0000-0000-0000-000000000001'::uuid,
-     1400.00, 'MONTHLY', 10::smallint, NULL::date),
-    ('50000000-0000-0000-0000-0000000000b2'::uuid, '30000000-0000-0000-0000-000000000011'::uuid,
-     '30000000-0000-0000-0000-000000000001'::uuid, '50000000-0000-0000-0000-000000000003'::uuid,
-     800.00, 'ONE_TIME', NULL::smallint, DATE '2025-09-10'),
-    ('50000000-0000-0000-0000-0000000000b3'::uuid, '30000000-0000-0000-0000-000000000012'::uuid,
-     '30000000-0000-0000-0000-000000000001'::uuid, '50000000-0000-0000-0000-000000000003'::uuid,
-     1200.00, 'ONE_TIME', NULL::smallint, DATE '2025-09-10')
-) AS v(id, class_id, year_id, cat_id, amount, freq, due_day, due_date)
-WHERE NOT EXISTS (SELECT 1 FROM fee_structure f WHERE f.id = v.id);
+INSERT INTO fee_structure (school_id, class_id, academic_year_id, category_id, amount, frequency, due_day, due_date)
+SELECT '20000000-0000-0000-0000-000000000001', sc.id,
+       '30000000-0000-0000-0000-0000000000a1', '50000000-0000-0000-0000-000000000001',
+       1400.00, 'MONTHLY', 10, NULL
+FROM school_class sc
+WHERE sc.school_id = '20000000-0000-0000-0000-000000000001'
+  AND NOT EXISTS (
+      SELECT 1 FROM fee_structure f
+      WHERE f.class_id = sc.id
+        AND f.academic_year_id = '30000000-0000-0000-0000-0000000000a1'
+        AND f.category_id = '50000000-0000-0000-0000-000000000001');
+
+INSERT INTO fee_structure (school_id, class_id, academic_year_id, category_id, amount, frequency, due_day, due_date)
+SELECT '20000000-0000-0000-0000-000000000001', sc.id,
+       '30000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000003',
+       800.00, 'ONE_TIME', NULL, DATE '2025-09-10'
+FROM school_class sc
+WHERE sc.school_id = '20000000-0000-0000-0000-000000000001'
+  AND NOT EXISTS (
+      SELECT 1 FROM fee_structure f
+      WHERE f.class_id = sc.id
+        AND f.academic_year_id = '30000000-0000-0000-0000-000000000001'
+        AND f.category_id = '50000000-0000-0000-0000-000000000003');
 
 INSERT INTO sibling_discount_rule
     (id, school_id, academic_year_id, sibling_order, discount_type, discount_value, fee_category_id, status)
@@ -172,6 +181,14 @@ WHERE NOT EXISTS (
 
 INSERT INTO student_enrollment (id, school_id, student_id, section_id, academic_year_id, roll_number, status)
 SELECT '40000000-0000-0000-0000-000000000130', '20000000-0000-0000-0000-000000000001',
-       '40000000-0000-0000-0000-000000000030', '30000000-0000-0000-0000-000000000021',
+       '40000000-0000-0000-0000-000000000030', s.id,
        '30000000-0000-0000-0000-000000000001', 3, 'ACTIVE'
-WHERE NOT EXISTS (SELECT 1 FROM student_enrollment e WHERE e.id = '40000000-0000-0000-0000-000000000130');
+FROM section s
+JOIN school_class sc ON sc.id = s.class_id
+WHERE sc.school_id = '20000000-0000-0000-0000-000000000001'
+  AND NOT EXISTS (
+      SELECT 1 FROM student_enrollment e
+      WHERE e.student_id = '40000000-0000-0000-0000-000000000030'
+        AND e.academic_year_id = '30000000-0000-0000-0000-000000000001')
+ORDER BY sc.sort_order NULLS LAST, sc.name, s.name
+LIMIT 1;

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 import { ApiResponse, PagedResponse } from '../../core/models/api.model';
 import {
   AcademicYearOption,
@@ -55,7 +55,17 @@ export class FeesService {
   }
 
   listHeads(): Observable<FeeHead[]> {
-    return this.http.get<ApiResponse<FeeHead[]>>('/api/fees/categories').pipe(map((res) => res.data ?? []));
+    return this.http.get<ApiResponse<FeeHead[]>>('/api/fees/categories').pipe(
+      map((res) =>
+        (res.data ?? []).map((head) => ({
+          ...head,
+          frequency: head.frequency || 'MONTHLY',
+          optional: !!head.optional,
+          refundable: !!head.refundable,
+          status: head.status || 'ACTIVE',
+        }))
+      )
+    );
   }
 
   createHead(payload: FeeHeadPayload): Observable<FeeHead> {
@@ -94,7 +104,12 @@ export class FeesService {
     if (academicYearId) {
       params = params.set('academicYearId', academicYearId);
     }
-    return this.http.get<ApiResponse<FeeStructureAudit[]>>('/api/fees/structures/audit', { params }).pipe(map((res) => res.data ?? []));
+    return this.http
+      .get<ApiResponse<FeeStructureAudit[]>>('/api/fees/structures/audit', { params })
+      .pipe(
+        map((res) => res.data ?? []),
+        catchError(() => of([]))
+      );
   }
 
   listSiblingRules(academicYearId?: string): Observable<SiblingDiscountRule[]> {
@@ -102,7 +117,12 @@ export class FeesService {
     if (academicYearId) {
       params = params.set('academicYearId', academicYearId);
     }
-    return this.http.get<ApiResponse<SiblingDiscountRule[]>>('/api/fees/discounts/sibling', { params }).pipe(map((res) => res.data ?? []));
+    return this.http
+      .get<ApiResponse<SiblingDiscountRule[]>>('/api/fees/discounts/sibling', { params })
+      .pipe(
+        map((res) => res.data ?? []),
+        catchError(() => of([]))
+      );
   }
 
   createSiblingRule(payload: SiblingDiscountPayload): Observable<SiblingDiscountRule> {
@@ -118,7 +138,12 @@ export class FeesService {
     if (academicYearId) {
       params = params.set('academicYearId', academicYearId);
     }
-    return this.http.get<ApiResponse<AdhocLevy[]>>('/api/fees/adhoc', { params }).pipe(map((res) => res.data ?? []));
+    return this.http
+      .get<ApiResponse<AdhocLevy[]>>('/api/fees/adhoc', { params })
+      .pipe(
+        map((res) => res.data ?? []),
+        catchError(() => of([]))
+      );
   }
 
   createLevy(payload: AdhocLevyPayload): Observable<AdhocLevy> {

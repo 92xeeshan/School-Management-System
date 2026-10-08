@@ -143,7 +143,7 @@ import { FeesService } from './fees.service';
                   <td>{{ row.className }}</td>
                   <td>{{ row.categoryName }}</td>
                   <td class="num">{{ formatMoney(row.amount) }}</td>
-                  <td>{{ 'fees.freq.' + row.frequency | translate }}</td>
+                  <td>{{ 'fees.freq.' + (row.frequency || 'MONTHLY') | translate }}</td>
                   <td>{{ row.dueDate || row.dueDay || '—' }}</td>
                   @if (canManage) {
                     <td>
