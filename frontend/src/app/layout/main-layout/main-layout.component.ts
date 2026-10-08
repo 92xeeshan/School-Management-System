@@ -69,7 +69,7 @@ const SIDENAV_STORAGE_KEY = 'schoolms.sidenav.collapsed';
                routerLinkActive="active"
                [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
                [matTooltip]="item.labelKey | translate"
-               [matTooltipDisabled]="!collapsed || (isMobile$ | async) === true"
+               [matTooltipDisabled]="!collapsed"
                matTooltipShowDelay="200"
                (click)="onNavClick()">
               <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
