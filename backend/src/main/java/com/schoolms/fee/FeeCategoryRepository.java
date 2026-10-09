@@ -13,4 +13,8 @@ public interface FeeCategoryRepository extends JpaRepository<FeeCategory, UUID> 
     Optional<FeeCategory> findByIdAndSchoolId(UUID id, UUID schoolId);
 
     boolean existsBySchoolIdAndCode(UUID schoolId, String code);
+
+    boolean existsBySchoolIdAndCodeAndIdNot(UUID schoolId, String code, UUID id);
+
+    List<FeeCategory> findBySchoolIdAndStatusOrderByNameAsc(UUID schoolId, String status);
 }

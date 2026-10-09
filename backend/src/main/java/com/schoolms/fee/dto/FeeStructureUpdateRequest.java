@@ -5,13 +5,8 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
-public record FeeStructureRequest(
-        UUID classId,
-        Boolean applyToAllClasses,
-        @NotNull(message = "{validation.not_null}") UUID academicYearId,
-        @NotNull(message = "{validation.not_null}") UUID categoryId,
+public record FeeStructureUpdateRequest(
         @NotNull(message = "{validation.not_null}") @Positive(message = "{validation.positive}") BigDecimal amount,
         String frequency,
         Short dueDay,

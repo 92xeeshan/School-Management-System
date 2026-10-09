@@ -38,13 +38,14 @@ export class AuthService {
     if (!this.isAuthenticated()) {
       return Promise.resolve();
     }
-    return firstValueFrom(
+    void firstValueFrom(
       this.http.get<ApiResponse<AuthUser>>('/api/auth/me').pipe(
         tap((res) => this.updateUser(res.data)),
         map(() => undefined),
         catchError(() => of(undefined))
       )
     );
+    return Promise.resolve();
   }
 
   login(username: string, password: string): Observable<AuthResponse> {

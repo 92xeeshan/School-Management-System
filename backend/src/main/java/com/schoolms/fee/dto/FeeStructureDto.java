@@ -16,6 +16,7 @@ public record FeeStructureDto(
         BigDecimal amount,
         String frequency,
         Short dueDay,
+        LocalDate dueDate,
         LocalDate applicableFrom,
         LocalDate applicableTo
 ) {
@@ -23,6 +24,6 @@ public record FeeStructureDto(
         return new FeeStructureDto(structure.getId(), structure.getClassId(), className,
                 structure.getAcademicYearId(), structure.getCategoryId(), categoryName,
                 structure.getAmount(), structure.getFrequency().name(), structure.getDueDay(),
-                structure.getApplicableFrom(), structure.getApplicableTo());
+                structure.getDueDate(), structure.getApplicableFrom(), structure.getApplicableTo());
     }
 }

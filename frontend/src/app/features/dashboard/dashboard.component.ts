@@ -893,7 +893,7 @@ export class DashboardComponent implements OnInit {
       { key: 'markAttendance', labelKey: 'dashboard.quickActions.markAttendance', icon: '✅', route: '/attendance', permissions: ['ATTENDANCE_MARK'] },
       { key: 'addStudent', labelKey: 'dashboard.quickActions.addStudent', icon: '👩‍🎓', route: '/students', permissions: ['STUDENT_CREATE'] },
       { key: 'publishNotice', labelKey: 'dashboard.quickActions.publishNotice', icon: '📢', route: '/notices', permissions: ['NOTICE_CREATE'] },
-      { key: 'collectFee', labelKey: 'dashboard.quickActions.collectFee', icon: '💳', route: '/fees', permissions: ['FEE_PAYMENT_RECORD'] },
+      { key: 'collectFee', labelKey: 'dashboard.quickActions.collectFee', icon: '💳', route: '/fees/collect', permissions: ['FEE_PAYMENT_RECORD'] },
       { key: 'addEvent', labelKey: 'dashboard.quickActions.addEvent', icon: '📅', route: '/calendar', permissions: ['EVENT_MANAGE'] },
       { key: 'admitCards', labelKey: 'examinations.tabs.admitCards', icon: '🎫', route: '/examinations/admit-cards', permissions: ['ADMIT_CARD_READ'] },
       { key: 'reportCards', labelKey: 'examinations.tabs.reportCards', icon: '📄', route: '/examinations/report-cards', permissions: ['REPORT_CARD_READ'] },
