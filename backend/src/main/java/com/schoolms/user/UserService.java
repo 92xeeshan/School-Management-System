@@ -1,8 +1,11 @@
 package com.schoolms.user;
 
-import com.schoolms.common.exception.BusinessException;
-import com.schoolms.common.exception.ResourceNotFoundException;
+import com.schoolms.auth.CredentialAccountService;
+import com.schoolms.auth.CredentialGenerator;
+import com.schoolms.auth.PasswordPolicy;
+import com.schoolms.auth.RefreshTokenRepository;
 import com.schoolms.common.enums.UserStatus;
+import com.schoolms.common.exception.BusinessException;
 import com.schoolms.security.PermissionCacheService;
 import com.schoolms.security.SecurityUtils;
 import com.schoolms.user.dto.CreateUserRequest;
@@ -15,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -28,6 +32,9 @@ public class UserService {
     private final UserRoleRepository userRoleRepository;
     private final PermissionCacheService permissionCacheService;
     private final PasswordEncoder passwordEncoder;
+    private final CredentialGenerator credentialGenerator;
+    private final CredentialAccountService credentialAccountService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Transactional(readOnly = true)
     public List<UserDto> list() {
@@ -46,32 +53,45 @@ public class UserService {
     @Transactional
     public UserDto create(CreateUserRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        if (userRepository.existsByUsernameAndSchoolId(request.username(), schoolId)) {
+        String roleCode = primaryRole(request.roleCodes());
+        String username = request.username() == null || request.username().isBlank()
+                ? credentialGenerator.nextUsername(schoolId, roleCode)
+                : request.username();
+        if (userRepository.existsByUsernameAndSchoolId(username, schoolId)) {
             throw new BusinessException("user.username_exists");
         }
         if (request.email() != null && !request.email().isBlank()
                 && userRepository.existsByEmailAndSchoolId(request.email(), schoolId)) {
             throw new BusinessException("user.email_exists");
         }
+        String temporaryPassword = request.password() == null || request.password().isBlank()
+                ? credentialGenerator.temporaryPassword(request.firstName())
+                : request.password();
+        if (request.password() != null && !request.password().isBlank()) {
+            PasswordPolicy.validate(temporaryPassword);
+        }
 
         User user = new User();
         user.setSchoolId(schoolId);
-        user.setUsername(request.username());
+        user.setUsername(username);
         user.setEmail(request.email());
         user.setPhone(request.phone());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setPasswordHash(passwordEncoder.encode(temporaryPassword));
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setLocale(validLocale(request.locale()));
         user.setStatus(UserStatus.ACTIVE);
+        user.setMustChangePassword(true);
         user = userRepository.save(user);
 
         if (request.roleCodes() != null) {
-            for (String roleCode : request.roleCodes()) {
-                assignRoleInternal(user, roleCode);
+            for (String code : request.roleCodes()) {
+                assignRoleInternal(user, code);
             }
         }
-        return UserDto.from(user, rolesOf(user.getId()));
+        credentialAccountService.audit(schoolId, SecurityUtils.currentUserId(), user.getId(),
+                "ACCOUNT_CREATED", user.getUsername());
+        return UserDto.from(user, rolesOf(user.getId()), temporaryPassword);
     }
 
     @Transactional
@@ -99,6 +119,10 @@ public class UserService {
         }
         if (request.status() != null) {
             user.setStatus(request.status());
+            if (request.status() != UserStatus.ACTIVE) {
+                credentialAccountService.bumpTokenVersionAndRevoke(user);
+                refreshTokenRepository.revokeAllByUserId(user.getId(), Instant.now());
+            }
         }
         userRepository.save(user);
         permissionCacheService.evict(id);
@@ -160,6 +184,13 @@ public class UserService {
 
     private List<String> rolesOf(UUID userId) {
         return userRepository.findRoleCodesByUserId(userId);
+    }
+
+    private String primaryRole(List<String> roleCodes) {
+        if (roleCodes == null || roleCodes.isEmpty()) {
+            return "STUDENT";
+        }
+        return roleCodes.get(0);
     }
 
     private String validLocale(String locale) {

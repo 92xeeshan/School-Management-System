@@ -26,9 +26,15 @@ public record StudentDto(
         String presentAddress,
         String previousSchool,
         StudentStatus status,
-        UUID userId
+        UUID userId,
+        String username,
+        String temporaryPassword
 ) {
     public static StudentDto from(Student student) {
+        return from(student, null, null);
+    }
+
+    public static StudentDto from(Student student, String username, String temporaryPassword) {
         return new StudentDto(
                 student.getId(), student.getAdmissionNo(), student.getFirstName(),
                 student.getLastName(), student.getDisplayName(), student.getDateOfBirth(),
@@ -36,6 +42,6 @@ public record StudentDto(
                 student.getNationality(), student.getAdmissionDate(), student.getPhotoUrl(),
                 student.getPhone(), student.getEmergencyContact(), student.getPermanentAddress(),
                 student.getPresentAddress(), student.getPreviousSchool(),
-                student.getStatus(), student.getUserId());
+                student.getStatus(), student.getUserId(), username, temporaryPassword);
     }
 }

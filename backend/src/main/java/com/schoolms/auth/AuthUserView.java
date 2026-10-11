@@ -24,4 +24,14 @@ public interface AuthUserView {
     String getLastName();
 
     String getEmail();
+
+    Boolean getMustChangePassword();
+
+    Boolean getQuestionsSet();
+
+    Integer getTokenVersion();
+
+    Integer getFailedLoginAttempts();
+
+    java.time.Instant getLockedUntil();
 }

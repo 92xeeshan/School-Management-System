@@ -36,4 +36,12 @@ public class AuthException extends RuntimeException {
     public static AuthException accessDenied() {
         return new AuthException(HttpStatus.FORBIDDEN, "auth.access_denied");
     }
+
+    public static AuthException locked() {
+        return new AuthException(HttpStatus.LOCKED, "auth.account_locked");
+    }
+
+    public static AuthException passwordMustChange() {
+        return new AuthException(HttpStatus.FORBIDDEN, "auth.password_must_change");
+    }
 }

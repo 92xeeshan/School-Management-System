@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,9 +12,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
-import { AuthUser } from '../../core/auth/auth.model';
+import { AuthUser, LinkedChild } from '../../core/auth/auth.model';
 import { ThemeMode, ThemeService } from '../../core/theme/theme.service';
 import { LocaleService } from '../../i18n/locale.service';
 import { LOCALE_META, SUPPORTED_LOCALES, SupportedLocale } from '../../i18n/i18n.config';
@@ -108,6 +108,18 @@ const SIDENAV_STORAGE_KEY = 'schoolms.sidenav.collapsed';
           <span class="topbar-title">{{ 'app.tagline' | translate }}</span>
           <span class="topbar-spacer"></span>
           <div class="topbar-actions">
+            @if ((children$ | async)?.length) {
+              <mat-form-field appearance="outline" class="child-field" subscriptSizing="dynamic">
+                <mat-label>{{ 'auth.switchChild' | translate }}</mat-label>
+                <mat-select
+                  [value]="(activeChild$ | async)?.studentId ?? ''"
+                  (selectionChange)="onChildChange($event.value)">
+                  @for (child of children$ | async; track child.studentId) {
+                    <mat-option [value]="child.studentId">{{ child.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
             <mat-form-field appearance="outline" class="lang-field" subscriptSizing="dynamic">
               <mat-label>{{ 'common.language' | translate }}</mat-label>
               <mat-select
@@ -147,8 +159,12 @@ const SIDENAV_STORAGE_KEY = 'schoolms.sidenav.collapsed';
                     <div class="user-role">{{ roleLabel(user) | translate }}</div>
                   </div>
                 </div>
-                <mat-divider />
-                <button mat-menu-item type="button" (click)="onLogout()">
+                 <mat-divider />
+                 <a mat-menu-item routerLink="/change-password">
+                   <mat-icon>lock_reset</mat-icon>
+                   <span>{{ 'auth.changePassword.title' | translate }}</span>
+                 </a>
+                 <button mat-menu-item type="button" (click)="onLogout()">
                   <mat-icon>logout</mat-icon>
                   <span>{{ 'common.logout' | translate }}</span>
                 </button>
@@ -224,6 +240,7 @@ const SIDENAV_STORAGE_KEY = 'schoolms.sidenav.collapsed';
     .topbar-spacer { flex: 1 1 auto; }
     .topbar-actions { display: flex; align-items: center; gap: 8px; }
     .lang-field { width: 132px; font-size: 14px; }
+    .child-field { width: 180px; font-size: 14px; }
     .lang-field .mat-mdc-form-field-infix { min-height: 40px; padding-top: 8px; padding-bottom: 8px; }
     .theme-toggle mat-icon { font-size: 22px; width: 22px; height: 22px; color: var(--color-text); }
 
@@ -268,12 +285,14 @@ const SIDENAV_STORAGE_KEY = 'schoolms.sidenav.collapsed';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   collapsed = localStorage.getItem(SIDENAV_STORAGE_KEY) === 'true';
   mobileOpen = false;
 
   readonly isMobile$: Observable<boolean>;
   readonly user$: Observable<AuthUser | null>;
+  readonly children$: Observable<LinkedChild[]>;
+  readonly activeChild$: Observable<LinkedChild | null>;
   readonly supportedLocales = SUPPORTED_LOCALES;
   readonly localeMeta = LOCALE_META;
 
@@ -290,6 +309,7 @@ export class MainLayoutComponent {
     { route: '/certificates', labelKey: 'nav.certificates', icon: 'workspace_premium', permissions: ['CERTIFICATE_GENERATE', 'CERTIFICATE_APPROVE'] },
     { route: '/downloads', labelKey: 'nav.downloads', icon: 'download', permissions: ['MARKSHEET_READ', 'CERTIFICATE_READ'] },
     { route: '/notices', labelKey: 'nav.notices', icon: 'campaign', permissions: ['NOTICE_READ'] },
+    { route: '/users', labelKey: 'nav.users', icon: 'manage_accounts', permissions: ['USER_READ'] },
   ];
 
   constructor(
@@ -299,7 +319,26 @@ export class MainLayoutComponent {
     breakpoints: BreakpointObserver
   ) {
     this.user$ = this.auth.user$;
+    this.activeChild$ = this.auth.activeChild$;
+    this.children$ = this.auth.hasRole('PARENT') ? this.auth.listChildren() : of([]);
     this.isMobile$ = breakpoints.observe('(max-width: 768px)').pipe(map((state) => state.matches));
+  }
+
+  ngOnInit(): void {
+    if (this.auth.hasRole('PARENT')) {
+      this.auth.listChildren().subscribe((children) => {
+        if (children.length && !this.auth.activeChild) {
+          this.auth.setActiveChild(children[0]);
+        }
+      });
+    }
+  }
+
+  onChildChange(studentId: string): void {
+    this.auth.listChildren().subscribe((children) => {
+      const child = children.find((item) => item.studentId === studentId) ?? null;
+      this.auth.setActiveChild(child);
+    });
   }
 
   get visibleNavItems(): NavItem[] {

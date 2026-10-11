@@ -24,7 +24,8 @@ public class JwtService {
 
     private final JwtProperties properties;
 
-    public String generateAccessToken(UUID userId, UUID schoolId, List<String> roles, String locale) {
+    public String generateAccessToken(UUID userId, UUID schoolId, List<String> roles, String locale,
+                                      int tokenVersion) {
         Instant now = Instant.now();
         Instant expiry = now.plus(Duration.ofMinutes(properties.accessTokenTtlMinutes()));
         return Jwts.builder()
@@ -32,6 +33,7 @@ public class JwtService {
                 .claim("schoolId", schoolId == null ? "" : schoolId.toString())
                 .claim("roles", roles)
                 .claim("locale", locale)
+                .claim("tv", tokenVersion)
                 .issuer(properties.issuer())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))

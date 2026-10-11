@@ -13,13 +13,19 @@ public record GuardianDto(
         String email,
         String phone,
         String occupation,
-        UUID userId
+        UUID userId,
+        String username,
+        String temporaryPassword
 ) {
     public static GuardianDto from(Guardian guardian) {
+        return from(guardian, null, null);
+    }
+
+    public static GuardianDto from(Guardian guardian, String username, String temporaryPassword) {
         return new GuardianDto(
                 guardian.getId(), guardian.getFirstName(), guardian.getLastName(),
                 guardian.getDisplayName(), guardian.getRelationship().name(),
                 guardian.getEmail(), guardian.getPhone(), guardian.getOccupation(),
-                guardian.getUserId());
+                guardian.getUserId(), username, temporaryPassword);
     }
 }

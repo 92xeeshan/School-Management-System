@@ -3,21 +3,24 @@ package com.schoolms.auth;
 import com.schoolms.auth.dto.AuthResponse;
 import com.schoolms.auth.dto.AuthUserDto;
 import com.schoolms.auth.dto.AuthUserViewDto;
+import com.schoolms.auth.dto.LinkedChildDto;
 import com.schoolms.auth.dto.LoginRequest;
 import com.schoolms.auth.dto.RefreshRequest;
+import com.schoolms.certificate.CertificateLifecycleService;
+import com.schoolms.common.enums.UserStatus;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
-import com.schoolms.common.enums.UserStatus;
 import com.schoolms.config.JwtProperties;
-import com.schoolms.security.PermissionCacheService;
 import com.schoolms.security.JwtService;
+import com.schoolms.security.PermissionCacheService;
 import com.schoolms.security.SecurityUtils;
 import com.schoolms.security.UserPrincipal;
+import com.schoolms.student.GuardianRepository;
+import com.schoolms.student.StudentGuardianRepository;
+import com.schoolms.tenant.TenantBinder;
 import com.schoolms.tenant.TenantContext;
-import com.schoolms.certificate.CertificateLifecycleService;
 import com.schoolms.user.User;
 import com.schoolms.user.UserRepository;
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,13 +43,25 @@ public class AuthService {
     private final PermissionCacheService permissionCacheService;
     private final JwtProperties jwtProperties;
     private final CertificateLifecycleService certificateLifecycleService;
+    private final GuardianRepository guardianRepository;
+    private final StudentGuardianRepository studentGuardianRepository;
+    private final TenantBinder tenantBinder;
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         AuthUserViewDto authUser = userRepository.findAuthUser(request.username())
                 .map(AuthUserViewDto::from)
                 .orElseThrow(AuthException::badCredentials);
 
+        if (authUser.lockedUntil() != null && authUser.lockedUntil().isAfter(Instant.now())) {
+            throw AuthException.locked();
+        }
+        if (authUser.status() == UserStatus.LOCKED) {
+            throw AuthException.locked();
+        }
+        tenantBinder.bind(authUser.schoolId());
         if (!passwordEncoder.matches(request.password(), authUser.passwordHash())) {
+            registerFailedLogin(authUser.id(), authUser.schoolId());
             throw AuthException.badCredentials();
         }
         if (authUser.status() != UserStatus.ACTIVE) {
@@ -55,16 +70,13 @@ public class AuthService {
             }
             throw AuthException.inactive();
         }
-        return issueTokens(authUser.id(), authUser.schoolId(), authUser.username(), authUser.locale());
+        clearFailedLogins(authUser.id(), authUser.schoolId());
+        return issueTokens(authUser.id(), authUser.schoolId(), true);
     }
 
     public AuthResponse refresh(RefreshRequest request) {
         try {
-            // The opaque refresh token is itself the credential for this public
-            // endpoint. Look it up with RLS bypassed: we cannot know the owning
-            // school until we have loaded the user, and the lookup joins the
-            // RLS-protected app_user table.
-            TenantContext.setBypassRls(true);
+            tenantBinder.bindBypass();
 
             String tokenHash = jwtService.sha256(request.refreshToken());
             RefreshToken stored = refreshTokenRepository.findByTokenHashFetchUser(tokenHash)
@@ -86,7 +98,7 @@ public class AuthService {
             if (user.getStatus() != UserStatus.ACTIVE) {
                 throw new BusinessException("auth.user_inactive");
             }
-            return issueTokens(user.getId(), user.getSchoolId(), user.getUsername(), user.getLocale());
+            return issueTokens(user.getId(), user.getSchoolId(), false);
         } finally {
             TenantContext.clear();
         }
@@ -99,38 +111,55 @@ public class AuthService {
     }
 
     public AuthUserDto me() {
-        UserPrincipal principal = SecurityUtils.currentPrincipal();
-        return buildUserDto(principal.id());
+        return buildUserDto(SecurityUtils.currentUserId());
     }
 
-    private AuthResponse issueTokens(UUID userId, UUID schoolId, String username, String locale) {
+    @Transactional(readOnly = true)
+    public List<LinkedChildDto> myChildren() {
+        UUID schoolId = SecurityUtils.currentSchoolId();
+        UUID userId = SecurityUtils.currentUserId();
+        return guardianRepository.findBySchoolIdAndUserId(schoolId, userId)
+                .map(guardian -> studentGuardianRepository.findWithStudents(schoolId, guardian.getId()).stream()
+                        .map(sg -> new LinkedChildDto(
+                                sg.getStudent().getId(),
+                                sg.getStudent().getDisplayName(),
+                                sg.getStudent().getAdmissionNo(),
+                                null,
+                                null))
+                        .toList())
+                .orElse(List.of());
+    }
+
+    private AuthResponse issueTokens(UUID userId, UUID schoolId, boolean kickOtherSessions) {
         try {
-            TenantContext.setSchoolId(schoolId);
-            TenantContext.setBypassRls(schoolId == null);
+            tenantBinder.bind(schoolId);
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BusinessException("user.not_found"));
+            if (kickOtherSessions) {
+                user.setTokenVersion(user.getTokenVersion() + 1);
+                refreshTokenRepository.revokeAllByUserId(userId, Instant.now());
+            }
+            user.setLastLoginAt(Instant.now());
+            user = userRepository.save(user);
 
             List<String> roles = userRepository.findRoleCodesByUserId(userId);
             Set<String> permissions = permissionCacheService.getAuthorities(userId);
-
-            String accessToken = jwtService.generateAccessToken(userId, schoolId, roles, locale);
-            String refreshToken = persistRefreshToken(userId, schoolId == null);
-
-            userRepository.findById(userId).ifPresent(user -> {
-                user.setLastLoginAt(Instant.now());
-                userRepository.save(user);
-            });
+            String accessToken = jwtService.generateAccessToken(
+                    userId, schoolId, roles, user.getLocale(), user.getTokenVersion());
+            String refreshToken = persistRefreshToken(userId);
 
             return new AuthResponse(
                     accessToken,
                     refreshToken,
                     Duration.ofMinutes(jwtProperties.accessTokenTtlMinutes()).toSeconds(),
-                    new AuthUserDto(userId, schoolId, username, null,
-                            null, null, null, locale, roles, permissions));
+                    toAuthUserDto(user, roles, permissions));
         } finally {
             TenantContext.clear();
         }
     }
 
-    private String persistRefreshToken(UUID userId, boolean bypassRls) {
+    private String persistRefreshToken(UUID userId) {
         String rawToken = jwtService.generateRefreshToken();
         RefreshToken entity = new RefreshToken();
         entity.setTokenHash(jwtService.sha256(rawToken));
@@ -148,10 +177,45 @@ public class AuthService {
                     .orElseThrow(() -> new BusinessException("user.not_found"));
             List<String> roles = userRepository.findRoleCodesByUserId(userId);
             Set<String> permissions = permissionCacheService.getAuthorities(userId);
-            return new AuthUserDto(
-                    user.getId(), user.getSchoolId(), user.getUsername(), user.getEmail(),
-                    user.getFirstName(), user.getLastName(), user.getDisplayName(),
-                    user.getLocale(), roles, permissions);
+            return toAuthUserDto(user, roles, permissions);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private AuthUserDto toAuthUserDto(User user, List<String> roles, Set<String> permissions) {
+        return new AuthUserDto(
+                user.getId(), user.getSchoolId(), user.getUsername(), user.getEmail(),
+                user.getFirstName(), user.getLastName(), user.getDisplayName(),
+                user.getLocale(), roles, permissions,
+                user.isMustChangePassword(), user.isQuestionsSet());
+    }
+
+    private void registerFailedLogin(UUID userId, UUID schoolId) {
+        try {
+            tenantBinder.bind(schoolId);
+            userRepository.findById(userId).ifPresent(user -> {
+                int attempts = user.getFailedLoginAttempts() + 1;
+                user.setFailedLoginAttempts(attempts);
+                if (attempts >= CredentialService.MAX_FAILED_ATTEMPTS) {
+                    user.setLockedUntil(Instant.now().plus(CredentialService.LOCKOUT));
+                    user.setStatus(UserStatus.LOCKED);
+                }
+                userRepository.save(user);
+            });
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private void clearFailedLogins(UUID userId, UUID schoolId) {
+        try {
+            tenantBinder.bind(schoolId);
+            userRepository.findById(userId).ifPresent(user -> {
+                user.setFailedLoginAttempts(0);
+                user.setLockedUntil(null);
+                userRepository.save(user);
+            });
         } finally {
             TenantContext.clear();
         }

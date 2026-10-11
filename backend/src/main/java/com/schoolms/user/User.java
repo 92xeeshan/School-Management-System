@@ -48,6 +48,21 @@ public class User extends BaseEntity {
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword;
+
+    @Column(name = "questions_set", nullable = false)
+    private boolean questionsSet;
+
+    @Column(name = "token_version", nullable = false)
+    private int tokenVersion;
+
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts;
+
+    @Column(name = "locked_until")
+    private Instant lockedUntil;
+
     public String getDisplayName() {
         return lastName == null || lastName.isBlank()
                 ? firstName

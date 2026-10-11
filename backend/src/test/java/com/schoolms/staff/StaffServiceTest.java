@@ -11,6 +11,7 @@ import com.schoolms.academics.TeacherProfileRepository;
 import com.schoolms.academics.TeacherSection;
 import com.schoolms.academics.TeacherSectionRepository;
 import com.schoolms.academics.TeacherSubjectRepository;
+import com.schoolms.auth.CredentialAccountService;
 import com.schoolms.common.enums.EmploymentType;
 import com.schoolms.common.enums.Gender;
 import com.schoolms.common.enums.StaffType;
@@ -18,6 +19,7 @@ import com.schoolms.common.exception.BusinessException;
 import com.schoolms.staff.dto.ClassTeacherRequest;
 import com.schoolms.staff.dto.StaffMemberDto;
 import com.schoolms.staff.dto.StaffMemberRequest;
+import com.schoolms.user.dto.ProvisionedAccount;
 import com.schoolms.TestSecurity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +52,7 @@ class StaffServiceTest {
     @Mock private SectionRepository sectionRepository;
     @Mock private SchoolClassRepository classRepository;
     @Mock private AcademicYearRepository academicYearRepository;
+    @Mock private CredentialAccountService credentialAccountService;
 
     private StaffService staffService;
 
@@ -60,7 +63,7 @@ class StaffServiceTest {
     void setUp() {
         staffService = new StaffService(teacherRepository, teacherSubjectRepository,
                 teacherSectionRepository, nonTeachingStaffRepository, sectionRepository,
-                classRepository, academicYearRepository);
+                classRepository, academicYearRepository, credentialAccountService);
         TestSecurity.loginAsAdmin();
     }
 
@@ -72,6 +75,8 @@ class StaffServiceTest {
     @Test
     void createTeachingStaffPersistsWithSchoolContext() {
         when(teacherRepository.existsBySchoolIdAndEmployeeNo(schoolId, "EMP100")).thenReturn(false);
+        when(credentialAccountService.provision(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new ProvisionedAccount(UUID.randomUUID(), "TCH2026001", "Alis@4323"));
         when(teacherRepository.save(any(TeacherProfile.class))).thenAnswer(inv -> inv.getArgument(0));
 
         StaffMemberDto dto = staffService.createTeachingStaff(request("EMP100"));

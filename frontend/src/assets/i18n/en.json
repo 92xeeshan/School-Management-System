@@ -29,7 +29,9 @@
     "themeDark": "Switch to dark theme",
     "language": "Language",
     "collapseNav": "Collapse navigation",
-    "expandNav": "Expand navigation"
+    "expandNav": "Expand navigation",
+    "yes": "Yes",
+    "no": "No"
   },
   "login": {
     "title": "Sign In",
@@ -40,7 +42,9 @@
     "inactiveAccount": "This account is inactive or locked.",
     "tcDeactivated": "Account deactivated due to Transfer Certificate issuance.",
     "serverError": "Unable to reach the server. Please try again.",
-    "welcomeBack": "Welcome back, please sign in to continue."
+    "welcomeBack": "Welcome back, please sign in to continue.",
+    "forgotPassword": "Forgot password?",
+    "accountLocked": "Too many failed sign-in attempts. Try again in 15 minutes."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -55,6 +59,7 @@
     "calendar": "Calendar",
     "downloads": "Downloads",
     "certificates": "Certificates",
+    "users": "Users",
     "menu": "Open navigation"
   },
   "roles": {
@@ -1041,5 +1046,65 @@
     "daysAgo": "{{count}}d ago",
     "unread": "Unread",
     "open": "Open notifications"
+  },
+  "auth": {
+    "switchChild": "Child",
+    "questionsCount": "Select 2 or 3 security questions.",
+    "questions": {
+      "MOTHER_MAIDEN": "What is your mother's maiden name?",
+      "FIRST_PET": "What was the name of your first pet?",
+      "BIRTH_CITY": "In which city were you born?",
+      "FAVORITE_TEACHER": "Who was your favorite teacher?",
+      "FIRST_SCHOOL": "What was the name of your first school?"
+    },
+    "firstLogin": {
+      "title": "Set up your account",
+      "subtitle": "Choose a new password and 2 or 3 security questions.",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "hint": "Use 8–72 characters with uppercase, lowercase, a number, and a symbol.",
+      "question": "Question {{n}}",
+      "selectQuestion": "Select a question",
+      "answer": "Answer",
+      "submit": "Save and continue"
+    },
+    "forgot": {
+      "title": "Reset password",
+      "subtitle": "Verify your security questions to set a new password.",
+      "start": "Continue",
+      "verify": "Verify answers",
+      "complete": "Set new password",
+      "success": "Password updated. You can sign in now.",
+      "backToLogin": "Back to sign in"
+    },
+    "changePassword": {
+      "title": "Change password",
+      "current": "Current password",
+      "submit": "Update password"
+    }
+  },
+  "credentials": {
+    "issued": "Login credentials generated",
+    "copyHint": "Copy these now. The temporary password is shown only once.",
+    "shownOnce": "This temporary password will not be shown again.",
+    "username": "Username",
+    "temporaryPassword": "Temporary password",
+    "copy": "Copy credentials",
+    "copied": "Copied",
+    "close": "Dismiss"
+  },
+  "users": {
+    "title": "Users",
+    "add": "Add user",
+    "username": "Username",
+    "name": "Name",
+    "lastName": "Last name",
+    "email": "Email",
+    "role": "Role",
+    "roles": "Roles",
+    "mustChange": "Must change password",
+    "lastLogin": "Last login",
+    "resetPassword": "Reset password",
+    "audit": "Credential audit"
   }
 }

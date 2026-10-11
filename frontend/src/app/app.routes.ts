@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/auth/auth.guard';
+import { FirstLoginGuard } from './core/auth/first-login.guard';
 import { PermissionGuard } from './core/auth/permission.guard';
 import { AuthService } from './core/auth/auth.service';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
@@ -12,11 +13,34 @@ export const routes: Routes = [
       import('./features/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/forgot-password.component').then((m) => m.ForgotPasswordComponent),
+  },
+  {
+    path: 'first-time-setup',
+    loadComponent: () =>
+      import('./features/auth/first-time-setup.component').then((m) => m.FirstTimeSetupComponent),
+    canActivate: [FirstLoginGuard],
+  },
+  {
     path: '',
     component: MainLayoutComponent,
     canActivate: [AuthGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      {
+        path: 'change-password',
+        loadComponent: () =>
+          import('./features/auth/change-password.component').then((m) => m.ChangePasswordComponent),
+      },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./features/users/users.component').then((m) => m.UsersComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['USER_READ'] },
+      },
       {
         path: 'dashboard',
         loadComponent: () =>
