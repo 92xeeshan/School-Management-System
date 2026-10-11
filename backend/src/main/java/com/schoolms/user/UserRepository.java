@@ -23,7 +23,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query(value = """
             SELECT id, school_id AS schoolId, username, password_hash AS passwordHash,
-                   status, locale, first_name AS firstName, last_name AS lastName, email
+                   status, locale, first_name AS firstName, last_name AS lastName, email,
+                   must_change_password AS mustChangePassword, questions_set AS questionsSet,
+                   token_version AS tokenVersion, failed_login_attempts AS failedLoginAttempts,
+                   locked_until AS lockedUntil
             FROM auth_find_user(:login)
             """, nativeQuery = true)
     Optional<AuthUserView> findAuthUser(@Param("login") String login);

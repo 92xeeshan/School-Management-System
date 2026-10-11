@@ -1,6 +1,9 @@
 package com.schoolms.user;
 
 import com.schoolms.common.api.ApiResponse;
+import com.schoolms.auth.CredentialService;
+import com.schoolms.auth.dto.CredentialAuditDto;
+import com.schoolms.auth.dto.ResetPasswordRequest;
 import com.schoolms.user.dto.CreateUserRequest;
 import com.schoolms.user.dto.LocaleRequest;
 import com.schoolms.user.dto.RoleRequest;
@@ -31,6 +34,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final CredentialService credentialService;
 
     @Operation(summary = "List users in the current school")
     @PreAuthorize("hasAuthority('USER_READ')")
@@ -72,6 +76,23 @@ public class UserController {
     @DeleteMapping("/{id}/roles")
     public ApiResponse<UserDto> removeRole(@PathVariable UUID id, @Valid @RequestBody RoleRequest request) {
         return ApiResponse.ok(userService.removeRole(id, request));
+    }
+
+    @Operation(summary = "Admin reset of a user's password")
+    @PreAuthorize("hasAuthority('USER_UPDATE')")
+    @PostMapping("/{id}/reset-password")
+    public ApiResponse<UserDto> resetPassword(@PathVariable UUID id,
+                                              @RequestBody(required = false) ResetPasswordRequest request) {
+        return ApiResponse.ok(credentialService.adminResetPassword(id,
+                request == null ? new ResetPasswordRequest(null) : request));
+    }
+
+    @Operation(summary = "Credential audit trail")
+    @PreAuthorize("hasAuthority('USER_READ')")
+    @GetMapping("/credential-audit")
+    public ApiResponse<List<CredentialAuditDto>> credentialAudit(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) UUID targetUserId) {
+        return ApiResponse.ok(credentialService.listAudit(targetUserId));
     }
 
     @Operation(summary = "Update the current user's language preference")

@@ -12,9 +12,11 @@ import com.schoolms.academics.TeacherSection;
 import com.schoolms.academics.TeacherSectionRepository;
 import com.schoolms.academics.TeacherSubject;
 import com.schoolms.academics.TeacherSubjectRepository;
+import com.schoolms.auth.CredentialAccountService;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
 import com.schoolms.security.SecurityUtils;
+import com.schoolms.user.dto.ProvisionedAccount;
 import com.schoolms.staff.dto.ClassTeacherRequest;
 import com.schoolms.staff.dto.SectionRefDto;
 import com.schoolms.staff.dto.StaffMemberDto;
@@ -45,6 +47,7 @@ public class StaffService {
     private final SectionRepository sectionRepository;
     private final SchoolClassRepository classRepository;
     private final AcademicYearRepository academicYearRepository;
+    private final CredentialAccountService credentialAccountService;
 
     // ---- Teaching staff --------------------------------------------------
 
@@ -69,8 +72,12 @@ public class StaffService {
         teacher.setSchoolId(schoolId);
         teacher.setStatus(ACTIVE);
         apply(teacher, request);
+        ProvisionedAccount account = provisionIfNeeded(schoolId, "TEACHER", request);
+        if (account != null) {
+            teacher.setUserId(account.userId());
+        }
         teacher = teacherRepository.save(teacher);
-        return toDto(teacher, schoolId, List.of());
+        return withCredentials(toDto(teacher, schoolId, List.of()), account);
     }
 
     @Transactional
@@ -152,7 +159,14 @@ public class StaffService {
         staff.setSchoolId(schoolId);
         staff.setStatus(ACTIVE);
         apply(staff, request);
-        return StaffMemberDto.from(nonTeachingStaffRepository.save(staff));
+        ProvisionedAccount account = provisionIfNeeded(schoolId, "ADMIN", request);
+        if (account != null) {
+            staff.setUserId(account.userId());
+        }
+        staff = nonTeachingStaffRepository.save(staff);
+        return account == null
+                ? StaffMemberDto.from(staff)
+                : StaffMemberDto.from(staff, account.username(), account.temporaryPassword());
     }
 
     @Transactional
@@ -244,6 +258,27 @@ public class StaffService {
                 .findByTeacherIdAndSchoolId(teacher.getId(), schoolId).stream()
                 .map(TeacherSubject::getSubjectId).toList();
         return StaffMemberDto.from(teacher, subjectIds, classTeacherOf);
+    }
+
+    private ProvisionedAccount provisionIfNeeded(UUID schoolId, String roleCode, StaffMemberRequest request) {
+        if (request.userId() != null) {
+            return null;
+        }
+        return credentialAccountService.provision(schoolId, roleCode,
+                request.firstName(), request.lastName(), request.email(), request.phone());
+    }
+
+    private StaffMemberDto withCredentials(StaffMemberDto dto, ProvisionedAccount account) {
+        if (account == null) {
+            return dto;
+        }
+        return new StaffMemberDto(
+                dto.id(), dto.staffType(), account.userId(), dto.employeeNo(),
+                dto.firstName(), dto.lastName(), dto.displayName(), dto.email(), dto.phone(),
+                dto.gender(), dto.dateOfBirth(), dto.designation(), dto.department(),
+                dto.qualification(), dto.employmentType(), dto.joinDate(), dto.address(),
+                dto.status(), dto.subjectIds(), dto.classTeacherOf(),
+                account.username(), account.temporaryPassword());
     }
 
     private Map<UUID, List<SectionRefDto>> classTeacherRefsByTeacher(UUID schoolId, UUID yearId) {

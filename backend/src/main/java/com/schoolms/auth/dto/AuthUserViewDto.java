@@ -12,7 +12,12 @@ public record AuthUserViewDto(
         String locale,
         String firstName,
         String lastName,
-        String email
+        String email,
+        boolean mustChangePassword,
+        boolean questionsSet,
+        int tokenVersion,
+        int failedLoginAttempts,
+        java.time.Instant lockedUntil
 ) {
     public static AuthUserViewDto from(AuthUserView view) {
         return new AuthUserViewDto(
@@ -24,6 +29,11 @@ public record AuthUserViewDto(
                 view.getLocale(),
                 view.getFirstName(),
                 view.getLastName(),
-                view.getEmail());
+                view.getEmail(),
+                Boolean.TRUE.equals(view.getMustChangePassword()),
+                Boolean.TRUE.equals(view.getQuestionsSet()),
+                view.getTokenVersion() == null ? 0 : view.getTokenVersion(),
+                view.getFailedLoginAttempts() == null ? 0 : view.getFailedLoginAttempts(),
+                view.getLockedUntil());
     }
 }

@@ -1,11 +1,13 @@
 package com.schoolms.student;
 
+import com.schoolms.auth.CredentialAccountService;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
 import com.schoolms.common.enums.GuardianRelationship;
 import com.schoolms.security.SecurityUtils;
 import com.schoolms.student.dto.GuardianDto;
 import com.schoolms.student.dto.GuardianRequest;
+import com.schoolms.user.dto.ProvisionedAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class GuardianService {
 
     private final GuardianRepository guardianRepository;
+    private final CredentialAccountService credentialAccountService;
 
     @Transactional(readOnly = true)
     public List<GuardianDto> list() {
@@ -29,10 +32,20 @@ public class GuardianService {
 
     @Transactional
     public GuardianDto create(GuardianRequest request) {
+        UUID schoolId = SecurityUtils.currentSchoolId();
         Guardian guardian = new Guardian();
         apply(guardian, request);
-        guardian.setSchoolId(SecurityUtils.currentSchoolId());
-        return GuardianDto.from(guardianRepository.save(guardian));
+        guardian.setSchoolId(schoolId);
+        ProvisionedAccount account = null;
+        if (guardian.getUserId() == null) {
+            account = credentialAccountService.provision(schoolId, "PARENT",
+                    request.firstName(), request.lastName(), request.email(), request.phone());
+            guardian.setUserId(account.userId());
+        }
+        guardian = guardianRepository.save(guardian);
+        return account == null
+                ? GuardianDto.from(guardian)
+                : GuardianDto.from(guardian, account.username(), account.temporaryPassword());
     }
 
     @Transactional

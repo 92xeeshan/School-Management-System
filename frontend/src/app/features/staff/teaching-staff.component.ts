@@ -7,11 +7,13 @@ import { EMPLOYMENT_TYPES, GENDERS, SectionRef, StaffMember } from './staff.mode
 import { StaffService } from './staff.service';
 import { createStaffForm, staffFormToPayload, staffFormValue } from './staff-form.util';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
+import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/credential-handover/credential-handover.component';
 
 @Component({
   selector: 'app-teaching-staff',
-  imports: [TranslateModule, ReactiveFormsModule, EmptyStateComponent],
+  imports: [TranslateModule, ReactiveFormsModule, EmptyStateComponent, CredentialHandoverComponent],
   template: `
+    <app-credential-handover [credentials]="issuedCredentials" (closed)="issuedCredentials = null" />
     @if (pageError) {
       <p class="banner error">{{ pageError }}</p>
     }
@@ -293,6 +295,7 @@ export class TeachingStaffComponent implements OnInit {
 
   pendingDelete: StaffMember | null = null;
   deletingId: string | null = null;
+  issuedCredentials: IssuedCredentials | null = null;
 
   readonly genders = GENDERS;
   readonly employmentTypes = EMPLOYMENT_TYPES;
@@ -383,8 +386,11 @@ export class TeachingStaffComponent implements OnInit {
       this.saving = false;
       this.cdr.markForCheck();
     })).subscribe({
-      next: () => {
+      next: (member) => {
         this.showModal = false;
+        if (!this.editingId && member?.username && member.temporaryPassword) {
+          this.issuedCredentials = { username: member.username, temporaryPassword: member.temporaryPassword };
+        }
         this.load();
       },
       error: () => {

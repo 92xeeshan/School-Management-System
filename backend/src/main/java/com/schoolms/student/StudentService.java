@@ -13,6 +13,7 @@ import com.schoolms.academics.TeacherProfileRepository;
 import com.schoolms.academics.TeacherSectionRepository;
 import com.schoolms.attendance.AttendanceService;
 import com.schoolms.attendance.dto.AttendanceSummaryDto;
+import com.schoolms.auth.CredentialAccountService;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
@@ -31,6 +32,7 @@ import com.schoolms.student.dto.StudentListItemDto;
 import com.schoolms.student.dto.StudentProfileDto;
 import com.schoolms.student.dto.StudentProfileUpdateRequest;
 import com.schoolms.student.dto.StudentRequest;
+import com.schoolms.user.dto.ProvisionedAccount;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvValidationException;
@@ -68,6 +70,7 @@ public class StudentService {
     private final TeacherProfileRepository teacherRepository;
     private final TeacherSectionRepository teacherSectionRepository;
     private final AttendanceService attendanceService;
+    private final CredentialAccountService credentialAccountService;
 
     @Transactional(readOnly = true)
     public Page<StudentListItemDto> list(int page, int size, String query) {
@@ -134,7 +137,16 @@ public class StudentService {
         Student student = new Student();
         apply(student, request);
         student.setSchoolId(schoolId);
-        return StudentDto.from(studentRepository.save(student));
+        ProvisionedAccount account = null;
+        if (student.getUserId() == null) {
+            account = credentialAccountService.provision(schoolId, "STUDENT",
+                    request.firstName(), request.lastName(), null, request.phone());
+            student.setUserId(account.userId());
+        }
+        student = studentRepository.save(student);
+        return account == null
+                ? StudentDto.from(student)
+                : StudentDto.from(student, account.username(), account.temporaryPassword());
     }
 
     @Transactional
@@ -224,7 +236,14 @@ public class StudentService {
         guardian.setEmail(request.email());
         guardian.setPhone(request.phone());
         guardian.setOccupation(request.occupation());
-        guardian.setUserId(request.userId());
+        ProvisionedAccount account = null;
+        if (request.userId() == null) {
+            account = credentialAccountService.provision(schoolId, "PARENT",
+                    request.firstName(), request.lastName(), request.email(), request.phone());
+            guardian.setUserId(account.userId());
+        } else {
+            guardian.setUserId(request.userId());
+        }
         guardian = guardianRepository.save(guardian);
 
         StudentGuardian link = new StudentGuardian();
@@ -234,7 +253,13 @@ public class StudentService {
         link.setRelationship(parseRelationship(request.relationship()));
         link.setPrimary(true);
         clearPrimaryFlags(studentId, schoolId);
-        return toGuardianDto(studentGuardianRepository.save(link));
+        StudentGuardian saved = studentGuardianRepository.save(link);
+        if (account != null) {
+            return new StudentGuardianDto(saved.getId(),
+                    GuardianDto.from(saved.getGuardian(), account.username(), account.temporaryPassword()),
+                    saved.getRelationship().name(), saved.isPrimary());
+        }
+        return toGuardianDto(saved);
     }
 
     @Transactional

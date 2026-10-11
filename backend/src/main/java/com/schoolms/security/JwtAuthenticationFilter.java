@@ -19,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -28,6 +29,13 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Set<String> SETUP_PATHS = Set.of(
+            "/api/auth/me",
+            "/api/auth/first-login",
+            "/api/auth/logout",
+            "/api/auth/questions"
+    );
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
@@ -39,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = extractBearerToken(request);
             if (token != null) {
-                authenticate(token);
+                authenticate(token, request);
             }
             filterChain.doFilter(request, response);
         } catch (JwtException | IllegalArgumentException e) {
@@ -50,12 +58,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
-    private void authenticate(String token) {
+    private void authenticate(String token, HttpServletRequest request) {
         Claims claims = jwtService.parseAccessToken(token);
         UUID userId = UUID.fromString(claims.getSubject());
         UUID schoolId = parseSchoolId(claims.get("schoolId", String.class));
         List<String> roles = claims.get("roles", List.class);
         String locale = claims.get("locale", String.class);
+        int tokenVersion = claims.get("tv") instanceof Number n ? n.intValue() : 0;
 
         boolean isSuperAdmin = roles != null && roles.contains("SUPER_ADMIN");
         TenantContext.setSchoolId(schoolId);
@@ -63,6 +72,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         Optional<User> user = userRepository.findById(userId);
         if (user.isEmpty() || user.get().getStatus() != UserStatus.ACTIVE) {
+            SecurityContextHolder.clearContext();
+            return;
+        }
+        if (user.get().getTokenVersion() != tokenVersion) {
+            SecurityContextHolder.clearContext();
+            return;
+        }
+        if (user.get().isMustChangePassword() && !isSetupPath(request.getRequestURI())) {
             SecurityContextHolder.clearContext();
             return;
         }
@@ -75,6 +92,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    private boolean isSetupPath(String uri) {
+        return SETUP_PATHS.contains(uri);
     }
 
     private String extractBearerToken(HttpServletRequest request) {

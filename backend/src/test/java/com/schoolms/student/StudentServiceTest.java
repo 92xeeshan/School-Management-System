@@ -15,6 +15,7 @@ import com.schoolms.academics.TeacherSection;
 import com.schoolms.academics.TeacherSectionRepository;
 import com.schoolms.attendance.AttendanceService;
 import com.schoolms.attendance.dto.AttendanceSummaryDto;
+import com.schoolms.auth.CredentialAccountService;
 import com.schoolms.common.enums.StudentStatus;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
@@ -23,6 +24,7 @@ import com.schoolms.student.dto.StudentDto;
 import com.schoolms.student.dto.StudentProfileDto;
 import com.schoolms.student.dto.StudentProfileUpdateRequest;
 import com.schoolms.student.dto.StudentRequest;
+import com.schoolms.user.dto.ProvisionedAccount;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,6 +70,8 @@ class StudentServiceTest {
     private TeacherSectionRepository teacherSectionRepository;
     @Mock
     private AttendanceService attendanceService;
+    @Mock
+    private CredentialAccountService credentialAccountService;
 
     private StudentService studentService;
 
@@ -78,7 +82,7 @@ class StudentServiceTest {
         studentService = new StudentService(studentRepository, guardianRepository,
                 studentGuardianRepository, enrollmentRepository, classRepository,
                 sectionRepository, academicYearRepository, teacherRepository,
-                teacherSectionRepository, attendanceService);
+                teacherSectionRepository, attendanceService, credentialAccountService);
         TestSecurity.loginAsAdmin();
     }
 
@@ -93,6 +97,8 @@ class StudentServiceTest {
                 LocalDate.of(2014, 5, 10), "FEMALE", "B+", "Hindu", "IN",
                 LocalDate.of(2025, 4, 1), null, null, null, null, null, null);
         when(studentRepository.existsBySchoolIdAndAdmissionNo(schoolId, "ADM100")).thenReturn(false);
+        when(credentialAccountService.provision(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new ProvisionedAccount(UUID.randomUUID(), "STD2026001", "Meer@4321"));
 
         Student saved = new Student();
         saved.setId(UUID.randomUUID());

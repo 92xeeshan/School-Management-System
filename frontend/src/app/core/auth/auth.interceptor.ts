@@ -6,8 +6,19 @@ import { AuthService } from './auth.service';
 
 let refreshing = false;
 
+const PUBLIC_AUTH = [
+  '/api/auth/login',
+  '/api/auth/refresh',
+  '/api/auth/forgot',
+  '/api/auth/questions',
+];
+
+function isPublicAuth(url: string): boolean {
+  return PUBLIC_AUTH.some((path) => url.includes(path));
+}
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.includes('/api/') || req.url.includes('/api/auth/login') || req.url.includes('/api/auth/refresh')) {
+  if (!req.url.includes('/api/') || isPublicAuth(req.url)) {
     return next(req);
   }
 

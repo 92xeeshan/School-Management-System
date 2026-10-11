@@ -14,6 +14,8 @@ public record AuthUserDto(
         String displayName,
         String locale,
         List<String> roles,
-        Set<String> permissions
+        Set<String> permissions,
+        boolean mustChangePassword,
+        boolean questionsSet
 ) {
 }

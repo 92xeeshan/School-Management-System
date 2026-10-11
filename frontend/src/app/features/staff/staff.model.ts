@@ -33,6 +33,8 @@ export interface StaffMember {
   status: string;
   subjectIds: string[] | null;
   classTeacherOf: SectionRef[] | null;
+  username?: string | null;
+  temporaryPassword?: string | null;
 }
 
 export interface StaffMemberPayload {

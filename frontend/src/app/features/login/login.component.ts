@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/auth/auth.service';
@@ -9,7 +9,7 @@ import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, TranslateModule],
+  imports: [ReactiveFormsModule, TranslateModule, RouterLink],
   template: `
     <div class="login-page">
       <div class="login-card">
@@ -37,6 +37,7 @@ import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
           <button class="btn btn-primary btn-block" type="submit" [disabled]="form.invalid || submitting">
             @if (submitting) { {{ 'common.loading' | translate }} } @else { {{ 'login.submit' | translate }} }
           </button>
+          <a class="forgot-link" routerLink="/forgot-password">{{ 'login.forgotPassword' | translate }}</a>
         </form>
 
         <div class="lang-switcher">
@@ -88,6 +89,7 @@ import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
       cursor: pointer; font: inherit; font-size: .85rem;
     }
     .lang-pill.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+    .forgot-link { display: block; text-align: center; margin-top: 14px; color: var(--color-primary); font-size: .9rem; }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -113,13 +115,16 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate([this.auth.needsFirstLogin() ? '/first-time-setup' : '/dashboard']);
     }
   }
 
   private loginErrorKey(error: HttpErrorResponse): string {
     const code = (error.error && error.error.code) as string | undefined;
-    if (error.status === 401 || code === 'auth.bad_credentials') {
+    if (code === 'auth.account_locked') {
+      return 'login.accountLocked';
+    }
+    if (error.status === 401 || code === 'auth.bad_credentials' || code === 'user.not_found') {
       return 'login.invalidCredentials';
     }
     if (code === 'auth.tc_deactivated') {
@@ -143,6 +148,10 @@ export class LoginComponent implements OnInit {
       next: () => {
         this.submitting = false;
         this.cdr.markForCheck();
+        if (this.auth.needsFirstLogin()) {
+          this.router.navigate(['/first-time-setup']);
+          return;
+        }
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
         this.router.navigate([returnUrl ?? '/dashboard']);
       },

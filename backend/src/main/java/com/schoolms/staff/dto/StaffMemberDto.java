@@ -34,7 +34,9 @@ public record StaffMemberDto(
         String address,
         String status,
         List<UUID> subjectIds,
-        List<SectionRefDto> classTeacherOf
+        List<SectionRefDto> classTeacherOf,
+        String username,
+        String temporaryPassword
 ) {
 
     public static StaffMemberDto from(TeacherProfile teacher, List<UUID> subjectIds,
@@ -45,16 +47,32 @@ public record StaffMemberDto(
                 teacher.getEmail(), teacher.getPhone(), teacher.getGender(), teacher.getDateOfBirth(),
                 teacher.getDesignation(), teacher.getDepartment(), teacher.getQualification(),
                 teacher.getEmploymentType(), teacher.getJoinDate(), teacher.getAddress(),
-                teacher.getStatus(), subjectIds, classTeacherOf);
+                teacher.getStatus(), subjectIds, classTeacherOf, null, null);
+    }
+
+    public static StaffMemberDto from(TeacherProfile teacher, List<UUID> subjectIds,
+                                      List<SectionRefDto> classTeacherOf,
+                                      String username, String temporaryPassword) {
+        return new StaffMemberDto(
+                teacher.getId(), StaffType.TEACHING, teacher.getUserId(), teacher.getEmployeeNo(),
+                teacher.getFirstName(), teacher.getLastName(), teacher.getDisplayName(),
+                teacher.getEmail(), teacher.getPhone(), teacher.getGender(), teacher.getDateOfBirth(),
+                teacher.getDesignation(), teacher.getDepartment(), teacher.getQualification(),
+                teacher.getEmploymentType(), teacher.getJoinDate(), teacher.getAddress(),
+                teacher.getStatus(), subjectIds, classTeacherOf, username, temporaryPassword);
     }
 
     public static StaffMemberDto from(NonTeachingStaff staff) {
+        return from(staff, null, null);
+    }
+
+    public static StaffMemberDto from(NonTeachingStaff staff, String username, String temporaryPassword) {
         return new StaffMemberDto(
                 staff.getId(), StaffType.NON_TEACHING, staff.getUserId(), staff.getEmployeeNo(),
                 staff.getFirstName(), staff.getLastName(), staff.getDisplayName(),
                 staff.getEmail(), staff.getPhone(), staff.getGender(), staff.getDateOfBirth(),
                 staff.getDesignation(), staff.getDepartment(), staff.getQualification(),
                 staff.getEmploymentType(), staff.getJoinDate(), staff.getAddress(),
-                staff.getStatus(), null, null);
+                staff.getStatus(), null, null, username, temporaryPassword);
     }
 }

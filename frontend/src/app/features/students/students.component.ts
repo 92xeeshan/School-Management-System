@@ -8,6 +8,7 @@ import { ApiError, ApiResponse, PagedResponse } from '../../core/models/api.mode
 import { AuthService } from '../../core/auth/auth.service';
 import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
+import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/credential-handover/credential-handover.component';
 
 interface Student {
   id: string;
@@ -126,7 +127,7 @@ interface StudentReportCard {
 
 @Component({
   selector: 'app-students',
-  imports: [TranslateModule, ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent],
+  imports: [TranslateModule, ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent, CredentialHandoverComponent],
   template: `
     <div class="page">
       <app-page-header [title]="'students.title' | translate" [subtitle]="'students.subtitle' | translate">
@@ -134,6 +135,8 @@ interface StudentReportCard {
           <button class="btn btn-primary" (click)="openAddModal()">{{ 'students.addStudent' | translate }}</button>
         }
       </app-page-header>
+
+      <app-credential-handover [credentials]="issuedCredentials" (closed)="issuedCredentials = null" />
 
       <div class="card">
         <div class="card-toolbar">
@@ -529,6 +532,7 @@ export class StudentsComponent implements OnInit {
   editingId: string | null = null;
   pendingDelete: Student | null = null;
   deletingId: string | null = null;
+  issuedCredentials: IssuedCredentials | null = null;
   showReportCard = false;
   loadingReportCard = false;
   exportingReport = false;
@@ -799,8 +803,13 @@ export class StudentsComponent implements OnInit {
       });
       return;
     }
-    this.http.post<ApiResponse<{ id: string }>>('/api/students', body).subscribe({
-      next: (res) => this.enroll(res.data.id),
+    this.http.post<ApiResponse<{ id: string; username?: string; temporaryPassword?: string }>>('/api/students', body).subscribe({
+      next: (res) => {
+        if (res.data?.username && res.data.temporaryPassword) {
+          this.issuedCredentials = { username: res.data.username, temporaryPassword: res.data.temporaryPassword };
+        }
+        this.enroll(res.data.id);
+      },
       error: () => {
         this.saving = false;
         this.cdr.markForCheck();

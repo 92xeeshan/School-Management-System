@@ -2,10 +2,18 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, firstValueFrom, of, tap } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { AuthResponse, AuthUser, LoginRequest, RefreshRequest } from './auth.model';
+import {
+  AuthResponse,
+  AuthUser,
+  LinkedChild,
+  LoginRequest,
+  RefreshRequest,
+  SecurityQuestion,
+} from './auth.model';
 import { ApiResponse } from '../models/api.model';
 
 const STORAGE_KEY = 'schoolms.auth';
+const CHILD_KEY = 'schoolms.activeChild';
 
 interface StoredSession {
   accessToken: string;
@@ -18,6 +26,8 @@ interface StoredSession {
 export class AuthService {
   private readonly userSubject = new BehaviorSubject<AuthUser | null>(null);
   readonly user$ = this.userSubject.asObservable();
+  private readonly childSubject = new BehaviorSubject<LinkedChild | null>(this.readChild());
+  readonly activeChild$ = this.childSubject.asObservable();
 
   constructor(private http: HttpClient) {
     const session = this.readSession();
@@ -90,6 +100,10 @@ export class AuthService {
     return !!session && session.expiresAt > Date.now();
   }
 
+  needsFirstLogin(): boolean {
+    return this.currentUser?.mustChangePassword === true;
+  }
+
   hasPermission(code: string): boolean {
     const user = this.userSubject.value;
     return user?.permissions?.includes(code) ?? false;
@@ -105,6 +119,63 @@ export class AuthService {
 
   get currentUser(): AuthUser | null {
     return this.userSubject.value;
+  }
+
+  listQuestions(): Observable<SecurityQuestion[]> {
+    return this.http
+      .get<ApiResponse<SecurityQuestion[]>>('/api/auth/questions')
+      .pipe(map((res) => res.data ?? []));
+  }
+
+  completeFirstLogin(payload: {
+    newPassword: string;
+    confirmPassword: string;
+    answers: { questionId: string; answer: string }[];
+  }): Observable<void> {
+    return this.http.post<ApiResponse<void>>('/api/auth/first-login', payload).pipe(map(() => undefined));
+  }
+
+  changePassword(payload: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Observable<void> {
+    return this.http.post<ApiResponse<void>>('/api/auth/change-password', payload).pipe(map(() => undefined));
+  }
+
+  startForgot(username: string): Observable<{ challengeId: string; questions: SecurityQuestion[] }> {
+    return this.http
+      .post<ApiResponse<{ challengeId: string; questions: SecurityQuestion[] }>>('/api/auth/forgot', { username })
+      .pipe(map((res) => res.data));
+  }
+
+  verifyForgot(challengeId: string, answers: { questionId: string; answer: string }[]): Observable<string> {
+    return this.http
+      .post<ApiResponse<{ resetToken: string }>>('/api/auth/forgot/verify', { challengeId, answers })
+      .pipe(map((res) => res.data.resetToken));
+  }
+
+  completeForgot(resetToken: string, newPassword: string, confirmPassword: string): Observable<void> {
+    return this.http
+      .post<ApiResponse<void>>('/api/auth/forgot/complete', { resetToken, newPassword, confirmPassword })
+      .pipe(map(() => undefined));
+  }
+
+  listChildren(): Observable<LinkedChild[]> {
+    return this.http.get<ApiResponse<LinkedChild[]>>('/api/auth/children').pipe(map((res) => res.data ?? []));
+  }
+
+  setActiveChild(child: LinkedChild | null): void {
+    if (child) {
+      localStorage.setItem(CHILD_KEY, JSON.stringify(child));
+    } else {
+      localStorage.removeItem(CHILD_KEY);
+    }
+    this.childSubject.next(child);
+  }
+
+  get activeChild(): LinkedChild | null {
+    return this.childSubject.value;
   }
 
   private setSession(auth: AuthResponse): void {
@@ -130,7 +201,9 @@ export class AuthService {
 
   private clearSession(): void {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(CHILD_KEY);
     this.userSubject.next(null);
+    this.childSubject.next(null);
   }
 
   private storedRefreshToken(): string | null {
@@ -151,6 +224,15 @@ export class AuthService {
       return session;
     } catch {
       localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+  }
+
+  private readChild(): LinkedChild | null {
+    try {
+      const raw = localStorage.getItem(CHILD_KEY);
+      return raw ? (JSON.parse(raw) as LinkedChild) : null;
+    } catch {
       return null;
     }
   }
