@@ -8,10 +8,11 @@ import { AuthService } from '../../core/auth/auth.service';
 import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/credential-handover/credential-handover.component';
+import { PasswordResetDialogComponent, PasswordResetPayload } from '../../layout/credential-handover/password-reset-dialog.component';
 
 @Component({
   selector: 'app-users',
-  imports: [ReactiveFormsModule, TranslateModule, PageHeaderComponent, EmptyStateComponent, CredentialHandoverComponent],
+  imports: [ReactiveFormsModule, TranslateModule, PageHeaderComponent, EmptyStateComponent, CredentialHandoverComponent, PasswordResetDialogComponent],
   template: `
     <app-page-header [title]="'users.title' | translate">
       @if (canCreate) {
@@ -55,7 +56,7 @@ import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/cre
                   <td>{{ user.lastLoginAt || '—' }}</td>
                   @if (canUpdate) {
                     <td>
-                      <button class="btn btn-sm" type="button" [disabled]="resettingId === user.id" (click)="reset(user)">
+                      <button class="btn btn-sm" type="button" [disabled]="resettingId === user.id" (click)="openReset(user)">
                         {{ 'users.resetPassword' | translate }}
                       </button>
                     </td>
@@ -84,6 +85,14 @@ import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/cre
         </ul>
       }
     </div>
+
+    <app-password-reset-dialog
+      [open]="!!resetTarget"
+      [targetName]="resetTarget?.displayName || resetTarget?.username || ''"
+      [saving]="!!resettingId"
+      [error]="resetError"
+      (cancelled)="closeReset()"
+      (confirmed)="confirmReset($event)" />
 
     @if (showModal) {
       <div class="modal-backdrop" (click)="closeModal()">
@@ -149,6 +158,8 @@ export class UsersComponent implements OnInit {
   saving = false;
   formError = '';
   resettingId: string | null = null;
+  resetTarget: AppUser | null = null;
+  resetError = '';
   issued: IssuedCredentials | null = null;
 
   readonly form = new FormGroup({
@@ -212,18 +223,37 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  reset(user: AppUser): void {
-    this.resettingId = user.id;
+  openReset(user: AppUser): void {
+    this.resetTarget = user;
+    this.resetError = '';
     this.cdr.markForCheck();
-    this.http.post<ApiResponse<AppUser>>(`/api/users/${user.id}/reset-password`, {}).subscribe({
+  }
+
+  closeReset(): void {
+    this.resetTarget = null;
+    this.resettingId = null;
+    this.resetError = '';
+    this.cdr.markForCheck();
+  }
+
+  confirmReset(payload: PasswordResetPayload): void {
+    if (!this.resetTarget) {
+      return;
+    }
+    const user = this.resetTarget;
+    this.resettingId = user.id;
+    this.resetError = '';
+    this.cdr.markForCheck();
+    this.http.post<ApiResponse<AppUser>>(`/api/users/${user.id}/reset-password`, payload).subscribe({
       next: (res) => {
         this.resettingId = null;
+        this.resetTarget = null;
         this.captureIssued(res.data);
         this.load();
       },
-      error: () => {
+      error: (error: HttpErrorResponse) => {
         this.resettingId = null;
-        this.pageError = 'common.error';
+        this.resetError = (error.error && error.error.code) || 'common.error';
         this.cdr.markForCheck();
       },
     });

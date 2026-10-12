@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public record StudentProfileDto(
         UUID id,
+        UUID userId,
         String admissionNo,
         String firstName,
         String lastName,

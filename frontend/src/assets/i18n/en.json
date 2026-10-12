@@ -1105,6 +1105,8 @@
     "mustChange": "Must change password",
     "lastLogin": "Last login",
     "resetPassword": "Reset password",
+    "resetAuto": "Generate a temporary password",
+    "resetCustom": "Set a custom temporary password",
     "audit": "Credential audit"
   }
 }

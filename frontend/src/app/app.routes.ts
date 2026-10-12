@@ -30,11 +30,6 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
-        path: 'change-password',
-        loadComponent: () =>
-          import('./features/auth/change-password.component').then((m) => m.ChangePasswordComponent),
-      },
-      {
         path: 'users',
         loadComponent: () =>
           import('./features/users/users.component').then((m) => m.UsersComponent),

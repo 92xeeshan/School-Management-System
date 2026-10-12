@@ -8,6 +8,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import { CertificateService } from '../../core/certificates/certificate.service';
 import { CertificateIssued, CertificateType } from '../../core/certificates/certificate.model';
 import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
+import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/credential-handover/credential-handover.component';
+import { PasswordResetDialogComponent, PasswordResetPayload } from '../../layout/credential-handover/password-reset-dialog.component';
 
 interface AttendanceSummary {
   present: number;
@@ -20,6 +22,7 @@ interface AttendanceSummary {
 
 interface StudentProfile {
   id: string;
+  userId: string | null;
   admissionNo: string;
   firstName: string;
   lastName: string;
@@ -68,7 +71,7 @@ interface SectionOption {
 
 @Component({
   selector: 'app-student-profile',
-  imports: [TranslateModule, ReactiveFormsModule, FormsModule, RouterLink, PageHeaderComponent],
+  imports: [TranslateModule, ReactiveFormsModule, FormsModule, RouterLink, PageHeaderComponent, CredentialHandoverComponent, PasswordResetDialogComponent],
   template: `
     <div class="page">
       <app-page-header
@@ -78,10 +81,22 @@ interface SectionOption {
         @if (canGenerate && !editing) {
           <button class="btn" type="button" (click)="openCertificateModal()">{{ 'certificates.generate' | translate }}</button>
         }
+        @if (canResetPassword && !editing) {
+          <button class="btn" type="button" (click)="openReset()">{{ 'users.resetPassword' | translate }}</button>
+        }
         @if (profile?.canEdit && !editing) {
           <button class="btn btn-primary" type="button" (click)="startEdit()">{{ 'common.edit' | translate }}</button>
         }
       </app-page-header>
+
+      <app-credential-handover [credentials]="issued" (closed)="issued = null" />
+      <app-password-reset-dialog
+        [open]="showReset"
+        [targetName]="profile?.displayName || ''"
+        [saving]="resetting"
+        [error]="resetError"
+        (cancelled)="closeReset()"
+        (confirmed)="confirmReset($event)" />
 
       @if (loading) {
         <div class="card pad">{{ 'common.loading' | translate }}</div>
@@ -337,6 +352,10 @@ export class StudentProfileComponent implements OnInit {
   generatingCert = false;
   certError = '';
   certSuccess = '';
+  showReset = false;
+  resetting = false;
+  resetError = '';
+  issued: IssuedCredentials | null = null;
   private readonly phonePattern = Validators.pattern(/^(?:[+0-9][0-9\s-]{6,29})?$/);
 
   readonly form = new FormGroup({
@@ -374,6 +393,14 @@ export class StudentProfileComponent implements OnInit {
 
   get canGenerate(): boolean {
     return !!this.profile?.canEdit && this.auth.hasPermission('CERTIFICATE_GENERATE');
+  }
+
+  get canResetPassword(): boolean {
+    if (!this.profile?.userId) {
+      return false;
+    }
+    return this.auth.hasPermission('USER_UPDATE')
+      || (!!this.profile.canEdit && this.auth.hasRole('TEACHER'));
   }
 
   get sectionsForClass(): SectionOption[] {
@@ -416,6 +443,44 @@ export class StudentProfileComponent implements OnInit {
 
   onClassChange(): void {
     this.form.patchValue({ sectionId: '' });
+  }
+
+  openReset(): void {
+    this.showReset = true;
+    this.resetError = '';
+    this.cdr.markForCheck();
+  }
+
+  closeReset(): void {
+    this.showReset = false;
+    this.resetting = false;
+    this.resetError = '';
+    this.cdr.markForCheck();
+  }
+
+  confirmReset(payload: PasswordResetPayload): void {
+    if (!this.profile) {
+      return;
+    }
+    this.resetting = true;
+    this.resetError = '';
+    this.cdr.markForCheck();
+    this.http.post<ApiResponse<IssuedCredentials>>(`/api/students/${this.profile.id}/reset-password`, payload).subscribe({
+      next: (res) => {
+        this.resetting = false;
+        this.showReset = false;
+        if (res.data?.username && res.data.temporaryPassword) {
+          this.issued = { username: res.data.username, temporaryPassword: res.data.temporaryPassword };
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.resetting = false;
+        const api = err.error as ApiError | undefined;
+        this.resetError = api?.code || api?.message || 'common.error';
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   openCertificateModal(): void {

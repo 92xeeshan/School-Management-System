@@ -16,6 +16,8 @@ import com.schoolms.academics.TeacherSectionRepository;
 import com.schoolms.attendance.AttendanceService;
 import com.schoolms.attendance.dto.AttendanceSummaryDto;
 import com.schoolms.auth.CredentialAccountService;
+import com.schoolms.auth.CredentialService;
+import com.schoolms.auth.dto.ResetPasswordRequest;
 import com.schoolms.common.enums.StudentStatus;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
@@ -25,6 +27,7 @@ import com.schoolms.student.dto.StudentProfileDto;
 import com.schoolms.student.dto.StudentProfileUpdateRequest;
 import com.schoolms.student.dto.StudentRequest;
 import com.schoolms.user.dto.ProvisionedAccount;
+import com.schoolms.user.dto.UserDto;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,6 +75,8 @@ class StudentServiceTest {
     private AttendanceService attendanceService;
     @Mock
     private CredentialAccountService credentialAccountService;
+    @Mock
+    private CredentialService credentialService;
 
     private StudentService studentService;
 
@@ -82,7 +87,8 @@ class StudentServiceTest {
         studentService = new StudentService(studentRepository, guardianRepository,
                 studentGuardianRepository, enrollmentRepository, classRepository,
                 sectionRepository, academicYearRepository, teacherRepository,
-                teacherSectionRepository, attendanceService, credentialAccountService);
+                teacherSectionRepository, attendanceService, credentialAccountService,
+                credentialService);
         TestSecurity.loginAsAdmin();
     }
 
@@ -320,6 +326,77 @@ class StudentServiceTest {
 
         assertThrows(AuthException.class, () -> studentService.updateProfile(studentId, request));
         verify(studentRepository, never()).save(any());
+    }
+
+    @Test
+    void resetPasswordAllowsAdmin() {
+        UUID studentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        Student student = sampleStudent(studentId);
+        student.setUserId(userId);
+        when(studentRepository.findByIdAndSchoolId(studentId, schoolId)).thenReturn(Optional.of(student));
+        UserDto dto = new UserDto(userId, schoolId, "STD2026001", null, null, "Meera", "Sharma",
+                "Meera Sharma", "en", null, true, false, List.of("STUDENT"), null, null, "Meer@1234");
+        when(credentialService.resetPassword(userId, new ResetPasswordRequest(null), "ADMIN_PASSWORD_RESET"))
+                .thenReturn(dto);
+
+        UserDto result = studentService.resetPassword(studentId, new ResetPasswordRequest(null));
+
+        assertEquals("STD2026001", result.username());
+        assertEquals("Meer@1234", result.temporaryPassword());
+        verify(credentialService).resetPassword(userId, new ResetPasswordRequest(null), "ADMIN_PASSWORD_RESET");
+    }
+
+    @Test
+    void resetPasswordAllowsClassTeacher() {
+        TestSecurity.loginAsTeacher();
+        UUID studentId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID yearId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        UUID sectionId = UUID.randomUUID();
+        Student student = sampleStudent(studentId);
+        student.setUserId(userId);
+        when(studentRepository.findByIdAndSchoolId(studentId, schoolId)).thenReturn(Optional.of(student));
+        stubEnrollment(studentId, yearId, classId, sectionId);
+        stubClassTeacher(sectionId, yearId);
+        UserDto dto = new UserDto(userId, schoolId, "STD2026001", null, null, "Meera", "Sharma",
+                "Meera Sharma", "en", null, true, false, List.of("STUDENT"), null, null, "Meer@1234");
+        when(credentialService.resetPassword(userId, new ResetPasswordRequest(null), "CLASS_TEACHER_PASSWORD_RESET"))
+                .thenReturn(dto);
+
+        UserDto result = studentService.resetPassword(studentId, null);
+
+        assertEquals("Meer@1234", result.temporaryPassword());
+        verify(credentialService).resetPassword(userId, new ResetPasswordRequest(null), "CLASS_TEACHER_PASSWORD_RESET");
+    }
+
+    @Test
+    void resetPasswordRejectsGeneralTeacher() {
+        TestSecurity.loginAsTeacher();
+        UUID studentId = UUID.randomUUID();
+        UUID yearId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        UUID sectionId = UUID.randomUUID();
+        Student student = sampleStudent(studentId);
+        student.setUserId(UUID.randomUUID());
+        when(studentRepository.findByIdAndSchoolId(studentId, schoolId)).thenReturn(Optional.of(student));
+        stubEnrollment(studentId, yearId, classId, sectionId);
+        when(teacherRepository.findBySchoolIdAndUserId(schoolId, TestSecurity.USER_ID)).thenReturn(Optional.empty());
+
+        assertThrows(AuthException.class, () -> studentService.resetPassword(studentId, null));
+        verify(credentialService, never()).resetPassword(any(), any(), any());
+    }
+
+    @Test
+    void resetPasswordRejectsStudentWithoutLogin() {
+        UUID studentId = UUID.randomUUID();
+        Student student = sampleStudent(studentId);
+        when(studentRepository.findByIdAndSchoolId(studentId, schoolId)).thenReturn(Optional.of(student));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> studentService.resetPassword(studentId, null));
+        assertEquals("student.no_login", ex.getMessage());
     }
 
     private Student sampleStudent(UUID studentId) {

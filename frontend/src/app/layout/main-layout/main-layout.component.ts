@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -19,6 +19,7 @@ import { ThemeMode, ThemeService } from '../../core/theme/theme.service';
 import { LocaleService } from '../../i18n/locale.service';
 import { LOCALE_META, SUPPORTED_LOCALES, SupportedLocale } from '../../i18n/i18n.config';
 import { NotificationBellComponent } from '../notifications/notification-bell.component';
+import { ChangePasswordComponent } from '../../features/auth/change-password.component';
 
 interface NavItem {
   route: string;
@@ -38,6 +39,7 @@ const SIDENAV_STORAGE_KEY = 'schoolms.sidenav.collapsed';
     TranslateModule,
     AsyncPipe,
     NotificationBellComponent,
+    ChangePasswordComponent,
     MatButtonModule,
     MatDividerModule,
     MatFormFieldModule,
@@ -160,10 +162,10 @@ const SIDENAV_STORAGE_KEY = 'schoolms.sidenav.collapsed';
                   </div>
                 </div>
                  <mat-divider />
-                 <a mat-menu-item routerLink="/change-password">
-                   <mat-icon>lock_reset</mat-icon>
-                   <span>{{ 'auth.changePassword.title' | translate }}</span>
-                 </a>
+                  <button mat-menu-item type="button" (click)="openChangePassword()">
+                    <mat-icon>lock_reset</mat-icon>
+                    <span>{{ 'auth.changePassword.title' | translate }}</span>
+                  </button>
                  <button mat-menu-item type="button" (click)="onLogout()">
                   <mat-icon>logout</mat-icon>
                   <span>{{ 'common.logout' | translate }}</span>
@@ -172,6 +174,8 @@ const SIDENAV_STORAGE_KEY = 'schoolms.sidenav.collapsed';
             }
           </div>
         </mat-toolbar>
+
+        <app-change-password [open]="showChangePassword" (closed)="closeChangePassword()" />
 
         <main class="content">
           <router-outlet />
@@ -288,6 +292,7 @@ const SIDENAV_STORAGE_KEY = 'schoolms.sidenav.collapsed';
 export class MainLayoutComponent implements OnInit {
   collapsed = localStorage.getItem(SIDENAV_STORAGE_KEY) === 'true';
   mobileOpen = false;
+  showChangePassword = false;
 
   readonly isMobile$: Observable<boolean>;
   readonly user$: Observable<AuthUser | null>;
@@ -316,6 +321,7 @@ export class MainLayoutComponent implements OnInit {
     readonly localeService: LocaleService,
     readonly theme: ThemeService,
     private auth: AuthService,
+    private cdr: ChangeDetectorRef,
     breakpoints: BreakpointObserver
   ) {
     this.user$ = this.auth.user$;
@@ -370,6 +376,16 @@ export class MainLayoutComponent implements OnInit {
   roleLabel(user: AuthUser): string {
     const role = user.roles[0];
     return role ? `roles.${role}` : 'roles.STUDENT';
+  }
+
+  openChangePassword(): void {
+    this.showChangePassword = true;
+    this.cdr.markForCheck();
+  }
+
+  closeChangePassword(): void {
+    this.showChangePassword = false;
+    this.cdr.markForCheck();
   }
 
   onLogout(): void {
