@@ -14,6 +14,8 @@ import com.schoolms.academics.TeacherSectionRepository;
 import com.schoolms.attendance.AttendanceService;
 import com.schoolms.attendance.dto.AttendanceSummaryDto;
 import com.schoolms.auth.CredentialAccountService;
+import com.schoolms.auth.CredentialService;
+import com.schoolms.auth.dto.ResetPasswordRequest;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
@@ -33,6 +35,7 @@ import com.schoolms.student.dto.StudentProfileDto;
 import com.schoolms.student.dto.StudentProfileUpdateRequest;
 import com.schoolms.student.dto.StudentRequest;
 import com.schoolms.user.dto.ProvisionedAccount;
+import com.schoolms.user.dto.UserDto;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvValidationException;
@@ -71,6 +74,7 @@ public class StudentService {
     private final TeacherSectionRepository teacherSectionRepository;
     private final AttendanceService attendanceService;
     private final CredentialAccountService credentialAccountService;
+    private final CredentialService credentialService;
 
     @Transactional(readOnly = true)
     public Page<StudentListItemDto> list(int page, int size, String query) {
@@ -116,6 +120,33 @@ public class StudentService {
         }
         upsertParentGuardians(student, request, access.editableFields());
         return toProfile(student);
+    }
+
+    @Transactional
+    public UserDto resetPassword(UUID studentId, ResetPasswordRequest request) {
+        Student student = findStudent(studentId);
+        if (student.getUserId() == null) {
+            throw new BusinessException("student.no_login");
+        }
+        assertCanResetPassword(student);
+        UserPrincipal principal = SecurityUtils.currentPrincipal();
+        String action = principal.hasRole("TEACHER") && !principal.hasRole("ADMIN") && !principal.hasRole("SUPER_ADMIN")
+                ? "CLASS_TEACHER_PASSWORD_RESET"
+                : "ADMIN_PASSWORD_RESET";
+        return credentialService.resetPassword(student.getUserId(),
+                request == null ? new ResetPasswordRequest(null) : request, action);
+    }
+
+    private void assertCanResetPassword(Student student) {
+        UserPrincipal principal = SecurityUtils.currentPrincipal();
+        if (principal.hasRole("ADMIN") || principal.hasRole("SUPER_ADMIN")) {
+            return;
+        }
+        UUID sectionId = currentEnrollment(student.getId(), student.getSchoolId()).sectionId();
+        if (principal.hasRole("TEACHER") && isClassTeacherOf(principal.id(), sectionId, student.getSchoolId())) {
+            return;
+        }
+        throw AuthException.accessDenied();
     }
 
     @Transactional(readOnly = true)
@@ -445,7 +476,7 @@ public class StudentService {
             attendance = attendanceService.getStudentSummary(student.getId(), year.getStartDate(), year.getEndDate());
         }
         return new StudentProfileDto(
-                student.getId(), student.getAdmissionNo(), student.getFirstName(), student.getLastName(),
+                student.getId(), student.getUserId(), student.getAdmissionNo(), student.getFirstName(), student.getLastName(),
                 student.getDisplayName(), student.getDateOfBirth(), student.getGender(), student.getBloodGroup(),
                 student.getReligion(), student.getNationality(), student.getPhone(), student.getEmergencyContact(),
                 student.getPermanentAddress(), student.getPresentAddress(), student.getPreviousSchool(),

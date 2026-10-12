@@ -11,7 +11,9 @@ import com.schoolms.student.dto.StudentGuardianDto;
 import com.schoolms.student.dto.StudentListItemDto;
 import com.schoolms.student.dto.StudentProfileDto;
 import com.schoolms.student.dto.StudentProfileUpdateRequest;
+import com.schoolms.auth.dto.ResetPasswordRequest;
 import com.schoolms.student.dto.StudentRequest;
+import com.schoolms.user.dto.UserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -74,6 +76,14 @@ public class StudentController {
     @GetMapping("/{id}/profile")
     public ApiResponse<StudentProfileDto> getProfile(@PathVariable UUID id) {
         return ApiResponse.ok(studentService.getProfile(id));
+    }
+
+    @Operation(summary = "Reset a student's login password")
+    @PreAuthorize("hasAnyAuthority('USER_UPDATE', 'STUDENT_READ')")
+    @PostMapping("/{id}/reset-password")
+    public ApiResponse<UserDto> resetPassword(@PathVariable UUID id,
+                                              @RequestBody(required = false) ResetPasswordRequest request) {
+        return ApiResponse.ok(studentService.resetPassword(id, request));
     }
 
     @Operation(summary = "Update a student's full profile")

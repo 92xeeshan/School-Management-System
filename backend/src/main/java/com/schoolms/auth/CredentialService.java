@@ -194,6 +194,11 @@ public class CredentialService {
 
     @Transactional
     public UserDto adminResetPassword(UUID userId, ResetPasswordRequest request) {
+        return resetPassword(userId, request, "ADMIN_PASSWORD_RESET");
+    }
+
+    @Transactional
+    public UserDto resetPassword(UUID userId, ResetPasswordRequest request, String auditAction) {
         User user = userRepository.findByIdAndSchoolId(userId, SecurityUtils.currentSchoolId())
                 .orElseThrow(() -> new BusinessException("user.not_found"));
         String temporary = request.temporaryPassword() == null || request.temporaryPassword().isBlank()
@@ -212,7 +217,7 @@ public class CredentialService {
         credentialAccountService.bumpTokenVersionAndRevoke(user);
         refreshTokenRepository.revokeAllByUserId(user.getId(), Instant.now());
         credentialAccountService.audit(user.getSchoolId(), SecurityUtils.currentUserId(), user.getId(),
-                "ADMIN_PASSWORD_RESET", user.getUsername());
+                auditAction, user.getUsername());
         return UserDto.from(user, userRepository.findRoleCodesByUserId(user.getId()), temporary);
     }
 
