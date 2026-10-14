@@ -60,6 +60,7 @@
     "downloads": "Downloads",
     "certificates": "Certificates",
     "users": "Users",
+    "inventory": "Inventory",
     "menu": "Open navigation"
   },
   "roles": {
@@ -155,7 +156,10 @@
       }
     },
     "alerts": {
-      "urgent": "Priority alert:"
+      "urgent": "Priority alert:",
+      "lowStock": "Low stock:",
+      "lowStockCount": "{{count}} item(s) at or below their reorder level.",
+      "viewInventory": "View inventory"
     },
     "quickActions": {
       "title": "Quick Actions",
@@ -1108,5 +1112,59 @@
     "resetAuto": "Generate a temporary password",
     "resetCustom": "Set a custom temporary password",
     "audit": "Credential audit"
+  },
+  "inventory": {
+    "title": "Inventory",
+    "subtitle": "Track school supplies, furniture, and lab equipment.",
+    "tabs": {
+      "items": "Items",
+      "categories": "Categories"
+    },
+    "name": "Name",
+    "description": "Description",
+    "category": "Category",
+    "allCategories": "All categories",
+    "allConditions": "All conditions",
+    "selectCategory": "Select a category",
+    "sku": "SKU / Asset tag",
+    "unit": "Unit",
+    "quantity": "Quantity",
+    "reorderThreshold": "Reorder threshold",
+    "purchaseDate": "Purchase date",
+    "purchaseCost": "Purchase cost",
+    "vendor": "Vendor",
+    "location": "Location / Room",
+    "conditionLabel": "Condition",
+    "assignedTo": "Assigned to",
+    "room": "Room",
+    "date": "Date",
+    "reason": "Reason",
+    "none": "None",
+    "lowStock": "Low stock",
+    "lowStockOnly": "Low stock only",
+    "addItem": "Add item",
+    "editItem": "Edit item",
+    "deleteConfirm": "Delete {{name}}? This also removes its stock history.",
+    "addCategory": "Add category",
+    "recordMovement": "Record movement",
+    "movementType": "Movement",
+    "assignTo": "Assign to",
+    "history": "History",
+    "importCsv": "Import CSV",
+    "importSummary": "Imported {{succeeded}} of {{total}} rows.",
+    "exportReport": "Export PDF",
+    "condition": {
+      "NEW": "New",
+      "GOOD": "Good",
+      "DAMAGED": "Damaged",
+      "UNDER_REPAIR": "Under repair",
+      "RETIRED": "Retired"
+    },
+    "type": {
+      "IN": "Stock in",
+      "OUT": "Stock out",
+      "CHECKOUT": "Check out",
+      "CHECKIN": "Check in"
+    }
   }
 }
