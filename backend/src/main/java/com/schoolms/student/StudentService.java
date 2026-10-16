@@ -22,12 +22,16 @@ import com.schoolms.common.exception.ResourceNotFoundException;
 import com.schoolms.common.enums.Gender;
 import com.schoolms.common.enums.GuardianRelationship;
 import com.schoolms.common.enums.StudentStatus;
+import com.schoolms.school.School;
+import com.schoolms.school.SchoolRepository;
 import com.schoolms.security.SecurityUtils;
 import com.schoolms.security.UserPrincipal;
 import com.schoolms.student.dto.EnrollRequest;
 import com.schoolms.student.dto.GuardianDto;
 import com.schoolms.student.dto.GuardianRequest;
 import com.schoolms.student.dto.ImportResult;
+import com.schoolms.student.dto.StudentDirectoryFilter;
+import com.schoolms.student.dto.StudentDirectoryRow;
 import com.schoolms.student.dto.StudentDto;
 import com.schoolms.student.dto.StudentGuardianDto;
 import com.schoolms.student.dto.StudentListItemDto;
@@ -38,21 +42,26 @@ import com.schoolms.user.dto.ProvisionedAccount;
 import com.schoolms.user.dto.UserDto;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -75,15 +84,137 @@ public class StudentService {
     private final AttendanceService attendanceService;
     private final CredentialAccountService credentialAccountService;
     private final CredentialService credentialService;
+    private final SchoolRepository schoolRepository;
+    private final StudentDirectoryPdfService directoryPdfService;
 
     @Transactional(readOnly = true)
     public Page<StudentListItemDto> list(int page, int size, String query) {
+        return list(page, size, new StudentDirectoryFilter(null, null, null, null, query, null, null));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<StudentListItemDto> list(int page, int size, StudentDirectoryFilter filter) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Student> students = query == null || query.isBlank()
-                ? studentRepository.findBySchoolId(schoolId, pageable)
-                : studentRepository.search(schoolId, query.trim(), pageable);
-        return students.map(student -> toListItem(student, schoolId));
+        StudentDirectoryFilter criteria = filter == null ? StudentDirectoryFilter.empty() : filter;
+        UUID academicYearId = criteria.academicYearId() != null
+                ? criteria.academicYearId()
+                : currentYearId(schoolId);
+        String query = normalizeQuery(criteria.query());
+        Pageable pageable = PageRequest.of(page, size, directorySort(criteria.sort(), criteria.direction()));
+        Page<StudentDirectoryRow> rows = studentRepository.searchDirectory(
+                schoolId, academicYearId, criteria.classId(), criteria.sectionId(),
+                parseStatus(criteria.status()), query, likePattern(query), pageable);
+        return rows.map(this::toListItem);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudentListItemDto> listAll(StudentDirectoryFilter filter) {
+        UUID schoolId = SecurityUtils.currentSchoolId();
+        StudentDirectoryFilter criteria = filter == null ? StudentDirectoryFilter.empty() : filter;
+        UUID academicYearId = criteria.academicYearId() != null
+                ? criteria.academicYearId()
+                : currentYearId(schoolId);
+        String query = normalizeQuery(criteria.query());
+        Pageable pageable = Pageable.unpaged(directorySort(criteria.sort(), criteria.direction()));
+        return studentRepository.searchDirectory(
+                        schoolId, academicYearId, criteria.classId(), criteria.sectionId(),
+                        parseStatus(criteria.status()), query, likePattern(query), pageable)
+                .map(this::toListItem)
+                .getContent();
+    }
+
+    private StudentListItemDto toListItem(StudentDirectoryRow row) {
+        StudentDto summary = StudentDto.summary(row.id(), row.admissionNo(), row.firstName(),
+                row.lastName(), row.admissionDate(), row.gender(), row.status());
+        return new StudentListItemDto(summary, row.enrollmentId(), row.academicYearId(),
+                row.className(), row.sectionName(), row.rollNumber());
+    }
+
+    private static String normalizeQuery(String query) {
+        if (query == null) {
+            return null;
+        }
+        String trimmed = query.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static String likePattern(String query) {
+        return query == null ? null : "%" + query.toLowerCase(Locale.ROOT) + "%";
+    }
+
+    private static StudentStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return StudentStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static Sort directorySort(String sort, String direction) {
+        String property = switch (sort == null ? "" : sort) {
+            case "name" -> "s.firstName";
+            case "rollNumber" -> "e.rollNumber";
+            case "admissionDate" -> "s.admissionDate";
+            default -> "s.admissionNo";
+        };
+        boolean desc = "desc".equalsIgnoreCase(direction);
+        Sort.Order order = new Sort.Order(desc ? Sort.Direction.DESC : Sort.Direction.ASC,
+                property, Sort.NullHandling.NULLS_LAST);
+        Sort primary = Sort.by(order);
+        if (!"name".equals(sort)) {
+            return primary;
+        }
+        Sort.Order lastName = new Sort.Order(desc ? Sort.Direction.DESC : Sort.Direction.ASC,
+                "s.lastName", Sort.NullHandling.NULLS_LAST);
+        return primary.and(Sort.by(lastName));
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportCsv(StudentDirectoryFilter filter) {
+        List<StudentListItemDto> items = listAll(filter);
+        String[] headers = {"Admission No", "First Name", "Last Name", "Gender", "Class",
+                "Section", "Roll No", "Status", "Admission Date"};
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (CSVWriter writer = new CSVWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
+                writer.writeNext(headers);
+                for (StudentListItemDto item : items) {
+                    StudentDto s = item.student();
+                    writer.writeNext(new String[]{
+                            value(s.admissionNo()),
+                            value(s.firstName()),
+                            value(s.lastName()),
+                            value(s.gender() == null ? null : s.gender().name()),
+                            value(item.className()),
+                            value(item.sectionName()),
+                            item.rollNumber() == null ? "" : String.valueOf(item.rollNumber()),
+                            value(s.status() == null ? null : s.status().name()),
+                            value(s.admissionDate() == null ? null : s.admissionDate().toString())
+                    });
+                }
+            }
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new BusinessException("student.export_failed");
+        }
+    }
+
+    private static String value(String text) {
+        return text == null ? "" : text;
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportPdf(StudentDirectoryFilter filter) {
+        List<StudentListItemDto> items = listAll(filter);
+        if (items.isEmpty()) {
+            throw new BusinessException("student.no_data");
+        }
+        UUID schoolId = SecurityUtils.currentSchoolId();
+        String schoolName = schoolRepository.findById(schoolId).map(School::getName).orElse(null);
+        return directoryPdfService.render(schoolName, items);
     }
 
     @Transactional(readOnly = true)

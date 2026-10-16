@@ -214,6 +214,28 @@
   "students": {
     "title": "छात्र",
     "subtitle": "छात्र रिकॉर्ड प्रबंधित करें",
+    "filters": {
+      "session": "शैक्षणिक सत्र",
+      "allSessions": "सभी सत्र",
+      "current": "वर्तमान",
+      "allClasses": "सभी कक्षाएँ",
+      "allSections": "सभी सेक्शन",
+      "allStatuses": "सभी स्थितियाँ",
+      "searchPlaceholder": "नाम, प्रवेश संख्या या रोल नं. खोजें",
+      "clear": "फ़िल्टर साफ़ करें",
+      "exportCsv": "CSV निर्यात करें",
+      "exportPdf": "PDF निर्यात करें",
+      "emptyTitle": "चयनित फ़िल्टर से कोई छात्र नहीं मिला",
+      "emptyHint": "अधिक छात्र देखने के लिए फ़िल्टर समायोजित करें या साफ़ करें।",
+      "pageInfo": "{{total}} में से {{from}}-{{to}} दिखाए जा रहे हैं",
+      "rowsPerPage": "प्रति पृष्ठ पंक्तियाँ"
+    },
+    "statuses": {
+      "ACTIVE": "सक्रिय",
+      "INACTIVE": "निष्क्रिय",
+      "ALUMNI": "स्नातक",
+      "TRANSFERRED": "स्थानांतरित"
+    },
     "addStudent": "छात्र जोड़ें",
     "editStudent": "छात्र संपादित करें",
     "viewReportCard": "रिपोर्ट कार्ड",

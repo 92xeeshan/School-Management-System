@@ -1,5 +1,7 @@
 package com.schoolms.student;
 
+import com.schoolms.common.enums.StudentStatus;
+import com.schoolms.student.dto.StudentDirectoryRow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,6 +32,51 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     Page<Student> search(@Param("schoolId") UUID schoolId,
                          @Param("query") String query,
                          Pageable pageable);
+
+    @Query(value = """
+            select new com.schoolms.student.dto.StudentDirectoryRow(
+                s.id, s.admissionNo, s.firstName, s.lastName, s.gender, s.status, s.admissionDate,
+                e.id, e.academicYearId, e.rollNumber,
+                sec.id, sec.name, c.id, c.name)
+            from Student s
+            left join StudentEnrollment e on e.studentId = s.id and e.schoolId = s.schoolId
+                 and e.academicYearId = :academicYearId
+            left join Section sec on sec.id = e.sectionId and sec.schoolId = s.schoolId
+            left join SchoolClass c on c.id = sec.classId and c.schoolId = s.schoolId
+            where s.schoolId = :schoolId
+              and (:classId is null or c.id = :classId)
+              and (:sectionId is null or sec.id = :sectionId)
+              and (:status is null or s.status = :status)
+              and (:query is null
+                   or lower(s.firstName) like :queryLike
+                   or lower(s.lastName) like :queryLike
+                   or lower(s.admissionNo) like :queryLike
+                   or cast(e.rollNumber as string) like :queryLike)
+            """,
+            countQuery = """
+            select count(s) from Student s
+            left join StudentEnrollment e on e.studentId = s.id and e.schoolId = s.schoolId
+                 and e.academicYearId = :academicYearId
+            left join Section sec on sec.id = e.sectionId and sec.schoolId = s.schoolId
+            left join SchoolClass c on c.id = sec.classId and c.schoolId = s.schoolId
+            where s.schoolId = :schoolId
+              and (:classId is null or c.id = :classId)
+              and (:sectionId is null or sec.id = :sectionId)
+              and (:status is null or s.status = :status)
+              and (:query is null
+                   or lower(s.firstName) like :queryLike
+                   or lower(s.lastName) like :queryLike
+                   or lower(s.admissionNo) like :queryLike
+                   or cast(e.rollNumber as string) like :queryLike)
+            """)
+    Page<StudentDirectoryRow> searchDirectory(@Param("schoolId") UUID schoolId,
+                                              @Param("academicYearId") UUID academicYearId,
+                                              @Param("classId") UUID classId,
+                                              @Param("sectionId") UUID sectionId,
+                                              @Param("status") StudentStatus status,
+                                              @Param("query") String query,
+                                              @Param("queryLike") String queryLike,
+                                              Pageable pageable);
 
     List<Student> findBySchoolIdAndIdIn(UUID schoolId, List<UUID> ids);
 

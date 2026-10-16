@@ -6,6 +6,7 @@ import com.schoolms.student.dto.AssignGuardianRequest;
 import com.schoolms.student.dto.EnrollRequest;
 import com.schoolms.student.dto.GuardianRequest;
 import com.schoolms.student.dto.ImportResult;
+import com.schoolms.student.dto.StudentDirectoryFilter;
 import com.schoolms.student.dto.StudentDto;
 import com.schoolms.student.dto.StudentGuardianDto;
 import com.schoolms.student.dto.StudentListItemDto;
@@ -19,6 +20,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,15 +48,47 @@ public class StudentController {
 
     private final StudentService studentService;
 
-    @Operation(summary = "List/search students (paginated)")
+    @Operation(summary = "List/search students (paginated, filterable and sortable)")
     @PreAuthorize("hasAuthority('STUDENT_READ')")
     @GetMapping
     public ApiResponse<PagedResponse<StudentListItemDto>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String query) {
-        Page<StudentListItemDto> result = studentService.list(page, Math.min(size, 100), query);
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) UUID academicYearId,
+            @RequestParam(required = false) UUID classId,
+            @RequestParam(required = false) UUID sectionId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        StudentDirectoryFilter filter = new StudentDirectoryFilter(
+                academicYearId, classId, sectionId, status, query, sort, direction);
+        Page<StudentListItemDto> result = studentService.list(page, Math.min(size, 100), filter);
         return ApiResponse.ok(PagedResponse.from(result));
+    }
+
+    @Operation(summary = "Export the filtered student directory as CSV or PDF")
+    @PreAuthorize("hasAuthority('STUDENT_READ')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) UUID academicYearId,
+            @RequestParam(required = false) UUID classId,
+            @RequestParam(required = false) UUID sectionId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction,
+            @RequestParam(defaultValue = "csv") String format) {
+        StudentDirectoryFilter filter = new StudentDirectoryFilter(
+                academicYearId, classId, sectionId, status, query, sort, direction);
+        boolean pdf = "pdf".equalsIgnoreCase(format);
+        byte[] body = pdf ? studentService.exportPdf(filter) : studentService.exportCsv(filter);
+        String filename = "students." + (pdf ? "pdf" : "csv");
+        String contentType = pdf ? MediaType.APPLICATION_PDF_VALUE : "text/csv";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(body);
     }
 
     @Operation(summary = "List students enrolled in a section")

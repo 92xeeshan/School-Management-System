@@ -214,6 +214,28 @@
   "students": {
     "title": "طلباء",
     "subtitle": "طلباء کے ریکارڈ کا انتظام کریں",
+    "filters": {
+      "session": "تعلیمی سیشن",
+      "allSessions": "تمام سیشنز",
+      "current": "موجودہ",
+      "allClasses": "تمام کلاسز",
+      "allSections": "تمام سیکشنز",
+      "allStatuses": "تمام حالتیں",
+      "searchPlaceholder": "نام، داخلہ نمبر یا رول نمبر تلاش کریں",
+      "clear": "فلٹرز صاف کریں",
+      "exportCsv": "CSV برآمد کریں",
+      "exportPdf": "PDF برآمد کریں",
+      "emptyTitle": "منتخب فلٹرز سے کوئی طالب علم نہیں ملا",
+      "emptyHint": "مزید طلباء دیکھنے کے لیے فلٹرز کو ایڈجسٹ یا صاف کریں۔",
+      "pageInfo": "{{total}} میں سے {{from}}-{{to}} دکھائے جا رہے ہیں",
+      "rowsPerPage": "فی صفحہ قطاریں"
+    },
+    "statuses": {
+      "ACTIVE": "فعال",
+      "INACTIVE": "غیر فعال",
+      "ALUMNI": "فارغ التحصیل",
+      "TRANSFERRED": "منتقل شدہ"
+    },
     "addStudent": "طالب علم شامل کریں",
     "editStudent": "طالب علم میں ترمیم",
     "viewReportCard": "رپورٹ کارڈ",

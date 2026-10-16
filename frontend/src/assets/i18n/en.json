@@ -214,6 +214,28 @@
   "students": {
     "title": "Students",
     "subtitle": "Manage student records",
+    "filters": {
+      "session": "Academic Session",
+      "allSessions": "All sessions",
+      "current": "Current",
+      "allClasses": "All classes",
+      "allSections": "All sections",
+      "allStatuses": "All statuses",
+      "searchPlaceholder": "Search name, admission no. or roll no.",
+      "clear": "Clear filters",
+      "exportCsv": "Export CSV",
+      "exportPdf": "Export PDF",
+      "emptyTitle": "No students found matching the selected filters",
+      "emptyHint": "Try adjusting or clearing the filters to see more students.",
+      "pageInfo": "Showing {{from}}-{{to}} of {{total}}",
+      "rowsPerPage": "Rows per page"
+    },
+    "statuses": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "ALUMNI": "Graduated",
+      "TRANSFERRED": "Transferred"
+    },
     "addStudent": "Add Student",
     "editStudent": "Edit Student",
     "viewReportCard": "Report card",

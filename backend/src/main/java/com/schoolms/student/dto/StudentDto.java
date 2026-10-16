@@ -44,4 +44,16 @@ public record StudentDto(
                 student.getPresentAddress(), student.getPreviousSchool(),
                 student.getStatus(), student.getUserId(), username, temporaryPassword);
     }
+
+    /**
+     * Lightweight variant for list/directory views where only identity and
+     * directory-relevant fields are populated.
+     */
+    public static StudentDto summary(UUID id, String admissionNo, String firstName, String lastName,
+                                     LocalDate admissionDate, Gender gender, StudentStatus status) {
+        String display = lastName == null || lastName.isBlank() ? firstName : firstName + " " + lastName;
+        return new StudentDto(id, admissionNo, firstName, lastName, display, null,
+                gender, null, null, null, admissionDate, null, null, null, null,
+                null, null, status, null, null, null);
+    }
 }
