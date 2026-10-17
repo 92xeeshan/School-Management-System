@@ -79,6 +79,7 @@ export interface DashboardSummary {
   myAttendance: AttendanceSummary | null;
   feeBalance: number | null;
   pendingGrading: number;
+  lowStockCount: number;
 }
 
 export type EventType =

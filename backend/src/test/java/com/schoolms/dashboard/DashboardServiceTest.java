@@ -17,6 +17,7 @@ import com.schoolms.exam.ExamMarkRepository;
 import com.schoolms.fee.FeeInstallmentRepository;
 import com.schoolms.fee.FeePaymentRepository;
 import com.schoolms.fee.StudentFeeAssignmentRepository;
+import com.schoolms.inventory.InventoryItemRepository;
 import com.schoolms.notice.NoticeRepository;
 import com.schoolms.notice.NoticeService;
 import com.schoolms.student.GuardianRepository;
@@ -65,6 +66,7 @@ class DashboardServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private ExamEntryRepository examEntryRepository;
     @Mock private ExamMarkRepository examMarkRepository;
+    @Mock private InventoryItemRepository inventoryItemRepository;
 
     private DashboardService service;
 
@@ -74,7 +76,8 @@ class DashboardServiceTest {
                 sectionRepository, attendanceRepository, paymentRepository, noticeRepository,
                 noticeService, teacherSectionRepository, guardianRepository, studentGuardianRepository,
                 academicYearRepository, enrollmentRepository, installmentRepository, assignmentRepository,
-                awardRepository, userRepository, examEntryRepository, examMarkRepository);
+                awardRepository, userRepository, examEntryRepository, examMarkRepository,
+                inventoryItemRepository);
         TestSecurity.login(TestSecurity.USER_ID, TestSecurity.SCHOOL_ID, List.of("ADMIN"),
                 java.util.Set.of("DASHBOARD_VIEW"));
     }
@@ -104,6 +107,7 @@ class DashboardServiceTest {
         assertEquals(3, dto.gender().boys());
         assertEquals(3, dto.gender().girls());
         assertEquals(50.0, dto.gender().boysPercent());
+        assertEquals(2, dto.lowStockCount());
         assertEquals(5, dto.attendanceTrend().size());
         DashboardDto.AttendanceTrendPointDto point = dto.attendanceTrend().stream()
                 .filter(p -> p.date().equals(monday)).findFirst().orElseThrow();
@@ -160,6 +164,7 @@ class DashboardServiceTest {
         when(noticeRepository.countBySchoolIdAndStatus(eq(TestSecurity.SCHOOL_ID), any())).thenReturn(1L);
         when(noticeService.unreadCount()).thenReturn(1L);
         when(paymentRepository.sumBySchoolId(TestSecurity.SCHOOL_ID)).thenReturn(new BigDecimal("1500"));
+        when(inventoryItemRepository.countLowStock(TestSecurity.SCHOOL_ID)).thenReturn(2L);
         when(installmentRepository.sumOverdue(eq(TestSecurity.SCHOOL_ID), any()))
                 .thenReturn(new BigDecimal("500"));
         when(awardRepository.findTop10BySchoolIdOrderByPointsDescAwardedDateDesc(TestSecurity.SCHOOL_ID))

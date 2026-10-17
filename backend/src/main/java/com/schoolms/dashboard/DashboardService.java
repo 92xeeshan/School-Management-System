@@ -25,6 +25,7 @@ import com.schoolms.exam.ExamMarkRepository;
 import com.schoolms.fee.FeeInstallmentRepository;
 import com.schoolms.fee.FeePaymentRepository;
 import com.schoolms.fee.StudentFeeAssignmentRepository;
+import com.schoolms.inventory.InventoryItemRepository;
 import com.schoolms.notice.NoticeRepository;
 import com.schoolms.notice.NoticeService;
 import com.schoolms.security.SecurityUtils;
@@ -72,6 +73,7 @@ public class DashboardService {
     private final UserRepository userRepository;
     private final ExamEntryRepository examEntryRepository;
     private final ExamMarkRepository examMarkRepository;
+    private final InventoryItemRepository inventoryItemRepository;
 
     @Transactional(readOnly = true)
     public DashboardDto get() {
@@ -98,12 +100,14 @@ public class DashboardService {
         List<DashboardDto.MyChildDto> myChildren = myChildren(schoolId, userId);
         AttendanceSummaryDto myAttendance = myAttendance(schoolId, userId);
         BigDecimal feeBalance = feeBalance(schoolId, userId);
+        long lowStockCount = inventoryItemRepository.countLowStock(schoolId);
 
         return new DashboardDto(totalStudents, totalTeachers, totalStaff, totalClasses, totalSections,
                 totalAwards, presentToday, absentToday, publishedNotices, unreadNotices,
                 feesCollected, feesOverdue, genderBreakdown(schoolId),
                 attendanceTrend(schoolId, today), starStudents(schoolId),
-                mySections, myChildren, myAttendance, feeBalance, pendingGrading(schoolId, userId));
+                mySections, myChildren, myAttendance, feeBalance, pendingGrading(schoolId, userId),
+                lowStockCount);
     }
 
     private DashboardDto.GenderBreakdownDto genderBreakdown(UUID schoolId) {
