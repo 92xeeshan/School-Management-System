@@ -19,10 +19,13 @@ interface Student {
   section: string;
   rollNumber: number;
   gender: string;
+  admissionDate: string;
   phone: string;
   guardianName: string;
   status: string;
 }
+
+type DirectorySortKey = 'admissionNo' | 'name' | 'rollNumber' | 'admissionDate';
 
 interface BackendStudent {
   id: string;
@@ -42,6 +45,7 @@ interface BackendStudentListItem {
     firstName: string;
     lastName: string;
     gender: string;
+    admissionDate: string | null;
     status: string;
   };
   className: string;
@@ -139,26 +143,80 @@ interface StudentReportCard {
       <app-credential-handover [credentials]="issuedCredentials" (closed)="issuedCredentials = null" />
 
       <div class="card">
-        <div class="card-toolbar">
-          <input class="search" type="search" [placeholder]="'common.search' | translate" (input)="filter = $any($event.target).value" />
+        <div class="filter-panel">
+          <div class="filter-grid">
+            <label class="filter-field">
+              <span>{{ 'students.filters.session' | translate }}</span>
+              <select [value]="selectedYearId" (change)="onYearChange($any($event.target).value)">
+                <option value="">{{ 'students.filters.allSessions' | translate }}</option>
+                @for (year of academicYears; track year.id) {
+                  <option [value]="year.id">{{ year.name }}{{ year.current ? ' (' + ('students.filters.current' | translate) + ')' : '' }}</option>
+                }
+              </select>
+            </label>
+            <label class="filter-field">
+              <span>{{ 'students.className' | translate }}</span>
+              <select [value]="selectedClassId" (change)="onClassChange($any($event.target).value)">
+                <option value="">{{ 'students.filters.allClasses' | translate }}</option>
+                @for (klass of classes; track klass.id) {
+                  <option [value]="klass.id">{{ klass.name }}</option>
+                }
+              </select>
+            </label>
+            <label class="filter-field">
+              <span>{{ 'students.section' | translate }}</span>
+              <select [value]="selectedSectionId" (change)="onSectionChange($any($event.target).value)">
+                <option value="">{{ 'students.filters.allSections' | translate }}</option>
+                @for (section of availableSections; track section.id) {
+                  <option [value]="section.id">{{ section.name }}</option>
+                }
+              </select>
+            </label>
+            <label class="filter-field">
+              <span>{{ 'common.status' | translate }}</span>
+              <select [value]="selectedStatus" (change)="onStatusChange($any($event.target).value)">
+                <option value="">{{ 'students.filters.allStatuses' | translate }}</option>
+                @for (status of statuses; track status) {
+                  <option [value]="status">{{ ('students.statuses.' + status) | translate }}</option>
+                }
+              </select>
+            </label>
+            <label class="filter-field search-field">
+              <span>{{ 'common.search' | translate }}</span>
+              <input type="search" [value]="query" (input)="onSearchInput($any($event.target).value)"
+                     [placeholder]="'students.filters.searchPlaceholder' | translate" />
+            </label>
+          </div>
+          <div class="filter-actions">
+            <button class="btn" type="button" (click)="clearFilters()" [disabled]="!hasActiveFilters">
+              {{ 'students.filters.clear' | translate }}
+            </button>
+            <button class="btn" type="button" (click)="exportDirectory('csv')" [disabled]="exporting || totalElements === 0">
+              {{ 'students.filters.exportCsv' | translate }}
+            </button>
+            <button class="btn" type="button" (click)="exportDirectory('pdf')" [disabled]="exporting || totalElements === 0">
+              {{ 'students.filters.exportPdf' | translate }}
+            </button>
+          </div>
         </div>
-        @if (filteredStudents.length === 0) {
-          <app-empty-state icon="school" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate">
-            @if (canCreate) {
-              <button class="btn btn-primary" type="button" (click)="openAddModal()">{{ 'students.addStudent' | translate }}</button>
-            }
+
+        @if (loading) {
+          <p class="center muted">{{ 'common.loading' | translate }}</p>
+        } @else if (students.length === 0) {
+          <app-empty-state icon="school" [title]="'students.filters.emptyTitle' | translate" [hint]="'students.filters.emptyHint' | translate">
+            <button class="btn" type="button" (click)="clearFilters()">{{ 'students.filters.clear' | translate }}</button>
           </app-empty-state>
         } @else {
         <div class="data-table-wrap">
           <table class="data-table">
             <thead>
               <tr>
-                <th>{{ 'students.studentId' | translate }}</th>
-                <th>{{ 'students.name' | translate }}</th>
+                <th class="sortable" (click)="sortBy('admissionNo')">{{ 'students.studentId' | translate }}<span class="sort-ind">{{ sortIndicator('admissionNo') }}</span></th>
+                <th class="sortable" (click)="sortBy('name')">{{ 'students.name' | translate }}<span class="sort-ind">{{ sortIndicator('name') }}</span></th>
                 <th>{{ 'students.className' | translate }}</th>
                 <th>{{ 'students.section' | translate }}</th>
-                <th>{{ 'students.rollNumber' | translate }}</th>
-                <th>{{ 'students.gender' | translate }}</th>
+                <th class="sortable" (click)="sortBy('rollNumber')">{{ 'students.rollNumber' | translate }}<span class="sort-ind">{{ sortIndicator('rollNumber') }}</span></th>
+                <th class="sortable" (click)="sortBy('admissionDate')">{{ 'students.admissionDate' | translate }}<span class="sort-ind">{{ sortIndicator('admissionDate') }}</span></th>
                 <th>{{ 'common.status' | translate }}</th>
                 @if (showActions) {
                   <th>{{ 'common.actions' | translate }}</th>
@@ -166,14 +224,14 @@ interface StudentReportCard {
               </tr>
             </thead>
             <tbody>
-              @for (student of filteredStudents; track student.id) {
+              @for (student of students; track student.id) {
                 <tr class="clickable" (click)="openProfile(student)">
                   <td>{{ student.admissionNo }}</td>
                   <td class="strong">{{ student.firstName }} {{ student.lastName }}</td>
                   <td>{{ student.className }}</td>
                   <td>{{ student.section }}</td>
                   <td>{{ student.rollNumber }}</td>
-                  <td>{{ student.gender }}</td>
+                  <td>{{ student.admissionDate }}</td>
                   <td><span class="badge status-pill" [class.badge-success]="student.status === 'ACTIVE'" [class.badge-muted]="student.status !== 'ACTIVE'">{{ student.status }}</span></td>
                   @if (showActions) {
                   <td>
@@ -218,6 +276,21 @@ interface StudentReportCard {
               }
             </tbody>
           </table>
+        </div>
+        <div class="pagination">
+          <span class="muted">{{ 'students.filters.pageInfo' | translate:{ from: pageFrom, to: pageTo, total: totalElements } }}</span>
+          <span class="spacer"></span>
+          <label class="page-size">
+            {{ 'students.filters.rowsPerPage' | translate }}
+            <select [value]="pageSize" (change)="onPageSizeChange(+$any($event.target).value)">
+              @for (option of pageSizeOptions; track option) {
+                <option [value]="option">{{ option }}</option>
+              }
+            </select>
+          </label>
+          <button class="btn btn-sm" type="button" (click)="goToPage(pageIndex - 1)" [disabled]="pageIndex === 0">‹</button>
+          <span class="muted">{{ pageIndex + 1 }} / {{ totalPages || 1 }}</span>
+          <button class="btn btn-sm" type="button" (click)="goToPage(pageIndex + 1)" [disabled]="pageIndex + 1 >= totalPages">›</button>
         </div>
         }
       </div>
@@ -451,12 +524,46 @@ interface StudentReportCard {
   `,
   styles: `
     .muted { color: var(--color-muted); }
+    .center { text-align: center; padding: 24px 0; }
     .search {
       padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px;
       width: 260px; font: inherit; background: var(--color-surface); color: var(--color-text);
     }
     tbody tr.clickable { cursor: pointer; }
     .strong { font-weight: 600; }
+
+    .filter-panel {
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
+      justify-content: space-between; padding: 4px 0 18px;
+      border-bottom: 1px solid var(--color-border); margin-bottom: 16px;
+    }
+    .filter-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px; flex: 1 1 620px;
+    }
+    .filter-field { display: flex; flex-direction: column; gap: 6px; }
+    .filter-field span { font-size: .78rem; font-weight: 500; color: var(--color-muted); }
+    .filter-field select, .filter-field input {
+      padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px;
+      font: inherit; background: var(--color-surface); color: var(--color-text); width: 100%;
+    }
+    .filter-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-actions .btn:disabled { opacity: .5; cursor: not-allowed; }
+    th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    th.sortable:hover { color: var(--color-primary); }
+    .sort-ind { margin-left: 4px; font-size: .7rem; }
+    .pagination {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 4px 2px; border-top: 1px solid var(--color-border); margin-top: 12px;
+    }
+    .pagination .spacer { flex: 1; }
+    .page-size { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--color-muted); }
+    .page-size select {
+      padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit;
+      background: var(--color-surface); color: var(--color-text);
+    }
+    .btn-sm { padding: 4px 10px; line-height: 1.2; }
+    @media (max-width: 640px) { .filter-actions { width: 100%; } }
 
     .modal-backdrop {
       position: fixed; inset: 0; z-index: 100;
@@ -526,7 +633,23 @@ interface StudentReportCard {
 })
 export class StudentsComponent implements OnInit {
   students: Student[] = [];
-  filter = '';
+  loading = false;
+  exporting = false;
+  totalElements = 0;
+  totalPages = 0;
+  pageIndex = 0;
+  pageSize = 25;
+  readonly pageSizeOptions = [10, 25, 50, 100];
+  query = '';
+  selectedYearId = '';
+  selectedClassId = '';
+  selectedSectionId = '';
+  selectedStatus = '';
+  sortKey: DirectorySortKey = 'admissionNo';
+  sortDirection: 'asc' | 'desc' = 'asc';
+  readonly statuses = ['ACTIVE', 'INACTIVE', 'ALUMNI', 'TRANSFERRED'];
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+
   showModal = false;
   saving = false;
   editingId: string | null = null;
@@ -585,23 +708,168 @@ export class StudentsComponent implements OnInit {
     return this.sections.filter((s) => s.classId === classId);
   }
 
-  get filteredStudents(): Student[] {
-    const q = this.filter.trim().toLowerCase();
-    if (!q) {
-      return this.students;
+  get availableSections(): SectionOption[] {
+    if (!this.selectedClassId) {
+      return this.sections;
     }
-    return this.students.filter(
-      (s) =>
-        (s.firstName ?? '').toLowerCase().includes(q) ||
-        (s.lastName ?? '').toLowerCase().includes(q) ||
-        (s.admissionNo ?? '').toLowerCase().includes(q) ||
-        (s.className ?? '').toLowerCase().includes(q)
+    return this.sections.filter((s) => s.classId === this.selectedClassId);
+  }
+
+  get hasActiveFilters(): boolean {
+    const currentYear = this.academicYears.find((y) => y.current)?.id ?? '';
+    return (
+      this.query.trim() !== '' ||
+      this.selectedClassId !== '' ||
+      this.selectedSectionId !== '' ||
+      this.selectedStatus !== '' ||
+      this.selectedYearId !== currentYear
     );
   }
 
+  get pageFrom(): number {
+    return this.totalElements === 0 ? 0 : this.pageIndex * this.pageSize + 1;
+  }
+
+  get pageTo(): number {
+    return Math.min((this.pageIndex + 1) * this.pageSize, this.totalElements);
+  }
+
   ngOnInit(): void {
-    this.load();
     this.loadMeta();
+  }
+
+  private buildParams(): Record<string, string> {
+    const params: Record<string, string> = {
+      page: String(this.pageIndex),
+      size: String(this.pageSize),
+      sort: this.sortKey,
+      direction: this.sortDirection,
+    };
+    if (this.query.trim()) {
+      params['query'] = this.query.trim();
+    }
+    if (this.selectedYearId) {
+      params['academicYearId'] = this.selectedYearId;
+    }
+    if (this.selectedClassId) {
+      params['classId'] = this.selectedClassId;
+    }
+    if (this.selectedSectionId) {
+      params['sectionId'] = this.selectedSectionId;
+    }
+    if (this.selectedStatus) {
+      params['status'] = this.selectedStatus;
+    }
+    return params;
+  }
+
+  onYearChange(value: string): void {
+    this.selectedYearId = value;
+    this.applyFilters();
+  }
+
+  onClassChange(value: string): void {
+    this.selectedClassId = value;
+    this.selectedSectionId = '';
+    this.applyFilters();
+  }
+
+  onSectionChange(value: string): void {
+    this.selectedSectionId = value;
+    this.applyFilters();
+  }
+
+  onStatusChange(value: string): void {
+    this.selectedStatus = value;
+    this.applyFilters();
+  }
+
+  onSearchInput(value: string): void {
+    this.query = value;
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.searchTimer = setTimeout(() => this.applyFilters(), 300);
+  }
+
+  applyFilters(): void {
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  clearFilters(): void {
+    const currentYear = this.academicYears.find((y) => y.current)?.id ?? '';
+    this.query = '';
+    this.selectedYearId = currentYear;
+    this.selectedClassId = '';
+    this.selectedSectionId = '';
+    this.selectedStatus = '';
+    this.sortKey = 'admissionNo';
+    this.sortDirection = 'asc';
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  sortBy(key: DirectorySortKey): void {
+    if (this.sortKey === key) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortKey = key;
+      this.sortDirection = 'asc';
+    }
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  sortIndicator(key: DirectorySortKey): string {
+    if (this.sortKey !== key) {
+      return '';
+    }
+    return this.sortDirection === 'asc' ? '▲' : '▼';
+  }
+
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || (this.totalPages > 0 && page >= this.totalPages)) {
+      return;
+    }
+    this.pageIndex = page;
+    this.load();
+  }
+
+  exportDirectory(format: 'csv' | 'pdf'): void {
+    if (this.exporting || this.totalElements === 0) {
+      return;
+    }
+    this.exporting = true;
+    this.cdr.markForCheck();
+    const params = this.buildParams();
+    delete params['page'];
+    delete params['size'];
+    this.http.get('/api/students/export', {
+      params: { ...params, format },
+      responseType: 'blob',
+    }).subscribe({
+      next: (blob) => {
+        this.exporting = false;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `students.${format}`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.exporting = false;
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   openProfile(student: Student): void {
@@ -852,9 +1120,12 @@ export class StudentsComponent implements OnInit {
   }
 
   private load(): void {
-    this.http.get<ApiResponse<PagedResponse<BackendStudentListItem>>>('/api/students', { params: { size: '100' } }).subscribe({
+    this.loading = true;
+    this.cdr.markForCheck();
+    this.http.get<ApiResponse<PagedResponse<BackendStudentListItem>>>('/api/students', { params: this.buildParams() }).subscribe({
       next: (res) => {
-        const items = res.data?.content ?? [];
+        const page = res.data;
+        const items = page?.content ?? [];
         this.students = items.map((item) => ({
           id: item.student.id,
           admissionNo: item.student.admissionNo ?? '',
@@ -864,14 +1135,21 @@ export class StudentsComponent implements OnInit {
           section: item.sectionName ?? '',
           rollNumber: item.rollNumber ?? 0,
           gender: item.student.gender ?? '',
+          admissionDate: item.student.admissionDate ?? '',
           phone: '',
           guardianName: '',
           status: item.student.status ?? '',
         }));
+        this.totalElements = page?.totalElements ?? 0;
+        this.totalPages = page?.totalPages ?? 0;
+        this.loading = false;
         this.cdr.markForCheck();
       },
       error: () => {
         this.students = [];
+        this.totalElements = 0;
+        this.totalPages = 0;
+        this.loading = false;
         this.cdr.markForCheck();
       },
     });
@@ -881,9 +1159,16 @@ export class StudentsComponent implements OnInit {
     this.http.get<ApiResponse<AcademicYear[]>>('/api/academic-years').subscribe({
       next: (res) => {
         this.academicYears = res.data ?? [];
+        const current = this.academicYears.find((y) => y.current);
+        if (current) {
+          this.selectedYearId = current.id;
+        }
+        this.load();
         this.cdr.markForCheck();
       },
-      error: () => undefined,
+      error: () => {
+        this.load();
+      },
     });
     this.http.get<ApiResponse<ClassOption[]>>('/api/classes').subscribe({
       next: (res) => {

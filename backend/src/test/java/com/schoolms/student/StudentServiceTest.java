@@ -18,11 +18,16 @@ import com.schoolms.attendance.dto.AttendanceSummaryDto;
 import com.schoolms.auth.CredentialAccountService;
 import com.schoolms.auth.CredentialService;
 import com.schoolms.auth.dto.ResetPasswordRequest;
+import com.schoolms.common.enums.Gender;
 import com.schoolms.common.enums.StudentStatus;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
+import com.schoolms.school.School;
 import com.schoolms.student.dto.EnrollRequest;
+import com.schoolms.student.dto.StudentDirectoryFilter;
+import com.schoolms.student.dto.StudentDirectoryRow;
 import com.schoolms.student.dto.StudentDto;
+import com.schoolms.student.dto.StudentListItemDto;
 import com.schoolms.student.dto.StudentProfileDto;
 import com.schoolms.student.dto.StudentProfileUpdateRequest;
 import com.schoolms.student.dto.StudentRequest;
@@ -35,17 +40,24 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -77,6 +89,10 @@ class StudentServiceTest {
     private CredentialAccountService credentialAccountService;
     @Mock
     private CredentialService credentialService;
+    @Mock
+    private com.schoolms.school.SchoolRepository schoolRepository;
+    @Mock
+    private StudentDirectoryPdfService directoryPdfService;
 
     private StudentService studentService;
 
@@ -88,7 +104,7 @@ class StudentServiceTest {
                 studentGuardianRepository, enrollmentRepository, classRepository,
                 sectionRepository, academicYearRepository, teacherRepository,
                 teacherSectionRepository, attendanceService, credentialAccountService,
-                credentialService);
+                credentialService, schoolRepository, directoryPdfService);
         TestSecurity.loginAsAdmin();
     }
 
@@ -397,6 +413,105 @@ class StudentServiceTest {
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> studentService.resetPassword(studentId, null));
         assertEquals("student.no_login", ex.getMessage());
+    }
+
+    @Test
+    void listAppliesFiltersAndSortsThroughDirectoryQuery() {
+        UUID yearId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        UUID sectionId = UUID.randomUUID();
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
+        StudentDirectoryRow row = new StudentDirectoryRow(UUID.randomUUID(), "ADM100", "Meera", "Sharma",
+                Gender.FEMALE, StudentStatus.ACTIVE, LocalDate.of(2025, 4, 1),
+                UUID.randomUUID(), yearId, 7, sectionId, "A", classId, "Class 5");
+        when(studentRepository.searchDirectory(eq(schoolId), eq(yearId), eq(classId), eq(sectionId),
+                eq(StudentStatus.INACTIVE), eq("Meera"), eq("%meera%"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(row)));
+
+        Page<StudentListItemDto> page = studentService.list(0, 25,
+                new StudentDirectoryFilter(null, classId, sectionId, "inactive", "Meera", "name", "asc"));
+
+        assertEquals(1, page.getTotalElements());
+        StudentListItemDto item = page.getContent().get(0);
+        assertEquals("Class 5", item.className());
+        assertEquals("A", item.sectionName());
+        assertEquals(7, item.rollNumber());
+        assertEquals("ADM100", item.student().admissionNo());
+        assertEquals(yearId, item.academicYearId());
+    }
+
+    @Test
+    void listDefaultsToCurrentAcademicYearWhenNotProvided() {
+        UUID yearId = UUID.randomUUID();
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
+        when(studentRepository.searchDirectory(eq(schoolId), eq(yearId), isNull(), isNull(),
+                isNull(), isNull(), isNull(), any(Pageable.class))).thenReturn(Page.empty());
+
+        studentService.list(0, 10, StudentDirectoryFilter.empty());
+
+        verify(studentRepository).searchDirectory(eq(schoolId), eq(yearId), isNull(), isNull(),
+                isNull(), isNull(), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    void listIgnoresInvalidStatusFilter() {
+        UUID yearId = UUID.randomUUID();
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
+        when(studentRepository.searchDirectory(eq(schoolId), eq(yearId), isNull(), isNull(),
+                isNull(), isNull(), isNull(), any(Pageable.class))).thenReturn(Page.empty());
+
+        studentService.list(0, 10,
+                new StudentDirectoryFilter(null, null, null, "SUSPENDED", null, null, null));
+
+        verify(studentRepository).searchDirectory(eq(schoolId), eq(yearId), isNull(), isNull(),
+                isNull(), isNull(), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    void exportCsvWritesHeaderAndFilteredRows() {
+        UUID yearId = UUID.randomUUID();
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
+        StudentDirectoryRow row = new StudentDirectoryRow(UUID.randomUUID(), "ADM100", "Meera", "Sharma",
+                Gender.FEMALE, StudentStatus.ACTIVE, LocalDate.of(2025, 4, 1),
+                UUID.randomUUID(), yearId, 7, UUID.randomUUID(), "A", UUID.randomUUID(), "Class 5");
+        when(studentRepository.searchDirectory(any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(row)));
+
+        String csv = new String(studentService.exportCsv(StudentDirectoryFilter.empty()), StandardCharsets.UTF_8);
+
+        assertTrue(csv.contains("Admission No"));
+        assertTrue(csv.contains("ADM100"));
+        assertTrue(csv.contains("Class 5"));
+    }
+
+    @Test
+    void exportPdfRendersSchoolHeader() {
+        UUID yearId = UUID.randomUUID();
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
+        StudentDirectoryRow row = new StudentDirectoryRow(UUID.randomUUID(), "ADM100", "Meera", "Sharma",
+                Gender.FEMALE, StudentStatus.ACTIVE, LocalDate.of(2025, 4, 1),
+                UUID.randomUUID(), yearId, 7, UUID.randomUUID(), "A", UUID.randomUUID(), "Class 5");
+        when(studentRepository.searchDirectory(any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(row)));
+        School school = new School();
+        school.setName("Demo School");
+        when(schoolRepository.findById(schoolId)).thenReturn(Optional.of(school));
+        when(directoryPdfService.render(eq("Demo School"), any())).thenReturn(new byte[] {1, 2, 3});
+
+        byte[] pdf = studentService.exportPdf(StudentDirectoryFilter.empty());
+
+        assertArrayEquals(new byte[] {1, 2, 3}, pdf);
+        verify(directoryPdfService).render(eq("Demo School"), any());
+    }
+
+    @Test
+    void exportPdfRejectsEmptyResult() {
+        UUID yearId = UUID.randomUUID();
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
+        when(studentRepository.searchDirectory(any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Page.empty());
+
+        assertThrows(BusinessException.class, () -> studentService.exportPdf(StudentDirectoryFilter.empty()));
     }
 
     private Student sampleStudent(UUID studentId) {
