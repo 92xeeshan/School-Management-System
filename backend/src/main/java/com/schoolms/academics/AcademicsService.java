@@ -53,12 +53,16 @@ public class AcademicsService {
     @Transactional
     public AcademicYearDto createYear(AcademicYearRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        if (academicYearRepository.existsBySchoolIdAndName(schoolId, request.name())) {
-            throw new BusinessException("error.conflict");
+        String name = request.name().trim();
+        if (request.endDate().isBefore(request.startDate())) {
+            throw new BusinessException("academic_year.invalid_dates");
+        }
+        if (academicYearRepository.existsBySchoolIdAndName(schoolId, name)) {
+            throw new BusinessException("academic_year.name_exists");
         }
         AcademicYear year = new AcademicYear();
         year.setSchoolId(schoolId);
-        year.setName(request.name());
+        year.setName(name);
         year.setStartDate(request.startDate());
         year.setEndDate(request.endDate());
         if (request.current()) {
