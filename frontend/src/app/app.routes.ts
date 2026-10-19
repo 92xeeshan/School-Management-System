@@ -102,6 +102,8 @@ export const routes: Routes = [
             path: 'terms',
             loadComponent: () =>
               import('./features/academics/academic-terms.component').then((m) => m.AcademicsTermsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['TERM_READ', 'CLASS_READ'] },
           },
         ],
       },

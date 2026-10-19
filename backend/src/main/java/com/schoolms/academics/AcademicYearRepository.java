@@ -15,4 +15,6 @@ public interface AcademicYearRepository extends JpaRepository<AcademicYear, UUID
     Optional<AcademicYear> findBySchoolIdAndCurrentTrue(UUID schoolId);
 
     boolean existsBySchoolIdAndName(UUID schoolId, String name);
+
+    boolean existsBySchoolIdAndNameAndIdNot(UUID schoolId, String name, UUID id);
 }

@@ -46,10 +46,10 @@ public class AcademicsController {
     }
 
     @Operation(summary = "Create an academic year")
-    @PreAuthorize("hasAuthority('CLASS_CREATE')")
+    @PreAuthorize("hasAnyAuthority('CLASS_CREATE', 'TERM_MANAGE')")
     @PostMapping("/api/academic-years")
     public ApiResponse<AcademicYearDto> createYear(@Valid @RequestBody AcademicYearRequest request) {
-        return ApiResponse.ok(academicsService.createYear(request));
+        return ApiResponse.ok(academicsService.createYear(request), "academic_year.created");
     }
 
     // ---- Classes -------------------------------------------------------------
