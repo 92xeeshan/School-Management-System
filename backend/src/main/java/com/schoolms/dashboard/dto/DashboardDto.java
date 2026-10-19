@@ -27,7 +27,8 @@ public record DashboardDto(
         List<MyChildDto> myChildren,
         AttendanceSummaryDto myAttendance,
         BigDecimal feeBalance,
-        long pendingGrading
+        long pendingGrading,
+        long lowStockCount
 ) {
     public record GenderBreakdownDto(long boys, long girls, long other, long total,
                                      double boysPercent, double girlsPercent, double otherPercent) {

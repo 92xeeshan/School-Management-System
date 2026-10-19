@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="inventory_report" pageWidth="842" pageHeight="595" columnWidth="802"
+              leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20"
+              orientation="Landscape"
+              uuid="00000000-0000-0000-0000-0000000000f3">
+
+    <property name="net.sf.jasperreports.export.pdf.force.linebreak.policy" value="true"/>
+    <style name="base" isDefault="true" fontName="Helvetica" fontSize="10" pdfFontName="Helvetica"/>
+
+    <parameter name="schoolName" class="java.lang.String"/>
+    <parameter name="schoolAddress" class="java.lang.String"/>
+    <parameter name="generatedOn" class="java.lang.String"/>
+    <parameter name="itemCount" class="java.lang.String"/>
+    <parameter name="rows" class="java.lang.String"/>
+
+    <title>
+        <band height="78">
+            <textField>
+                <reportElement x="0" y="0" width="802" height="22"/>
+                <textElement textAlignment="Center">
+                    <font size="16" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{schoolName}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="22" width="802" height="14"/>
+                <textElement textAlignment="Center"/>
+                <textFieldExpression><![CDATA[$P{schoolAddress}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="0" y="40" width="802" height="18"/>
+                <textElement textAlignment="Center">
+                    <font size="13" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Inventory Report]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="0" y="60" width="802" height="14"/>
+                <textElement textAlignment="Center"/>
+                <textFieldExpression><![CDATA["Generated on " + $P{generatedOn} + "  |  " + $P{itemCount} + " items"]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <detail>
+        <band height="420">
+            <textField isStretchWithOverflow="true">
+                <reportElement x="0" y="0" width="802" height="400"/>
+                <textElement>
+                    <font size="9"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{rows}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+</jasperReport>

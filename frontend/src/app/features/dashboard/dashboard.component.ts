@@ -170,6 +170,17 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
         </div>
       }
 
+      @if (lowStockCount > 0) {
+        <div class="alert-banner">
+          <span class="alert-icon">📦</span>
+          <div class="alert-body">
+            <strong>{{ 'dashboard.alerts.lowStock' | translate }}</strong>
+            <span>{{ 'dashboard.alerts.lowStockCount' | translate: { count: lowStockCount } }}</span>
+          </div>
+          <a class="alert-link" routerLink="/inventory">{{ 'dashboard.alerts.viewInventory' | translate }}</a>
+        </div>
+      }
+
       @if (summaryError) {
         <div class="card error-card">
           <p>{{ 'common.error' | translate }}</p>
@@ -901,6 +912,13 @@ export class DashboardComponent implements OnInit {
       { key: 'certificates', labelKey: 'nav.certificates', icon: '📜', route: '/certificates', permissions: ['CERTIFICATE_GENERATE', 'CERTIFICATE_APPROVE'] },
     ];
     return actions.filter((action) => this.auth.hasAnyPermission(action.permissions));
+  }
+
+  get lowStockCount(): number {
+    if (!this.auth.hasPermission('INVENTORY_READ')) {
+      return 0;
+    }
+    return this.summary?.lowStockCount ?? 0;
   }
 
   get urgentNotices(): DashboardNotice[] {

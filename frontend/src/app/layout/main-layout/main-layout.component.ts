@@ -313,6 +313,7 @@ export class MainLayoutComponent implements OnInit {
     { route: '/calendar', labelKey: 'nav.calendar', icon: 'calendar_month', permissions: ['EVENT_READ'] },
     { route: '/certificates', labelKey: 'nav.certificates', icon: 'workspace_premium', permissions: ['CERTIFICATE_GENERATE', 'CERTIFICATE_APPROVE'] },
     { route: '/downloads', labelKey: 'nav.downloads', icon: 'download', permissions: ['MARKSHEET_READ', 'CERTIFICATE_READ'] },
+    { route: '/inventory', labelKey: 'nav.inventory', icon: 'inventory_2', permissions: ['INVENTORY_READ'] },
     { route: '/notices', labelKey: 'nav.notices', icon: 'campaign', permissions: ['NOTICE_READ'] },
     { route: '/users', labelKey: 'nav.users', icon: 'manage_accounts', permissions: ['USER_READ'] },
   ];

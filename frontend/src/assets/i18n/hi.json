@@ -60,6 +60,7 @@
     "downloads": "डाउनलोड",
     "certificates": "प्रमाणपत्र",
     "users": "उपयोगकर्ता",
+    "inventory": "इन्वेंटरी",
     "menu": "नेविगेशन खोलें"
   },
   "roles": {
@@ -155,7 +156,10 @@
       }
     },
     "alerts": {
-      "urgent": "प्राथमिकता चेतावनी:"
+      "urgent": "प्राथमिकता चेतावनी:",
+      "lowStock": "कम स्टॉक:",
+      "lowStockCount": "{{count}} आइटम अपनी पुनः ऑर्डर सीमा पर या उससे नीचे हैं।",
+      "viewInventory": "इन्वेंटरी देखें"
     },
     "quickActions": {
       "title": "त्वरित कार्य",
@@ -1209,5 +1213,59 @@
     "resetAuto": "अस्थायी पासवर्ड बनाएँ",
     "resetCustom": "कस्टम अस्थायी पासवर्ड सेट करें",
     "audit": "प्रमाण ऑडिट"
+  },
+  "inventory": {
+    "title": "इन्वेंटरी",
+    "subtitle": "स्कूल की आपूर्ति, फर्नीचर और लैब उपकरण ट्रैक करें।",
+    "tabs": {
+      "items": "आइटम",
+      "categories": "श्रेणियाँ"
+    },
+    "name": "नाम",
+    "description": "विवरण",
+    "category": "श्रेणी",
+    "allCategories": "सभी श्रेणियाँ",
+    "allConditions": "सभी स्थितियाँ",
+    "selectCategory": "श्रेणी चुनें",
+    "sku": "SKU / एसेट टैग",
+    "unit": "इकाई",
+    "quantity": "मात्रा",
+    "reorderThreshold": "पुनः ऑर्डर सीमा",
+    "purchaseDate": "खरीद तिथि",
+    "purchaseCost": "खरीद लागत",
+    "vendor": "विक्रेता",
+    "location": "स्थान / कमरा",
+    "conditionLabel": "स्थिति",
+    "assignedTo": "को सौंपा",
+    "room": "कमरा",
+    "date": "तिथि",
+    "reason": "कारण",
+    "none": "कोई नहीं",
+    "lowStock": "कम स्टॉक",
+    "lowStockOnly": "केवल कम स्टॉक",
+    "addItem": "आइटम जोड़ें",
+    "editItem": "आइटम संपादित करें",
+    "deleteConfirm": "{{name}} हटाएँ? इसका स्टॉक इतिहास भी हट जाएगा।",
+    "addCategory": "श्रेणी जोड़ें",
+    "recordMovement": "स्टॉक लेनदेन दर्ज करें",
+    "movementType": "लेनदेन",
+    "assignTo": "को सौंपें",
+    "history": "इतिहास",
+    "importCsv": "CSV आयात करें",
+    "importSummary": "{{total}} में से {{succeeded}} पंक्तियाँ आयात हुईं।",
+    "exportReport": "PDF निर्यात करें",
+    "condition": {
+      "NEW": "नया",
+      "GOOD": "अच्छा",
+      "DAMAGED": "क्षतिग्रस्त",
+      "UNDER_REPAIR": "मरम्मत में",
+      "RETIRED": "सेवानिवृत्त"
+    },
+    "type": {
+      "IN": "स्टॉक इन",
+      "OUT": "स्टॉक आउट",
+      "CHECKOUT": "चेक आउट",
+      "CHECKIN": "चेक इन"
+    }
   }
 }
