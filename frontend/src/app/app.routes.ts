@@ -88,6 +88,8 @@ export const routes: Routes = [
             path: 'syllabus',
             loadComponent: () =>
               import('./features/academics/syllabus.component').then((m) => m.AcademicsSyllabusComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['SYLLABUS_READ'] },
           },
           {
             path: 'examinations',
