@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "start": "node scripts/inject-backend-url.mjs && ng serve",
+    "build": "node scripts/inject-backend-url.mjs && ng build",
+    "watch": "node scripts/inject-backend-url.mjs && ng build --watch --configuration development",
+    "test": "node scripts/inject-backend-url.mjs && ng test"
   },
   "private": true,
   "dependencies": {

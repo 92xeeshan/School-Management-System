@@ -11,6 +11,7 @@ The backend artifact version is `0.1.0-SNAPSHOT` (`backend/pom.xml`). Dates use 
 
 ### Added
 
+- Optional `NG_APP_BACKEND_URL` for split frontend/backend hosting. Empty value keeps relative `/api` (local proxy / nginx).
 - Documentation suite under `docs/` (product, architecture, API, devops, security, QA, user guides).
 - Root `CONTRIBUTING.md`.
 

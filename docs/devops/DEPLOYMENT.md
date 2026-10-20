@@ -65,6 +65,7 @@ Copy `.env.example` to `.env`. Never commit `.env`.
 | `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | `minioadmin` | Required in prod profile |
 | `MINIO_BUCKET` | `schoolms` | |
 | `CORS_ALLOWED_ORIGINS` | localhost + `https://*.monkeycode-ai.live` | Explicit https origins |
+| `NG_APP_BACKEND_URL` | empty (relative `/api`) | Render/API origin for Vercel builds |
 | `SPRING_PROFILES_ACTIVE` | `dev` | `prod` |
 
 There is no HashiCorp Vault or AWS Secrets Manager integration. Inject env vars via Compose, systemd, or your host’s secret store.
@@ -114,6 +115,7 @@ Or `scripts/run-linux.sh` / `scripts/run-windows.bat`. Apply SQL with `scripts/a
 2. Set `SPRING_PROFILES_ACTIVE=prod` and all required secrets (`JWT_SECRET`, MinIO keys, DB passwords).
 3. `mvn -DskipTests package` then run the JAR, **or** build Compose images with prod env.
 4. Serve the Angular build behind nginx that proxies `/api/` to the backend (see `frontend/nginx.conf`).
+   For a split host (Vercel UI + Render API), set `NG_APP_BACKEND_URL` to the API origin at Angular build time and list the UI origin in `CORS_ALLOWED_ORIGINS`. Leave `NG_APP_BACKEND_URL` empty when nginx/proxy still forwards `/api`.
 5. Restrict CORS to the public UI origin.
 6. Put TLS in front (this repo does not terminate HTTPS).
 

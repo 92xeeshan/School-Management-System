@@ -1,8 +1,8 @@
 # School Management System - Frontend (Angular)
 
-Single-page application for the School Management System. It talks to the
-Spring Boot backend through a relative `/api` prefix, so no API base URL
-configuration is needed.
+Single-page application for the School Management System. HTTP calls use a
+relative `/api` prefix by default. Set `NG_APP_BACKEND_URL` when the UI is
+hosted separately from the API (for example Vercel + Render).
 
 **Stack:** Angular 19 (standalone components, signals, reactive forms),
 Angular Material theming, ngx-translate (English / Hindi / Urdu with RTL).
@@ -44,18 +44,38 @@ Angular Material theming, ngx-translate (English / Hindi / Urdu with RTL).
 
 The Angular dev server loads this file automatically (`angular.json` ->
 `serve.options.proxyConfig`). Change `target` only if your backend runs on
-another port/host.
+another port/host. Leave `NG_APP_BACKEND_URL` empty locally so this proxy
+keeps handling `/api`.
 
-### 2.2 Allowed hosts (already configured)
+### 2.2 Backend URL for split deployments
+
+When the Angular build is served on a different origin than the API, set
+`NG_APP_BACKEND_URL` at **build time**. `npm start` / `npm run build` write
+the value into `src/environments/backend-url.ts`. If the variable is absent
+or empty, requests stay relative (`/api/...`) and local/Docker proxying is
+unchanged.
+
+```bash
+# Vercel / CI example (Render backend, no trailing slash)
+NG_APP_BACKEND_URL=https://schoolms-api.onrender.com npm run build
+```
+
+Vercel: Project Settings -> Environment Variables -> `NG_APP_BACKEND_URL`.
+On Render, add the Vercel origin to `CORS_ALLOWED_ORIGINS` (comma-separated).
+
+Do not put `/api` on the env value; the interceptor appends `/api/...`.
+Absolute `https://` URLs and `/assets/...` requests are not rewritten.
+
+### 2.3 Allowed hosts (already configured)
 
 `angular.json` already whitelists `*.monkeycode-ai.live` for the online
 preview. On a local machine you normally access the dev server through
 `localhost`, which is always allowed.
 
-### 2.3 Windows vs Linux
+### 2.4 Windows vs Linux
 
 There are **no platform-specific settings** for the frontend. Steps 2.1 and
-2.2 work identically on Windows and Linux. Only make sure Node.js and npm
+2.3 work identically on Windows and Linux. Only make sure Node.js and npm
 are on your `PATH`.
 
 ---
@@ -117,3 +137,4 @@ seed data. Password for all accounts is `Admin@123`:
 | 403 on every API call          | Frontend origin not in backend `CORS_ALLOWED_ORIGINS`   |
 | Port 4200 already in use       | Stop the other process, or serve on another port with `ng serve --port 4201` (then update the proxy target) |
 | API requests 404               | Backend not started / proxy target wrong in `proxy.conf.json` |
+| Login fails on Vercel          | Set `NG_APP_BACKEND_URL` to the Render origin and rebuild; add the Vercel origin to backend `CORS_ALLOWED_ORIGINS` |
