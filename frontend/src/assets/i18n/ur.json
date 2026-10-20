@@ -182,7 +182,8 @@
       "average": "اوسط",
       "attendanceRate": "حاضری",
       "feeBalance": "باقی فیس",
-      "upcomingExams": "آنے والے امتحانات"
+      "upcomingExams": "آنے والے امتحانات",
+      "upcomingQuizzes": "آنے والے کوئزز"
     },
     "search": {
       "placeholder": "طلباء، تقریبات تلاش کریں...",
@@ -901,7 +902,13 @@
       "deleteQuizConfirm": "یہ کوئز حذف کریں؟",
       "deleteQuestionConfirm": "یہ سوال حذف کریں؟",
       "publishConfirm": "یہ کوئز شائع کریں؟ طلباء کوششیں شروع کر سکیں گے۔",
-      "remaining": "کوششیں باقی"
+      "remaining": "کوششیں باقی",
+      "average": "اوسط",
+      "highest": "سب سے زیادہ",
+      "lowest": "سب سے کم",
+      "passCount": "پاس",
+      "failCount": "فیل",
+      "scored": "حاصل"
     }
   },
   "attendance": {

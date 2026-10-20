@@ -182,7 +182,8 @@
       "average": "avg",
       "attendanceRate": "Attendance",
       "feeBalance": "Fee Dues",
-      "upcomingExams": "Upcoming Exams"
+      "upcomingExams": "Upcoming Exams",
+      "upcomingQuizzes": "Upcoming Quizzes"
     },
     "search": {
       "placeholder": "Search students, events...",
@@ -901,7 +902,13 @@
       "deleteQuizConfirm": "Delete this quiz?",
       "deleteQuestionConfirm": "Delete this question?",
       "publishConfirm": "Publish this quiz? Students will be able to start attempts.",
-      "remaining": "attempts remaining"
+      "remaining": "attempts remaining",
+      "average": "Average",
+      "highest": "Highest",
+      "lowest": "Lowest",
+      "passCount": "Passed",
+      "failCount": "Failed",
+      "scored": "Scored"
     }
   },
   "attendance": {

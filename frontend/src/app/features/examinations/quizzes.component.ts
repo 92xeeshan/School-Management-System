@@ -453,6 +453,16 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
       }
 
       @if (pageTab === 'results') {
+        @if (resultStats) {
+          <div class="meta">
+            <span class="chip">{{ 'examinations.quizzesPage.scored' | translate }}: {{ resultStats.count }}</span>
+            <span class="chip">{{ 'examinations.quizzesPage.average' | translate }}: {{ formatNum(resultStats.average) }}</span>
+            <span class="chip">{{ 'examinations.quizzesPage.highest' | translate }}: {{ formatNum(resultStats.highest) }}</span>
+            <span class="chip">{{ 'examinations.quizzesPage.lowest' | translate }}: {{ formatNum(resultStats.lowest) }}</span>
+            <span class="chip">{{ 'examinations.quizzesPage.passCount' | translate }}: {{ resultStats.passed }}</span>
+            <span class="chip">{{ 'examinations.quizzesPage.failCount' | translate }}: {{ resultStats.failed }}</span>
+          </div>
+        }
         <div class="card">
           <div class="table-wrap">
             <table>
@@ -980,6 +990,23 @@ export class QuizzesComponent implements OnInit, OnDestroy {
       return klass.subjects;
     }
     return this.filterSubjects;
+  }
+
+  get resultStats(): { count: number; average: number; highest: number; lowest: number; passed: number; failed: number } | null {
+    const scored = this.results.filter((row) => row.source !== 'NONE' && row.score != null);
+    if (!scored.length) {
+      return null;
+    }
+    const scores = scored.map((row) => Number(row.score));
+    const sum = scores.reduce((acc, value) => acc + value, 0);
+    return {
+      count: scored.length,
+      average: sum / scored.length,
+      highest: Math.max(...scores),
+      lowest: Math.min(...scores),
+      passed: scored.filter((row) => row.passed).length,
+      failed: scored.filter((row) => !row.passed).length,
+    };
   }
 
   ngOnInit(): void {
