@@ -7,8 +7,10 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 To start a local development server, run:
 
 ```bash
-ng serve
+npm start
 ```
+
+Leave `NG_APP_BACKEND_URL` empty so `/api` is proxied to `http://localhost:8080`. For Vercel, set that variable to the Render origin at build time. See `docs/README-FRONTEND.md`.
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 

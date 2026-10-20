@@ -6,6 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+ARG NG_APP_BACKEND_URL=
+ENV NG_APP_BACKEND_URL=$NG_APP_BACKEND_URL
 RUN npm run build
 
 # Runtime stage: static files served by nginx

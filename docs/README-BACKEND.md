@@ -94,7 +94,7 @@ override the defaults:
 | `POSTGRES_PASSWORD`            | `schoolms`                           | Schema-owner password               |
 | `JWT_SECRET`                   | dev-only placeholder (see yml)       | JWT signing secret (32+ chars)      |
 | `MINIO_ENDPOINT`               | `http://localhost:9000`              | MinIO endpoint                      |
-| `CORS_ALLOWED_ORIGINS`         | `http://localhost:4200,...`          | Comma-separated allowed origins     |
+| `CORS_ALLOWED_ORIGINS`         | `http://localhost:4200,...`          | Comma-separated allowed origins (include the Vercel origin when the UI is hosted separately) |
 
 How to set variables:
 

@@ -64,8 +64,8 @@ Contacts are not stored in this repository. Maintain an internal roster.
 |---|---|
 | 401 bad credentials | Confirm demo password `Admin@123` or reset hash |
 | 403 inactive / TC | User status or TC deactivation; see certificates |
-| 403 CORS | Add origin to `CORS_ALLOWED_ORIGINS` |
-| Frontend login error, API up | Confirm proxy `/api` → 8080 |
+| 403 CORS | Add origin to `CORS_ALLOWED_ORIGINS` (include the Vercel origin on split deploys) |
+| Frontend login error, API up | Confirm proxy `/api` → 8080, or `NG_APP_BACKEND_URL` on Vercel builds |
 | Token loop | Clear `localStorage` key `schoolms.auth` |
 
 ### 3.5 MinIO / PDF failures

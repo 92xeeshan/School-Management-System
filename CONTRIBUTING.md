@@ -44,7 +44,7 @@ Place new backend code in the matching `com.schoolms.<domain>` package. Place ne
 
 ### Frontend
 
-- Standalone components, typed models, `/api` relative URLs only.
+- Standalone components, typed models, `/api` relative URLs in feature code. Split hosting (Vercel) sets `NG_APP_BACKEND_URL` at build time; `apiBaseInterceptor` prefixes it. Empty/unset keeps relative `/api` (dev proxy / nginx).
 - Route protection: `AuthGuard` + `PermissionGuard` with `data.permissions`.
 - Nav items in `main-layout.component.ts` must use the same permission codes as the API.
 - Reuse `PageHeaderComponent`, `EmptyStateComponent`, `.data-table`, `.card-toolbar`.

@@ -100,7 +100,7 @@ npm install
 npm start
 ```
 
-Dev server proxies `/api` to `http://localhost:8080` (`frontend/src/proxy.conf.json`).
+Dev server proxies `/api` to `http://localhost:8080` (`frontend/src/proxy.conf.json`). Leave `NG_APP_BACKEND_URL` empty so local proxying stays unchanged. For Vercel, set it to the Render origin at build time (see `docs/README-FRONTEND.md`).
 
 Together: `scripts/run-linux.sh` or `scripts/run-windows.bat`.
 

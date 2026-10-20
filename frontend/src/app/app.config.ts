@@ -6,6 +6,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 
 import { routes } from './app.routes';
 import { translateConfig } from './i18n/i18n.config';
+import { apiBaseInterceptor } from './core/api/api-base.interceptor';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { AuthService } from './core/auth/auth.service';
 import { ThemeService } from './core/theme/theme.service';
@@ -16,7 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideAnimations(),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([apiBaseInterceptor, authInterceptor])),
     provideTranslateService(translateConfig),
     provideAppInitializer(() => {
       inject(ThemeService);
