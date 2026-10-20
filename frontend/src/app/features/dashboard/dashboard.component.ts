@@ -321,6 +321,12 @@ const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
                     <span class="metric-label">{{ 'dashboard.roleInsights.upcomingExams' | translate }}</span>
                     <span class="metric-value">{{ upcomingExams.length }}</span>
                   </div>
+                  @if (canReadQuizzes) {
+                    <div class="metric">
+                      <span class="metric-label">{{ 'dashboard.roleInsights.upcomingQuizzes' | translate }}</span>
+                      <span class="metric-value">{{ upcomingQuizzes.length }}</span>
+                    </div>
+                  }
                 </div>
                 @if (summary.myChildren.length > 0) {
                   <ul class="section-list">
@@ -774,6 +780,7 @@ export class DashboardComponent implements OnInit {
   summary: DashboardSummary | null = null;
   events: SchoolEvent[] = [];
   upcomingEvents: SchoolEvent[] = [];
+  upcomingQuizzes: Array<{ id: string; title: string; status: string; startAt: string | null; endAt: string | null }> = [];
   notices: DashboardNotice[] = [];
   selectedDate = this.todayIso();
 
@@ -833,6 +840,7 @@ export class DashboardComponent implements OnInit {
     this.loadUpcoming();
     this.loadNotices();
     this.loadExpenses();
+    this.loadUpcomingQuizzes();
   }
 
   get displayName(): string {
@@ -865,6 +873,10 @@ export class DashboardComponent implements OnInit {
 
   get isParentOrStudent(): boolean {
     return this.auth.hasRole('PARENT') || this.auth.hasRole('STUDENT');
+  }
+
+  get canReadQuizzes(): boolean {
+    return this.auth.hasAnyPermission(['QUIZ_READ', 'QUIZ_MANAGE']);
   }
 
   get canManageEvents(): boolean {
@@ -910,6 +922,7 @@ export class DashboardComponent implements OnInit {
       { key: 'reportCards', labelKey: 'examinations.tabs.reportCards', icon: '📄', route: '/examinations/report-cards', permissions: ['REPORT_CARD_READ'] },
       { key: 'marksheets', labelKey: 'downloads.tabs.marksheet', icon: '📥', route: '/downloads/marksheet', permissions: ['MARKSHEET_READ'] },
       { key: 'certificates', labelKey: 'nav.certificates', icon: '📜', route: '/certificates', permissions: ['CERTIFICATE_GENERATE', 'CERTIFICATE_APPROVE'] },
+      { key: 'quizzes', labelKey: 'examinations.tabs.quizzes', icon: '📝', route: '/examinations/quizzes', permissions: ['QUIZ_READ', 'QUIZ_MANAGE'] },
     ];
     return actions.filter((action) => this.auth.hasAnyPermission(action.permissions));
   }
@@ -999,6 +1012,25 @@ export class DashboardComponent implements OnInit {
     this.dashboardService.upcoming(30).subscribe((events) => {
       this.upcomingEvents = events.slice(0, 5);
       this.loadingUpcoming = false;
+      this.cdr.markForCheck();
+    });
+  }
+
+  loadUpcomingQuizzes(): void {
+    if (!this.canReadQuizzes) {
+      return;
+    }
+    this.dashboardService.upcomingQuizzes().subscribe((quizzes) => {
+      const now = Date.now();
+      this.upcomingQuizzes = quizzes.filter((quiz) => {
+        if (quiz.status !== 'PUBLISHED') {
+          return false;
+        }
+        if (quiz.endAt && new Date(quiz.endAt).getTime() < now) {
+          return false;
+        }
+        return true;
+      });
       this.cdr.markForCheck();
     });
   }

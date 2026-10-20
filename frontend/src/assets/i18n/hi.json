@@ -182,7 +182,8 @@
       "average": "औसत",
       "attendanceRate": "उपस्थिति",
       "feeBalance": "शेष फीस",
-      "upcomingExams": "आगामी परीक्षाएँ"
+      "upcomingExams": "आगामी परीक्षाएँ",
+      "upcomingQuizzes": "आगामी क्विज़"
     },
     "search": {
       "placeholder": "छात्र, कार्यक्रम खोजें...",
@@ -901,7 +902,13 @@
       "deleteQuizConfirm": "यह क्विज़ हटाएँ?",
       "deleteQuestionConfirm": "यह प्रश्न हटाएँ?",
       "publishConfirm": "यह क्विज़ प्रकाशित करें? छात्र प्रयास शुरू कर सकेंगे।",
-      "remaining": "प्रयास शेष"
+      "remaining": "प्रयास शेष",
+      "average": "औसत",
+      "highest": "उच्चतम",
+      "lowest": "न्यूनतम",
+      "passCount": "उत्तीर्ण",
+      "failCount": "अनुत्तीर्ण",
+      "scored": "प्राप्त"
     }
   },
   "attendance": {

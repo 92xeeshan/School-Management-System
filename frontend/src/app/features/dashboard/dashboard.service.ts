@@ -40,6 +40,17 @@ export class DashboardService {
     );
   }
 
+  upcomingQuizzes(): Observable<Array<{ id: string; title: string; status: string; startAt: string | null; endAt: string | null }>> {
+    const params = new HttpParams().set('status', 'PUBLISHED');
+    return this.http.get<ApiResponse<Array<{ id: string; title: string; status: string; startAt: string | null; endAt: string | null }>>>(
+      '/api/quizzes',
+      { params }
+    ).pipe(
+      map((res) => res.data ?? []),
+      catchError(() => of([]))
+    );
+  }
+
   notices(): Observable<DashboardNotice[]> {
     return this.http.get<ApiResponse<BackendNotice[]>>('/api/notices/published').pipe(
       map((res) =>
