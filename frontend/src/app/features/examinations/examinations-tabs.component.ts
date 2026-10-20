@@ -67,6 +67,7 @@ export class ExaminationsTabsComponent {
     { path: 'report-cards', labelKey: 'examinations.tabs.reportCards', permissions: ['REPORT_CARD_READ'] },
     { path: 'analytics', labelKey: 'examinations.tabs.analytics', permissions: ['EXAM_MANAGE'] },
     { path: 'reevaluation', labelKey: 'examinations.tabs.reevaluation', permissions: ['EXAM_MANAGE'] },
+    { path: 'quizzes', labelKey: 'examinations.tabs.quizzes', permissions: ['QUIZ_READ', 'QUIZ_MANAGE'] },
   ];
 
   readonly user$: Observable<AuthUser | null>;

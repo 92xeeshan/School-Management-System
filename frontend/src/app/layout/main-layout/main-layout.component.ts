@@ -306,7 +306,7 @@ export class MainLayoutComponent implements OnInit {
     { route: '/students', labelKey: 'nav.students', icon: 'school', permissions: ['STUDENT_READ'] },
     { route: '/staff', labelKey: 'nav.staff', icon: 'groups', permissions: ['STAFF_READ'] },
     { route: '/academics', labelKey: 'nav.academics', icon: 'menu_book', permissions: ['CLASS_READ'] },
-    { route: '/examinations', labelKey: 'nav.examinations', icon: 'assignment', permissions: ['EXAM_READ', 'EXAM_MANAGE', 'ADMIT_CARD_READ', 'REPORT_CARD_READ'] },
+    { route: '/examinations', labelKey: 'nav.examinations', icon: 'assignment', permissions: ['EXAM_READ', 'EXAM_MANAGE', 'ADMIT_CARD_READ', 'REPORT_CARD_READ', 'QUIZ_READ', 'QUIZ_MANAGE'] },
     { route: '/attendance', labelKey: 'nav.attendance', icon: 'fact_check', permissions: ['ATTENDANCE_READ', 'ATTENDANCE_MARK'] },
     { route: '/fees', labelKey: 'nav.fees', icon: 'payments', permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW', 'FEE_STRUCTURE_MANAGE'] },
     { route: '/payroll', labelKey: 'nav.payroll', icon: 'account_balance_wallet', permissions: ['EXPENSE_READ', 'PAYROLL_READ', 'PAYSLIP_READ'] },

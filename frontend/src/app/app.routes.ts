@@ -112,7 +112,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/examinations/examinations-shell.component').then((m) => m.ExaminationsShellComponent),
         canActivate: [PermissionGuard],
-        data: { permissions: ['EXAM_READ', 'EXAM_MANAGE', 'ADMIT_CARD_READ', 'REPORT_CARD_READ'] },
+        data: { permissions: ['EXAM_READ', 'EXAM_MANAGE', 'ADMIT_CARD_READ', 'REPORT_CARD_READ', 'QUIZ_READ', 'QUIZ_MANAGE'] },
         children: [
           {
             path: '',
@@ -124,6 +124,9 @@ export const routes: Routes = [
               }
               if (auth.hasPermission('EXAM_READ')) {
                 return 'marks';
+              }
+              if (auth.hasAnyPermission(['QUIZ_READ', 'QUIZ_MANAGE'])) {
+                return 'quizzes';
               }
               if (auth.hasPermission('ADMIT_CARD_READ')) {
                 return 'admit-cards';
@@ -172,6 +175,13 @@ export const routes: Routes = [
               import('./features/examinations/reevaluation.component').then((m) => m.ReevaluationComponent),
             canActivate: [PermissionGuard],
             data: { permissions: ['EXAM_MANAGE'] },
+          },
+          {
+            path: 'quizzes',
+            loadComponent: () =>
+              import('./features/examinations/quizzes.component').then((m) => m.QuizzesComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['QUIZ_READ', 'QUIZ_MANAGE'] },
           },
         ],
       },
