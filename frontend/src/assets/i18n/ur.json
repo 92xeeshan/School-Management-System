@@ -62,6 +62,7 @@
     "downloads": "ڈاؤن لوڈز",
     "certificates": "سرٹیفکیٹس",
     "users": "صارفین",
+    "inventory": "انوینٹری",
     "menu": "نیویگیشن کھولیں"
   },
   "roles": {
@@ -157,7 +158,10 @@
       }
     },
     "alerts": {
-      "urgent": "ترجیحی انتباہ:"
+      "urgent": "ترجیحی انتباہ:",
+      "lowStock": "کم اسٹاک:",
+      "lowStockCount": "{{count}} آئٹمز اپنی دوبارہ آرڈر کی حد پر یا اس سے نیچے ہیں۔",
+      "viewInventory": "انوینٹری دیکھیں"
     },
     "quickActions": {
       "title": "فوری اقدامات",
@@ -1374,5 +1378,59 @@
     "resetAuto": "عارضی پاس ورڈ بنائیں",
     "resetCustom": "حسب ضرورت عارضی پاس ورڈ سیٹ کریں",
     "audit": "اسناد آڈٹ"
+  },
+  "inventory": {
+    "title": "انوینٹری",
+    "subtitle": "اسکول کی اشیاء، فرنیچر اور لیب کے سامان کو ٹریک کریں۔",
+    "tabs": {
+      "items": "آئٹمز",
+      "categories": "زمرے"
+    },
+    "name": "نام",
+    "description": "تفصیل",
+    "category": "زمرہ",
+    "allCategories": "تمام زمرے",
+    "allConditions": "تمام حالتیں",
+    "selectCategory": "زمرہ منتخب کریں",
+    "sku": "SKU / اثاثہ ٹیگ",
+    "unit": "یونٹ",
+    "quantity": "مقدار",
+    "reorderThreshold": "دوبارہ آرڈر کی حد",
+    "purchaseDate": "خریداری کی تاریخ",
+    "purchaseCost": "خریداری کی لاگت",
+    "vendor": "فروش",
+    "location": "مقام / کمرہ",
+    "conditionLabel": "حالت",
+    "assignedTo": "کے حوالے",
+    "room": "کمرہ",
+    "date": "تاریخ",
+    "reason": "وجہ",
+    "none": "کوئی نہیں",
+    "lowStock": "کم اسٹاک",
+    "lowStockOnly": "صرف کم اسٹاک",
+    "addItem": "آئٹم شامل کریں",
+    "editItem": "آئٹم میں ترمیم کریں",
+    "deleteConfirm": "{{name}} حذف کریں؟ اس کی اسٹاک ہسٹری بھی حذف ہو جائے گی۔",
+    "addCategory": "زمرہ شامل کریں",
+    "recordMovement": "اسٹاک لین دین درج کریں",
+    "movementType": "لین دین",
+    "assignTo": "کے حوالے کریں",
+    "history": "ہسٹری",
+    "importCsv": "CSV درآمد کریں",
+    "importSummary": "{{total}} میں سے {{succeeded}} قطاریں درآمد ہوئیں۔",
+    "exportReport": "PDF برآمد کریں",
+    "condition": {
+      "NEW": "نیا",
+      "GOOD": "اچھا",
+      "DAMAGED": "خراب",
+      "UNDER_REPAIR": "مرمت میں",
+      "RETIRED": "ریٹائرڈ"
+    },
+    "type": {
+      "IN": "اسٹاک ان",
+      "OUT": "اسٹاک آؤٹ",
+      "CHECKOUT": "چیک آؤٹ",
+      "CHECKIN": "چیک اِن"
+    }
   }
 }

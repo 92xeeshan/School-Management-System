@@ -312,6 +312,30 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'inventory',
+        loadComponent: () =>
+          import('./features/inventory/inventory-shell.component').then((m) => m.InventoryShellComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['INVENTORY_READ'] },
+        children: [
+          { path: '', redirectTo: 'items', pathMatch: 'full' },
+          {
+            path: 'items',
+            loadComponent: () =>
+              import('./features/inventory/inventory-items.component').then((m) => m.InventoryItemsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['INVENTORY_READ'] },
+          },
+          {
+            path: 'categories',
+            loadComponent: () =>
+              import('./features/inventory/inventory-categories.component').then((m) => m.InventoryCategoriesComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['INVENTORY_READ'] },
+          },
+        ],
+      },
+      {
         path: 'notices',
         loadComponent: () =>
           import('./features/notices/notices.component').then((m) => m.NoticesComponent),
