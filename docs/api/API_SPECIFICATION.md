@@ -308,7 +308,17 @@ Payment methods: `CASH`, `CARD`, `UPI`, `BANK_TRANSFER`.
 
 **Admit cards** `/api/admit-cards` — all `ADMIT_CARD_READ`: GET `/options`, `/students`, `/mine`, `/{studentId}`; POST `/export/pdf`, `/export/zip`.
 
-**Report cards** `/api/report-cards` — all `REPORT_CARD_READ`: same pattern as admit cards.
+**Report cards** `/api/report-cards` — all `REPORT_CARD_READ`: same pattern as admit cards. `GET /mine` accepts optional `studentId` for a parent's linked child.
+
+**Exam analytics** `/api/exam-analytics`
+
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/options` | `EXAM_READ` or `EXAM_MANAGE` or `REPORT_CARD_READ` |
+| GET | `/class` | `EXAM_READ` or `EXAM_MANAGE` |
+| GET | `/trend` | `EXAM_READ` or `EXAM_MANAGE` or `REPORT_CARD_READ` |
+
+Class analytics is staff-only and uses published report cards. Learners get `/trend` for themselves or a linked child. Charts ignore unpublished terms.
 
 **Marksheets** `/api/marksheets`
 

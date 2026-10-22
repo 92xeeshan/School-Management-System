@@ -31,9 +31,9 @@ See `docs/security/SECURITY.md` for the full RBAC matrix.
 ### 1.3 Non-goals in the current UI
 
 - Syllabus and academic-terms tabs are placeholders.
-- Examinations analytics and re-evaluation tabs are placeholders.
+- Examinations re-evaluation tab is a placeholder.
 - There is no dedicated Users admin screen in the Angular app; user APIs exist for admin/super-admin clients.
-- Parents do not have `ADMIT_CARD_READ`.
+- Parents have `ADMIT_CARD_READ` for linked children only.
 
 ---
 
@@ -118,7 +118,7 @@ See `docs/security/SECURITY.md` for the full RBAC matrix.
 - Marks grid: draft/save/submit, lock/unlock/deadline (`EXAM_MANAGE`), CSV/Excel import (`EXAM_MARK`).
 - Admit cards and report cards: roster, mine, PDF/ZIP; print only if published.
 - Marksheets: submit, approve, reject, publish/lock, PDF/ZIP (`MARKSHEET_READ` / `MARKSHEET_MANAGE`).
-- UI: `/examinations/*`, `/downloads/marksheet`. Analytics and re-evaluation: placeholders.
+- UI: `/examinations/*`, `/downloads/marksheet`. Analytics uses published report cards. Re-evaluation is a placeholder.
 
 ### PR-11 Certificates
 

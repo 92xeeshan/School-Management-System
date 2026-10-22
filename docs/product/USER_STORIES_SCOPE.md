@@ -127,7 +127,9 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 | US-82 | As a student, I want an admit card only when the schedule is published so that drafts stay internal | Must |
 | US-83 | As a student/parent, I want a report card and marksheet only after publish so that unofficial marks stay hidden | Must |
 | US-84 | As an admin, I want submit/approve/reject marksheets so that results have a two-step release | Must |
-| US-85 | As an admin, I want exam analytics and re-evaluation workflows so that I can analyze and recheck | Won't (placeholders) |
+| US-85 | As an admin, I want exam analytics from published report cards so that I can see class averages and top performers | Must |
+| US-85b | As a student/parent, I want a read-only analytics/portal view of published schedules, seating and report cards | Must |
+| US-85c | As an admin, I want re-evaluation workflows so that I can recheck marks | Won't (placeholder) |
 
 ### E10 Certificates
 
@@ -151,7 +153,7 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 | Attendance, fees, notices | Holiday PDF, widget customize | Award showcase API (entity exists, no controller) | SMS/email |
 | Exams, admit/report/marksheet workflows | Grading schemes UI | Super-admin rich UI | GraphQL / WebSockets |
 | Certificates request/approve | Urdu RTL | Syllabus content | Kubernetes-required deploy |
-| Dashboard + notifications | MinIO attachments | Exam analytics | HIPAA program |
+| Dashboard + notifications | MinIO attachments | Re-evaluation | HIPAA program |
 | en/hi/ur | Docker Compose pack | Re-evaluation | GitHub Pages site |
 
 ---
@@ -169,7 +171,7 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 ### Explicitly post-MVP / future
 
 - Syllabus, academic terms UI
-- Exam analytics and re-evaluation
+- Re-evaluation
 - Users/roles admin screens
 - SMTP, SSO, payment providers
 - CI/CD, staging/production cloud, APM dashboards

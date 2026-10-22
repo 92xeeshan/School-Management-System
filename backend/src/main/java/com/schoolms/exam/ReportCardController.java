@@ -55,8 +55,9 @@ public class ReportCardController {
     @GetMapping("/mine")
     public ApiResponse<ReportCardDto> mine(
             @RequestParam(required = false) UUID academicYearId,
-            @RequestParam(defaultValue = "TERM") String examTerm) {
-        return ApiResponse.ok(reportCardService.mine(academicYearId, examTerm));
+            @RequestParam(defaultValue = "TERM") String examTerm,
+            @RequestParam(required = false) UUID studentId) {
+        return ApiResponse.ok(reportCardService.mine(academicYearId, examTerm, studentId));
     }
 
     @Operation(summary = "Report card for a student")

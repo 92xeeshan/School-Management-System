@@ -65,7 +65,7 @@ export class ExaminationsTabsComponent {
     { path: 'marks', labelKey: 'examinations.tabs.marks', permissions: ['EXAM_READ', 'EXAM_MANAGE'] },
     { path: 'admit-cards', labelKey: 'examinations.tabs.admitCards', permissions: ['ADMIT_CARD_READ'] },
     { path: 'report-cards', labelKey: 'examinations.tabs.reportCards', permissions: ['REPORT_CARD_READ'] },
-    { path: 'analytics', labelKey: 'examinations.tabs.analytics', permissions: ['EXAM_MANAGE'] },
+    { path: 'analytics', labelKey: 'examinations.tabs.analytics', permissions: ['EXAM_READ', 'EXAM_MANAGE', 'REPORT_CARD_READ'] },
     { path: 'reevaluation', labelKey: 'examinations.tabs.reevaluation', permissions: ['EXAM_MANAGE'] },
     { path: 'quizzes', labelKey: 'examinations.tabs.quizzes', permissions: ['QUIZ_READ', 'QUIZ_MANAGE'] },
   ];

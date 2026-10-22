@@ -1,8 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, ViewEncapsulation } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
+import { AuthService } from '../../core/auth/auth.service';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 
 interface YearOption { id: string; name: string; current: boolean }
@@ -428,7 +430,12 @@ export class ReportCardsComponent implements OnInit {
   showPreview = false;
   selectedIds = new Set<string>();
 
-  constructor(private http: HttpClient, public cdr: ChangeDetectorRef) {}
+  constructor(
+    private http: HttpClient,
+    public cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private destroyRef: DestroyRef,
+  ) {}
 
   get filterSections(): SectionOption[] {
     return this.options?.classes.find((klass) => klass.id === this.classId)?.sections ?? [];
@@ -454,6 +461,11 @@ export class ReportCardsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadOptions();
+    this.auth.activeChild$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (this.studentView && this.yearId) {
+        this.reload();
+      }
+    });
   }
 
   termLabel(term: string): string {
@@ -662,6 +674,10 @@ export class ReportCardsComponent implements OnInit {
     }
     if (this.sectionId) {
       params = params.set('sectionId', this.sectionId);
+    }
+    const childId = this.auth.activeChild?.studentId;
+    if (this.studentView && this.auth.hasRole('PARENT') && childId) {
+      params = params.set('studentId', childId);
     }
     return params;
   }

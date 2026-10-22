@@ -27,7 +27,11 @@ import com.schoolms.school.School;
 import com.schoolms.school.SchoolRepository;
 import com.schoolms.security.SecurityUtils;
 import com.schoolms.security.UserPrincipal;
+import com.schoolms.student.Guardian;
+import com.schoolms.student.GuardianRepository;
 import com.schoolms.student.Student;
+import com.schoolms.student.StudentGuardian;
+import com.schoolms.student.StudentGuardianRepository;
 import com.schoolms.student.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -72,6 +76,8 @@ public class AdmitCardService {
     private final TeacherProfileRepository teacherRepository;
     private final TeacherSectionRepository teacherSectionRepository;
     private final SchoolRepository schoolRepository;
+    private final GuardianRepository guardianRepository;
+    private final StudentGuardianRepository studentGuardianRepository;
     private final MinioService minioService;
     private final AdmitCardPdfService pdfService;
 
@@ -84,8 +90,8 @@ public class AdmitCardService {
                 .map(year -> new AdmitCardOptionsDto.YearOption(year.getId(), year.getName(), year.isCurrent()))
                 .toList();
 
-        if (isStudent(principal)) {
-            Student student = requireOwnStudent(principal);
+        if (isLearner(principal)) {
+            Student student = requireOwnStudent(principal, null);
             UUID yearId = years.stream()
                     .filter(AdmitCardOptionsDto.YearOption::current)
                     .map(AdmitCardOptionsDto.YearOption::id)
@@ -142,8 +148,8 @@ public class AdmitCardService {
         String term = normalizeTerm(examTerm);
         AcademicYear year = academicYearRepository.findByIdAndSchoolId(academicYearId, schoolId)
                 .orElseThrow(() -> ResourceNotFoundException.of("academic_year", academicYearId));
-        if (isStudent(principal)) {
-            Student student = requireOwnStudent(principal);
+        if (isLearner(principal)) {
+            Student student = requireOwnStudent(principal, null);
             AdmitCardDto card = buildCard(schoolId, student, year, term, false);
             return List.of(toStudentDto(card));
         }
@@ -177,9 +183,14 @@ public class AdmitCardService {
 
     @Transactional(readOnly = true)
     public AdmitCardDto mine(UUID academicYearId, String examTerm) {
+        return mine(academicYearId, examTerm, null);
+    }
+
+    @Transactional(readOnly = true)
+    public AdmitCardDto mine(UUID academicYearId, String examTerm, UUID studentId) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         UserPrincipal principal = SecurityUtils.currentPrincipal();
-        Student student = requireOwnStudent(principal);
+        Student student = requireOwnStudent(principal, studentId);
         AcademicYear year = resolveYear(schoolId, academicYearId);
         return buildCard(schoolId, student, year, normalizeTerm(examTerm), false);
     }
@@ -190,7 +201,7 @@ public class AdmitCardService {
         UserPrincipal principal = SecurityUtils.currentPrincipal();
         Student student = loadAccessibleStudent(principal, schoolId, studentId);
         AcademicYear year = resolveYear(schoolId, academicYearId);
-        return buildCard(schoolId, student, year, normalizeTerm(examTerm), !isStudent(principal));
+        return buildCard(schoolId, student, year, normalizeTerm(examTerm), !isLearner(principal));
     }
 
     @Transactional(readOnly = true)
@@ -236,8 +247,10 @@ public class AdmitCardService {
         AcademicYear year = resolveYear(schoolId, request.academicYearId());
         String term = normalizeTerm(request.examTerm());
         List<Student> students;
-        if (isStudent(principal)) {
-            Student own = requireOwnStudent(principal);
+        if (isLearner(principal)) {
+            UUID preferred = request.studentIds() == null || request.studentIds().isEmpty()
+                    ? null : request.studentIds().get(0);
+            Student own = requireOwnStudent(principal, preferred);
             if (request.studentIds() != null && !request.studentIds().isEmpty()
                     && (request.studentIds().size() != 1 || !own.getId().equals(request.studentIds().get(0)))) {
                 throw AuthException.accessDenied();
@@ -273,7 +286,7 @@ public class AdmitCardService {
         }
         List<AdmitCardDto> cards = new ArrayList<>();
         for (Student student : students) {
-            AdmitCardDto card = buildCard(schoolId, student, year, term, !isStudent(principal));
+            AdmitCardDto card = buildCard(schoolId, student, year, term, !isLearner(principal));
             if (!card.published()) {
                 throw new BusinessException("admit_card.not_published");
             }
@@ -341,28 +354,48 @@ public class AdmitCardService {
     }
 
     private Student loadAccessibleStudent(UserPrincipal principal, UUID schoolId, UUID studentId) {
-        if (isStudent(principal)) {
-            Student own = requireOwnStudent(principal);
-            if (!own.getId().equals(studentId)) {
+        if (isLearner(principal)) {
+            return requireOwnStudent(principal, studentId);
+        }
+        return studentRepository.findByIdAndSchoolId(studentId, schoolId)
+                .orElseThrow(() -> ResourceNotFoundException.of("student", studentId));
+    }
+
+    private Student requireOwnStudent(UserPrincipal principal, UUID preferredStudentId) {
+        if (principal.hasRole("PARENT") && !principal.hasRole("STUDENT")
+                && !principal.hasRole("ADMIN") && !principal.hasRole("SUPER_ADMIN")
+                && !principal.hasRole("TEACHER")) {
+            Guardian guardian = guardianRepository.findBySchoolIdAndUserId(principal.schoolId(), principal.id())
+                    .orElseThrow(AuthException::accessDenied);
+            List<StudentGuardian> links = studentGuardianRepository.findWithStudents(principal.schoolId(), guardian.getId());
+            if (links.isEmpty()) {
                 throw AuthException.accessDenied();
             }
-            return own;
+            if (preferredStudentId != null) {
+                return links.stream()
+                        .map(StudentGuardian::getStudent)
+                        .filter(student -> student != null && preferredStudentId.equals(student.getId()))
+                        .findFirst()
+                        .orElseThrow(AuthException::accessDenied);
+            }
+            if (links.get(0).getStudent() == null) {
+                throw AuthException.accessDenied();
+            }
+            return links.get(0).getStudent();
         }
-        Student student = studentRepository.findByIdAndSchoolId(studentId, schoolId)
-                .orElseThrow(() -> ResourceNotFoundException.of("student", studentId));
+        if (!principal.hasRole("STUDENT")) {
+            throw AuthException.accessDenied();
+        }
+        Student student = studentRepository.findBySchoolIdAndUserId(principal.schoolId(), principal.id())
+                .orElseThrow(AuthException::accessDenied);
+        if (preferredStudentId != null && !preferredStudentId.equals(student.getId())) {
+            throw AuthException.accessDenied();
+        }
         return student;
     }
 
-    private Student requireOwnStudent(UserPrincipal principal) {
-        if (!isStudent(principal)) {
-            throw AuthException.accessDenied();
-        }
-        return studentRepository.findBySchoolIdAndUserId(principal.schoolId(), principal.id())
-                .orElseThrow(AuthException::accessDenied);
-    }
-
     private void assertStaffCanAccessSection(UserPrincipal principal, UUID schoolId, UUID sectionId) {
-        if (isStudent(principal)) {
+        if (isLearner(principal)) {
             throw AuthException.accessDenied();
         }
         if (!teacherScope(schoolId, principal).allowsSection(sectionId)) {
@@ -426,8 +459,9 @@ public class AdmitCardService {
         return term;
     }
 
-    private static boolean isStudent(UserPrincipal principal) {
-        return principal.hasRole("STUDENT") && !principal.hasRole("ADMIN") && !principal.hasRole("SUPER_ADMIN")
+    private static boolean isLearner(UserPrincipal principal) {
+        return (principal.hasRole("STUDENT") || principal.hasRole("PARENT"))
+                && !principal.hasRole("ADMIN") && !principal.hasRole("SUPER_ADMIN")
                 && !principal.hasRole("TEACHER");
     }
 

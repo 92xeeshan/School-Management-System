@@ -102,7 +102,7 @@ public class MarksheetService {
         boolean manage = canManage(principal);
 
         if (isLearner(principal)) {
-            Student student = requireOwnStudent(principal);
+            Student student = requireOwnStudent(principal, null);
             UUID yearId = years.stream()
                     .filter(MarksheetOptionsDto.YearOption::current)
                     .map(MarksheetOptionsDto.YearOption::id)
@@ -163,7 +163,7 @@ public class MarksheetService {
                 .orElseThrow(() -> ResourceNotFoundException.of("academic_year", academicYearId));
         String statusFilter = normalizeStatusFilter(status);
         if (isLearner(principal)) {
-            Student student = requireOwnStudent(principal);
+            Student student = requireOwnStudent(principal, null);
             MarksheetDto card = buildCard(schoolId, student, year, term);
             if (statusFilter != null && !statusFilter.equals(card.status())) {
                 return List.of();
@@ -186,9 +186,14 @@ public class MarksheetService {
 
     @Transactional(readOnly = true)
     public MarksheetDto mine(UUID academicYearId, String examTerm) {
+        return mine(academicYearId, examTerm, null);
+    }
+
+    @Transactional(readOnly = true)
+    public MarksheetDto mine(UUID academicYearId, String examTerm, UUID studentId) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         UserPrincipal principal = SecurityUtils.currentPrincipal();
-        Student student = requireOwnStudent(principal);
+        Student student = requireOwnStudent(principal, studentId);
         AcademicYear year = resolveYear(schoolId, academicYearId);
         return buildCard(schoolId, student, year, normalizeTerm(examTerm));
     }
@@ -449,7 +454,9 @@ public class MarksheetService {
         List<Student> students;
         SectionContext ctx;
         if (isLearner(principal)) {
-            Student own = requireOwnStudent(principal);
+            UUID preferred = request.studentIds() == null || request.studentIds().isEmpty()
+                    ? null : request.studentIds().get(0);
+            Student own = requireOwnStudent(principal, preferred);
             if (request.studentIds() != null && !request.studentIds().isEmpty()
                     && (request.studentIds().size() != 1 || !own.getId().equals(request.studentIds().get(0)))) {
                 throw AuthException.accessDenied();
@@ -917,24 +924,30 @@ public class MarksheetService {
 
     private Student loadAccessibleStudent(UserPrincipal principal, UUID schoolId, UUID studentId) {
         if (isLearner(principal)) {
-            Student own = requireOwnStudent(principal);
-            if (!own.getId().equals(studentId)) {
-                throw AuthException.accessDenied();
-            }
-            return own;
+            return requireOwnStudent(principal, studentId);
         }
         return studentRepository.findByIdAndSchoolId(studentId, schoolId)
                 .orElseThrow(() -> ResourceNotFoundException.of("student", studentId));
     }
 
-    private Student requireOwnStudent(UserPrincipal principal) {
+    private Student requireOwnStudent(UserPrincipal principal, UUID preferredStudentId) {
         if (principal.hasRole("PARENT") && !principal.hasRole("STUDENT")
                 && !principal.hasRole("ADMIN") && !principal.hasRole("SUPER_ADMIN")
                 && !principal.hasRole("TEACHER")) {
             Guardian guardian = guardianRepository.findBySchoolIdAndUserId(principal.schoolId(), principal.id())
                     .orElseThrow(AuthException::accessDenied);
             List<StudentGuardian> links = studentGuardianRepository.findWithStudents(principal.schoolId(), guardian.getId());
-            if (links.isEmpty() || links.get(0).getStudent() == null) {
+            if (links.isEmpty()) {
+                throw AuthException.accessDenied();
+            }
+            if (preferredStudentId != null) {
+                return links.stream()
+                        .map(StudentGuardian::getStudent)
+                        .filter(student -> student != null && preferredStudentId.equals(student.getId()))
+                        .findFirst()
+                        .orElseThrow(AuthException::accessDenied);
+            }
+            if (links.get(0).getStudent() == null) {
                 throw AuthException.accessDenied();
             }
             return links.get(0).getStudent();
@@ -942,8 +955,12 @@ public class MarksheetService {
         if (!principal.hasRole("STUDENT")) {
             throw AuthException.accessDenied();
         }
-        return studentRepository.findBySchoolIdAndUserId(principal.schoolId(), principal.id())
+        Student student = studentRepository.findBySchoolIdAndUserId(principal.schoolId(), principal.id())
                 .orElseThrow(AuthException::accessDenied);
+        if (preferredStudentId != null && !preferredStudentId.equals(student.getId())) {
+            throw AuthException.accessDenied();
+        }
+        return student;
     }
 
     private void assertStaffCanAccessSection(UserPrincipal principal, UUID schoolId, UUID sectionId) {

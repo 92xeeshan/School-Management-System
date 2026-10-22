@@ -167,7 +167,7 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/examinations/exam-analytics.component').then((m) => m.ExamAnalyticsComponent),
             canActivate: [PermissionGuard],
-            data: { permissions: ['EXAM_MANAGE'] },
+            data: { permissions: ['EXAM_READ', 'EXAM_MANAGE', 'REPORT_CARD_READ'] },
           },
           {
             path: 'reevaluation',

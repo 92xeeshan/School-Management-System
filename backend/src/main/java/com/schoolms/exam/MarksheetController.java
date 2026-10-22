@@ -60,8 +60,9 @@ public class MarksheetController {
     @GetMapping("/mine")
     public ApiResponse<MarksheetDto> mine(
             @RequestParam(required = false) UUID academicYearId,
-            @RequestParam(defaultValue = "TERM") String examTerm) {
-        return ApiResponse.ok(marksheetService.mine(academicYearId, examTerm));
+            @RequestParam(defaultValue = "TERM") String examTerm,
+            @RequestParam(required = false) UUID studentId) {
+        return ApiResponse.ok(marksheetService.mine(academicYearId, examTerm, studentId));
     }
 
     @Operation(summary = "Submit marksheets for administrative approval")
