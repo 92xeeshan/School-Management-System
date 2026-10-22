@@ -50,13 +50,14 @@ public class AdmitCardController {
         return ApiResponse.ok(admitCardService.roster(academicYearId, classId, sectionId, examTerm));
     }
 
-    @Operation(summary = "Current student admit card")
+    @Operation(summary = "Current student or parent admit card")
     @PreAuthorize("hasAuthority('ADMIT_CARD_READ')")
     @GetMapping("/mine")
     public ApiResponse<AdmitCardDto> mine(
             @RequestParam(required = false) UUID academicYearId,
-            @RequestParam(defaultValue = "TERM") String examTerm) {
-        return ApiResponse.ok(admitCardService.mine(academicYearId, examTerm));
+            @RequestParam(defaultValue = "TERM") String examTerm,
+            @RequestParam(required = false) UUID studentId) {
+        return ApiResponse.ok(admitCardService.mine(academicYearId, examTerm, studentId));
     }
 
     @Operation(summary = "Admit card for a student")

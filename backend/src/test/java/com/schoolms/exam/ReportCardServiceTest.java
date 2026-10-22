@@ -139,6 +139,47 @@ class ReportCardServiceTest {
     }
 
     @Test
+    void parentCanLoadPreferredLinkedChild() {
+        UUID parentUserId = UUID.fromString("20000000-0000-0000-0000-000000000020");
+        UUID guardianId = UUID.fromString("50000000-0000-0000-0000-000000000001");
+        TestSecurity.login(parentUserId, TestSecurity.SCHOOL_ID, List.of("PARENT"), Set.of("REPORT_CARD_READ"));
+        Guardian guardian = new Guardian();
+        guardian.setId(guardianId);
+        guardian.setUserId(parentUserId);
+        when(guardianRepository.findBySchoolIdAndUserId(TestSecurity.SCHOOL_ID, parentUserId))
+                .thenReturn(Optional.of(guardian));
+        StudentGuardian first = new StudentGuardian();
+        first.setStudent(student(studentId, studentUserId, "Aarav"));
+        StudentGuardian second = new StudentGuardian();
+        second.setStudent(student(otherStudentId, UUID.fromString("20000000-0000-0000-0000-000000000011"), "Diya"));
+        when(studentGuardianRepository.findWithStudents(TestSecurity.SCHOOL_ID, guardianId))
+                .thenReturn(List.of(first, second));
+        stubCardGraphForStudent(otherStudentId);
+
+        ReportCardDto card = service.mine(yearId, "TERM", otherStudentId);
+
+        assertEquals(otherStudentId, card.studentId());
+    }
+
+    @Test
+    void parentCannotLoadUnlinkedStudent() {
+        UUID parentUserId = UUID.fromString("20000000-0000-0000-0000-000000000020");
+        UUID guardianId = UUID.fromString("50000000-0000-0000-0000-000000000001");
+        TestSecurity.login(parentUserId, TestSecurity.SCHOOL_ID, List.of("PARENT"), Set.of("REPORT_CARD_READ"));
+        Guardian guardian = new Guardian();
+        guardian.setId(guardianId);
+        guardian.setUserId(parentUserId);
+        when(guardianRepository.findBySchoolIdAndUserId(TestSecurity.SCHOOL_ID, parentUserId))
+                .thenReturn(Optional.of(guardian));
+        StudentGuardian first = new StudentGuardian();
+        first.setStudent(student(studentId, studentUserId, "Aarav"));
+        when(studentGuardianRepository.findWithStudents(TestSecurity.SCHOOL_ID, guardianId))
+                .thenReturn(List.of(first));
+
+        assertThrows(AuthException.class, () -> service.get(otherStudentId, yearId, "TERM"));
+    }
+
+    @Test
     void exportBlockedUntilPublished() {
         stubSectionGraph();
         when(studentRepository.findBySectionAndYear(TestSecurity.SCHOOL_ID, sectionId, yearId))
@@ -244,22 +285,28 @@ class ReportCardServiceTest {
                 .thenReturn(Optional.of(year()));
         when(studentRepository.findBySchoolIdAndUserId(TestSecurity.SCHOOL_ID, studentUserId))
                 .thenReturn(Optional.of(student(studentId, studentUserId, "Aarav")));
-        when(enrollmentRepository.findByStudentIdAndAcademicYearId(studentId, yearId))
-                .thenReturn(Optional.of(enrollment(studentId, sectionId)));
+        stubCardGraphForStudent(studentId);
+    }
+
+    private void stubCardGraphForStudent(UUID id) {
+        when(academicYearRepository.findByIdAndSchoolId(yearId, TestSecurity.SCHOOL_ID))
+                .thenReturn(Optional.of(year()));
+        when(enrollmentRepository.findByStudentIdAndAcademicYearId(id, yearId))
+                .thenReturn(Optional.of(enrollment(id, sectionId)));
         stubSection();
         when(classRepository.findByIdAndSchoolId(classId, TestSecurity.SCHOOL_ID))
                 .thenReturn(Optional.of(schoolClass()));
         when(studentRepository.findBySectionAndYear(TestSecurity.SCHOOL_ID, sectionId, yearId))
-                .thenReturn(List.of(student(studentId, studentUserId, "Aarav")));
+                .thenReturn(List.of(student(id, studentUserId, "Aarav")));
         when(enrollmentRepository.findBySectionIdAndAcademicYearId(sectionId, yearId))
-                .thenReturn(List.of(enrollment(studentId, sectionId)));
+                .thenReturn(List.of(enrollment(id, sectionId)));
         when(examEntryRepository.findBySchoolIdAndAcademicYearIdAndSectionIdAndExamTerm(
                 TestSecurity.SCHOOL_ID, yearId, sectionId, "TERM")).thenReturn(List.of(entry()));
         when(subjectRepository.findBySchoolIdOrderByNameAsc(TestSecurity.SCHOOL_ID)).thenReturn(List.of(subject()));
         when(examMarkRepository.findBySchoolIdAndExamEntryIdIn(eq(TestSecurity.SCHOOL_ID), anyList()))
-                .thenReturn(List.of(mark(studentId)));
+                .thenReturn(List.of(mark(id)));
         when(reportCardRepository.findBySchoolIdAndAcademicYearIdAndSectionIdAndExamTerm(
-                TestSecurity.SCHOOL_ID, yearId, sectionId, "TERM")).thenReturn(List.of(stored()));
+                TestSecurity.SCHOOL_ID, yearId, sectionId, "TERM")).thenReturn(List.of(stored(id)));
         GradingScheme scheme = new GradingScheme();
         scheme.setId(UUID.fromString("90000000-0000-0000-0000-000000000001"));
         scheme.setPassPercent(new BigDecimal("33"));
@@ -282,7 +329,7 @@ class ReportCardServiceTest {
         guardian.setLastName("Kumar");
         link.setGuardian(guardian);
         link.setPrimary(true);
-        when(studentGuardianRepository.findWithGuardians(TestSecurity.SCHOOL_ID, studentId))
+        when(studentGuardianRepository.findWithGuardians(TestSecurity.SCHOOL_ID, id))
                 .thenReturn(List.of(link));
         when(awardRepository.findBySchoolIdOrderByAwardedDateDesc(TestSecurity.SCHOOL_ID)).thenReturn(List.of());
     }
@@ -381,8 +428,12 @@ class ReportCardServiceTest {
     }
 
     private ReportCard stored() {
+        return stored(studentId);
+    }
+
+    private ReportCard stored(UUID id) {
         ReportCard card = new ReportCard();
-        card.setStudentId(studentId);
+        card.setStudentId(id);
         card.setAcademicYearId(yearId);
         card.setExamTerm("TERM");
         card.setTeacherComment("Aarav is a sincere learner who participates well in class discussions.");

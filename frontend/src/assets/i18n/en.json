@@ -802,8 +802,24 @@
     },
     "analyticsPage": {
       "title": "Analytics & Performance",
-      "subtitle": "Track examination results and performance",
-      "body": "Analytics and performance will be available here in a later update."
+      "subtitle": "Class results, subject averages and published progress across terms",
+      "body": "Choose a class section to load published exam analytics.",
+      "selectClass": "Select class",
+      "selectSection": "Select section",
+      "selectSectionHint": "Select a class and section",
+      "classAverage": "Class average",
+      "passPercent": "Pass percentage",
+      "publishedCount": "Published cards",
+      "subjectDistribution": "Subject performance",
+      "topPerformers": "Top performers",
+      "trendTitle": "Progress across terms",
+      "noPublished": "No published results",
+      "noPublishedHint": "Charts use published report cards only.",
+      "noTrend": "No published terms yet",
+      "portalSchedules": "Exam schedule and seating",
+      "portalSchedulesHint": "Open admit cards for the published datesheet and room.",
+      "portalReports": "Published report card",
+      "portalReportsHint": "Open the report card tab for the linked student."
     },
     "reevaluationPage": {
       "title": "Re-evaluation & Grace Marks",

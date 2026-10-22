@@ -23,7 +23,11 @@ import com.schoolms.exam.dto.AdmitCardStudentDto;
 import com.schoolms.file.MinioService;
 import com.schoolms.school.School;
 import com.schoolms.school.SchoolRepository;
+import com.schoolms.student.Guardian;
+import com.schoolms.student.GuardianRepository;
 import com.schoolms.student.Student;
+import com.schoolms.student.StudentGuardian;
+import com.schoolms.student.StudentGuardianRepository;
 import com.schoolms.student.StudentRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +62,8 @@ class AdmitCardServiceTest {
     @Mock private TeacherProfileRepository teacherRepository;
     @Mock private TeacherSectionRepository teacherSectionRepository;
     @Mock private SchoolRepository schoolRepository;
+    @Mock private GuardianRepository guardianRepository;
+    @Mock private StudentGuardianRepository studentGuardianRepository;
     @Mock private MinioService minioService;
     @Mock private AdmitCardPdfService pdfService;
 
@@ -75,7 +81,8 @@ class AdmitCardServiceTest {
     void setUp() {
         service = new AdmitCardService(academicYearRepository, classRepository, sectionRepository, subjectRepository,
                 studentRepository, enrollmentRepository, scheduleRepository, teacherRepository,
-                teacherSectionRepository, schoolRepository, minioService, pdfService);
+                teacherSectionRepository, schoolRepository, guardianRepository, studentGuardianRepository,
+                minioService, pdfService);
         TestSecurity.login(TestSecurity.USER_ID, TestSecurity.SCHOOL_ID, List.of("ADMIN"),
                 Set.of("ADMIT_CARD_READ", "EXAM_MANAGE"));
     }
@@ -113,6 +120,54 @@ class AdmitCardServiceTest {
         loginStudent();
         when(studentRepository.findBySchoolIdAndUserId(TestSecurity.SCHOOL_ID, studentUserId))
                 .thenReturn(Optional.of(student(studentId, studentUserId, "Asha")));
+
+        assertThrows(AuthException.class, () -> service.get(otherStudentId, yearId, "TERM"));
+    }
+
+    @Test
+    void parentCanLoadLinkedChildAdmitCard() {
+        UUID parentUserId = UUID.fromString("20000000-0000-0000-0000-000000000020");
+        UUID guardianId = UUID.fromString("50000000-0000-0000-0000-000000000001");
+        TestSecurity.login(parentUserId, TestSecurity.SCHOOL_ID, List.of("PARENT"), Set.of("ADMIT_CARD_READ"));
+        Guardian guardian = new Guardian();
+        guardian.setId(guardianId);
+        guardian.setUserId(parentUserId);
+        when(guardianRepository.findBySchoolIdAndUserId(TestSecurity.SCHOOL_ID, parentUserId))
+                .thenReturn(Optional.of(guardian));
+        StudentGuardian link = new StudentGuardian();
+        link.setStudent(student(studentId, studentUserId, "Asha"));
+        when(studentGuardianRepository.findWithStudents(TestSecurity.SCHOOL_ID, guardianId))
+                .thenReturn(List.of(link));
+        stubRefs();
+        when(enrollmentRepository.findByStudentIdAndAcademicYearId(studentId, yearId))
+                .thenReturn(Optional.of(enrollment(studentId, sectionId)));
+        when(scheduleRepository.findBySchoolIdAndAcademicYearIdOrderByExamDateAscStartTimeAsc(
+                TestSecurity.SCHOOL_ID, yearId)).thenReturn(List.of(publishedSchedule()));
+        when(subjectRepository.findBySchoolIdOrderByNameAsc(TestSecurity.SCHOOL_ID))
+                .thenReturn(List.of(subject()));
+        when(schoolRepository.findById(TestSecurity.SCHOOL_ID)).thenReturn(Optional.of(school()));
+
+        AdmitCardDto card = service.mine(yearId, "TERM", studentId);
+
+        assertEquals(studentId, card.studentId());
+        assertTrue(card.published());
+        assertEquals("Room 101", card.datesheet().get(0).room());
+    }
+
+    @Test
+    void parentCannotLoadUnlinkedStudentAdmitCard() {
+        UUID parentUserId = UUID.fromString("20000000-0000-0000-0000-000000000020");
+        UUID guardianId = UUID.fromString("50000000-0000-0000-0000-000000000001");
+        TestSecurity.login(parentUserId, TestSecurity.SCHOOL_ID, List.of("PARENT"), Set.of("ADMIT_CARD_READ"));
+        Guardian guardian = new Guardian();
+        guardian.setId(guardianId);
+        guardian.setUserId(parentUserId);
+        when(guardianRepository.findBySchoolIdAndUserId(TestSecurity.SCHOOL_ID, parentUserId))
+                .thenReturn(Optional.of(guardian));
+        StudentGuardian link = new StudentGuardian();
+        link.setStudent(student(studentId, studentUserId, "Asha"));
+        when(studentGuardianRepository.findWithStudents(TestSecurity.SCHOOL_ID, guardianId))
+                .thenReturn(List.of(link));
 
         assertThrows(AuthException.class, () -> service.get(otherStudentId, yearId, "TERM"));
     }

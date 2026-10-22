@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, ViewEncapsulation } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiError, ApiResponse } from '../../core/models/api.model';
@@ -440,7 +441,12 @@ export class MarksheetComponent implements OnInit {
   selectedIds = new Set<string>();
   private queryTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private http: HttpClient, private auth: AuthService, public cdr: ChangeDetectorRef) {}
+  constructor(
+    private http: HttpClient,
+    private auth: AuthService,
+    public cdr: ChangeDetectorRef,
+    private destroyRef: DestroyRef,
+  ) {}
 
   get filterSections(): SectionOption[] {
     return this.options?.classes.find((klass) => klass.id === this.classId)?.sections ?? [];
@@ -481,6 +487,11 @@ export class MarksheetComponent implements OnInit {
   ngOnInit(): void {
     this.canManage = this.auth.hasPermission('MARKSHEET_MANAGE');
     this.loadOptions();
+    this.auth.activeChild$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (this.studentView && this.yearId) {
+        this.reload();
+      }
+    });
   }
 
   termLabel(term: string): string {
@@ -827,6 +838,10 @@ export class MarksheetComponent implements OnInit {
     }
     if (!this.studentView && this.statusFilter && this.statusFilter !== 'ALL') {
       params = params.set('status', this.statusFilter);
+    }
+    const childId = this.auth.activeChild?.studentId;
+    if (this.studentView && this.auth.hasRole('PARENT') && childId) {
+      params = params.set('studentId', childId);
     }
     return params;
   }

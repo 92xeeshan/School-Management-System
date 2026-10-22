@@ -33,7 +33,7 @@ APIs check **permission codes**. UI nav uses the same codes (`hasAnyPermission`)
 | `EVENT_MANAGE` | yes | yes | no | no | no |
 | `STAFF_READ` | yes | yes | yes | no | no |
 | `STAFF_CREATE/UPDATE/DELETE` | yes | yes | no | no | no |
-| `ADMIT_CARD_READ` | yes | yes | yes | yes | **no** |
+| `ADMIT_CARD_READ` | yes | yes | yes | yes | yes |
 | `REPORT_CARD_READ` | yes | yes | yes | yes | yes |
 | `MARKSHEET_READ` | yes | yes | yes | yes | yes |
 | `MARKSHEET_MANAGE` | yes | yes | no | no | no |

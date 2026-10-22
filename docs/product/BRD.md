@@ -112,5 +112,5 @@ Formal production SLOs (uptime, p95 latency) are not instrumented yet; see `docs
 - Online payment gateways and SSO
 - SMS/email gateways
 - Syllabus and exam-term configuration UIs (placeholders)
-- Exam analytics and re-evaluation modules (placeholders)
+- Exam re-evaluation module (placeholder)
 - Dedicated HIPAA alignment (not a health product)
