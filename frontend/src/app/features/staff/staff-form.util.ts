@@ -7,7 +7,7 @@ import { StaffMember, StaffMemberPayload } from './staff.model';
  */
 export function createStaffForm(): FormGroup {
   return new FormGroup({
-    employeeNo: new FormControl('', Validators.required),
+    employeeNo: new FormControl(''),
     firstName: new FormControl('', Validators.required),
     lastName: new FormControl(''),
     email: new FormControl(''),
@@ -44,7 +44,7 @@ export function staffFormValue(staff: StaffMember): Record<string, string> {
 export function staffFormToPayload(form: FormGroup): StaffMemberPayload {
   const value = form.getRawValue() as Record<string, string>;
   return {
-    employeeNo: (value['employeeNo'] ?? '').trim(),
+    employeeNo: (value['employeeNo'] ?? '').trim() || null,
     firstName: (value['firstName'] ?? '').trim(),
     lastName: blankToNull(value['lastName']),
     email: blankToNull(value['email']),

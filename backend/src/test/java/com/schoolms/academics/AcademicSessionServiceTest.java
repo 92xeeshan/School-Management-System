@@ -52,6 +52,8 @@ class AcademicSessionServiceTest {
     private PromotionBatchRepository promotionBatchRepository;
     @Mock
     private PromotionBatchItemRepository promotionItemRepository;
+    @Mock
+    private com.schoolms.common.RecordIdGenerator recordIdGenerator;
 
     private AcademicSessionService service;
 
@@ -67,7 +69,7 @@ class AcademicSessionServiceTest {
     void setUp() {
         service = new AcademicSessionService(academicYearRepository, termRepository, classRepository,
                 sectionRepository, enrollmentRepository, studentRepository, promotionBatchRepository,
-                promotionItemRepository);
+                promotionItemRepository, recordIdGenerator);
         TestSecurity.loginAsAdmin();
     }
 
@@ -226,6 +228,7 @@ class AcademicSessionServiceTest {
                 .thenReturn(0L);
         when(sectionRepository.findBySchoolIdOrderByNameAsc(TestSecurity.SCHOOL_ID))
                 .thenReturn(List.of(sourceSection, destSection));
+        when(recordIdGenerator.nextRollNumber(nextSectionId, nextYearId)).thenReturn(1);
         when(promotionBatchRepository.save(any(PromotionBatch.class))).thenAnswer(inv -> {
             PromotionBatch batch = inv.getArgument(0);
             if (batch.getId() == null) {
