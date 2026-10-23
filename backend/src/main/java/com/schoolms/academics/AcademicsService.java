@@ -12,6 +12,7 @@ import com.schoolms.academics.dto.SubjectDto;
 import com.schoolms.academics.dto.SubjectRequest;
 import com.schoolms.academics.dto.TeacherDto;
 import com.schoolms.academics.dto.TeacherRequest;
+import com.schoolms.common.RecordIdGenerator;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
 import com.schoolms.common.enums.SubjectType;
@@ -42,6 +43,7 @@ public class AcademicsService {
     private final TeacherSectionRepository teacherSectionRepository;
     private final ClassSubjectRepository classSubjectRepository;
     private final StudentEnrollmentRepository enrollmentRepository;
+    private final RecordIdGenerator recordIdGenerator;
 
     // ---- Academic years -------------------------------------------------
     @Transactional(readOnly = true)
@@ -323,19 +325,23 @@ public class AcademicsService {
     @Transactional
     public TeacherDto createTeacher(TeacherRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        if (teacherRepository.existsBySchoolIdAndEmployeeNo(schoolId, request.employeeNo())) {
+        String employeeNo = blankToNull(request.employeeNo());
+        if (employeeNo == null) {
+            employeeNo = recordIdGenerator.nextTeacherEmployeeNo(schoolId);
+        }
+        if (teacherRepository.existsBySchoolIdAndEmployeeNo(schoolId, employeeNo)) {
             throw new BusinessException("error.conflict");
         }
         TeacherProfile teacher = new TeacherProfile();
         teacher.setSchoolId(schoolId);
-        apply(teacher, request);
+        apply(teacher, request, employeeNo);
         teacher = teacherRepository.save(teacher);
         saveAssignments(teacher, schoolId, request);
         return withAssignments(teacher, schoolId);
     }
 
-    private void apply(TeacherProfile teacher, TeacherRequest request) {
-        teacher.setEmployeeNo(request.employeeNo());
+    private void apply(TeacherProfile teacher, TeacherRequest request, String employeeNo) {
+        teacher.setEmployeeNo(employeeNo);
         teacher.setFirstName(request.firstName());
         teacher.setLastName(request.lastName());
         teacher.setEmail(request.email());

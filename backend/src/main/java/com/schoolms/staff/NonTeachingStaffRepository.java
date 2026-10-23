@@ -1,6 +1,8 @@
 package com.schoolms.staff;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,4 +17,10 @@ public interface NonTeachingStaffRepository extends JpaRepository<NonTeachingSta
     boolean existsBySchoolIdAndEmployeeNo(UUID schoolId, String employeeNo);
 
     boolean existsBySchoolIdAndEmployeeNoAndIdNot(UUID schoolId, String employeeNo, UUID id);
+
+    @Query("""
+            select s.employeeNo from NonTeachingStaff s
+            where s.schoolId = :schoolId and s.employeeNo like concat(:prefix, '%')
+            """)
+    List<String> findEmployeeNosByPrefix(@Param("schoolId") UUID schoolId, @Param("prefix") String prefix);
 }

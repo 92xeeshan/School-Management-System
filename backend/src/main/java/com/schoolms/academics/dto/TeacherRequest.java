@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record TeacherRequest(
-        @NotBlank(message = "{validation.not_blank}") String employeeNo,
+        @Size(max = 30) String employeeNo,
         @NotBlank(message = "{validation.not_blank}") String firstName,
         String lastName,
         @Size(max = 120) String email,

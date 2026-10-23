@@ -13,7 +13,7 @@ import java.util.UUID;
  * Create/update payload shared by teaching and non-teaching staff.
  */
 public record StaffMemberRequest(
-        @NotBlank(message = "{validation.not_blank}") @Size(max = 30) String employeeNo,
+        @Size(max = 30) String employeeNo,
         @NotBlank(message = "{validation.not_blank}") @Size(max = 60) String firstName,
         @Size(max = 60) String lastName,
         @Email(message = "{validation.invalid_email}") @Size(max = 120) String email,

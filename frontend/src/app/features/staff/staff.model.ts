@@ -38,7 +38,7 @@ export interface StaffMember {
 }
 
 export interface StaffMemberPayload {
-  employeeNo: string;
+  employeeNo: string | null;
   firstName: string;
   lastName: string | null;
   email: string | null;

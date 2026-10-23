@@ -303,8 +303,8 @@ interface StudentReportCard {
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="form-grid">
               <div class="field">
-                <label>{{ 'students.studentId' | translate }} *</label>
-                <input type="text" formControlName="admissionNo" placeholder="ADM2026-010" />
+                <label>{{ 'students.studentId' | translate }}{{ editingId ? ' *' : '' }}</label>
+                <input type="text" formControlName="admissionNo" [placeholder]="editingId ? '' : ('students.admissionNoHint' | translate)" />
               </div>
               <div class="field">
                 <label>{{ 'students.name' | translate }} *</label>
@@ -666,7 +666,7 @@ export class StudentsComponent implements OnInit {
   academicYears: AcademicYear[] = [];
 
   readonly form = new FormGroup({
-    admissionNo: new FormControl('', Validators.required),
+    admissionNo: new FormControl(''),
     firstName: new FormControl('', Validators.required),
     lastName: new FormControl(''),
     dateOfBirth: new FormControl(''),
@@ -1052,7 +1052,7 @@ export class StudentsComponent implements OnInit {
     this.cdr.markForCheck();
     const { admissionNo, firstName, lastName, dateOfBirth, gender, admissionDate } = this.form.value;
     const body = {
-      admissionNo,
+      admissionNo: (admissionNo ?? '').trim() || null,
       firstName,
       lastName: lastName || null,
       dateOfBirth: dateOfBirth || null,
