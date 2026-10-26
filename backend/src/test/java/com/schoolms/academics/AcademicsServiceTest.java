@@ -45,6 +45,8 @@ class AcademicsServiceTest {
     private ClassSubjectRepository classSubjectRepository;
     @Mock
     private StudentEnrollmentRepository enrollmentRepository;
+    @Mock
+    private com.schoolms.common.RecordIdGenerator recordIdGenerator;
 
     private AcademicsService academicsService;
 
@@ -53,7 +55,7 @@ class AcademicsServiceTest {
         academicsService = new AcademicsService(academicYearRepository, classRepository,
                 sectionRepository, subjectRepository, teacherRepository,
                 teacherSubjectRepository, teacherSectionRepository, classSubjectRepository,
-                enrollmentRepository);
+                enrollmentRepository, recordIdGenerator);
         TestSecurity.loginAsAdmin();
     }
 

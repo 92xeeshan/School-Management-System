@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record StudentRequest(
-        @NotBlank(message = "{validation.not_blank}") @Size(max = 30) String admissionNo,
+        @Size(max = 30) String admissionNo,
         @NotBlank(message = "{validation.not_blank}") @Size(max = 60) String firstName,
         @Size(max = 60) String lastName,
         @Past(message = "validation.invalid") LocalDate dateOfBirth,

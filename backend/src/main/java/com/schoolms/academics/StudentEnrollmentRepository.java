@@ -39,5 +39,13 @@ public interface StudentEnrollmentRepository extends JpaRepository<StudentEnroll
 
     long countBySectionIdAndAcademicYearIdAndStatus(UUID sectionId, UUID academicYearId, String status);
 
+    @Query("""
+            select max(e.rollNumber) from StudentEnrollment e
+            where e.sectionId = :sectionId
+              and e.academicYearId = :academicYearId
+              and e.status = 'ACTIVE'
+            """)
+    Integer findMaxRollNumber(@Param("sectionId") UUID sectionId, @Param("academicYearId") UUID academicYearId);
+
     boolean existsByStudentIdAndAcademicYearId(UUID studentId, UUID academicYearId);
 }

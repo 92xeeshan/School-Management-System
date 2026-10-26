@@ -16,6 +16,12 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
 
     boolean existsBySchoolIdAndAdmissionNo(UUID schoolId, String admissionNo);
 
+    @Query("""
+            select s.admissionNo from Student s
+            where s.schoolId = :schoolId and s.admissionNo like concat(:prefix, '%')
+            """)
+    List<String> findAdmissionNosByPrefix(@Param("schoolId") UUID schoolId, @Param("prefix") String prefix);
+
     Optional<Student> findByIdAndSchoolId(UUID id, UUID schoolId);
 
     Optional<Student> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
