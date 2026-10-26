@@ -1,6 +1,7 @@
 package com.schoolms.expense;
 
 import com.schoolms.common.api.ApiResponse;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.expense.dto.ExpenseCategoryDto;
 import com.schoolms.expense.dto.ExpenseCategoryRequest;
 import com.schoolms.expense.dto.ExpenseChartDto;
@@ -43,13 +44,17 @@ public class ExpenseController {
         return ApiResponse.ok(expenseService.createCategory(request), "expense.category_created");
     }
 
-    @Operation(summary = "List expenses")
+    @Operation(summary = "List expenses (paginated and sortable)")
     @PreAuthorize("hasAuthority('EXPENSE_READ')")
     @GetMapping
-    public ApiResponse<List<ExpenseDto>> list(
+    public ApiResponse<PagedResponse<ExpenseDto>> list(
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) Integer month) {
-        return ApiResponse.ok(expenseService.list(year, month));
+            @RequestParam(required = false) Integer month,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        return ApiResponse.ok(expenseService.list(year, month, page, size, sort, direction));
     }
 
     @Operation(summary = "Record an expense")

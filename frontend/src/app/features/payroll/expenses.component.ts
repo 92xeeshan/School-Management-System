@@ -10,6 +10,7 @@ import { EmptyStateComponent } from '../../layout/empty-state/empty-state.compon
 import { Expense, ExpenseCategory, ExpenseChart, PAYMENT_METHODS } from './payroll.model';
 import { PayrollService } from './payroll.service';
 import { ExpenseChartComponent } from './expense-chart.component';
+import { DirectoryPagerComponent, SortDirection, sortIndicator, toggleSort } from '../../layout/directory-pager/directory-pager.component';
 
 @Component({
   selector: 'app-payroll-expenses',
@@ -22,6 +23,7 @@ import { ExpenseChartComponent } from './expense-chart.component';
     MatSelectModule,
     EmptyStateComponent,
     ExpenseChartComponent,
+    DirectoryPagerComponent,
   ],
   template: `
     <div class="stack">
@@ -95,12 +97,12 @@ import { ExpenseChartComponent } from './expense-chart.component';
           <table>
             <thead>
               <tr>
-                <th>{{ 'payroll.date' | translate }}</th>
+                <th class="sortable" (click)="sortBy('expenseDate')">{{ 'payroll.date' | translate }}<span class="sort-ind">{{ indicator('expenseDate') }}</span></th>
                 <th>{{ 'payroll.category' | translate }}</th>
-                <th>{{ 'payroll.vendor' | translate }}</th>
+                <th class="sortable" (click)="sortBy('vendor')">{{ 'payroll.vendor' | translate }}<span class="sort-ind">{{ indicator('vendor') }}</span></th>
                 <th>{{ 'payroll.description' | translate }}</th>
-                <th>{{ 'payroll.paymentMethod' | translate }}</th>
-                <th class="num">{{ 'payroll.amount' | translate }}</th>
+                <th class="sortable" (click)="sortBy('paymentMethod')">{{ 'payroll.paymentMethod' | translate }}<span class="sort-ind">{{ indicator('paymentMethod') }}</span></th>
+                <th class="num sortable" (click)="sortBy('amount')">{{ 'payroll.amount' | translate }}<span class="sort-ind">{{ indicator('amount') }}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -117,6 +119,10 @@ import { ExpenseChartComponent } from './expense-chart.component';
             </tbody>
           </table>
         </div>
+        <app-directory-pager
+          [pageIndex]="pageIndex" [pageSize]="pageSize"
+          [totalElements]="totalElements" [totalPages]="totalPages"
+          (pageChange)="onPage($event)" (pageSizeChange)="onPageSize($event)" />
       }
     </div>
   `,
@@ -141,6 +147,12 @@ export class ExpensesComponent implements OnInit {
   categories: ExpenseCategory[] = [];
   expenses: Expense[] = [];
   chart: ExpenseChart | null = null;
+  pageIndex = 0;
+  pageSize = 25;
+  totalElements = 0;
+  totalPages = 0;
+  sortKey = 'expenseDate';
+  sortDirection: SortDirection = 'desc';
   showForm = false;
   saving = false;
   paymentMethods = PAYMENT_METHODS;
@@ -176,12 +188,43 @@ export class ExpensesComponent implements OnInit {
 
   onYear(year: number): void {
     this.year = year;
+    this.pageIndex = 0;
+    this.refresh();
+  }
+
+  sortBy(key: string): void {
+    const next = toggleSort(this.sortKey, key, this.sortDirection);
+    this.sortKey = next.key;
+    this.sortDirection = next.direction;
+    this.pageIndex = 0;
+    this.refresh();
+  }
+
+  indicator(key: string): string {
+    return sortIndicator(this.sortKey, key, this.sortDirection);
+  }
+
+  onPage(page: number): void {
+    this.pageIndex = page;
+    this.refresh();
+  }
+
+  onPageSize(size: number): void {
+    this.pageSize = size;
+    this.pageIndex = 0;
     this.refresh();
   }
 
   refresh(): void {
-    this.payroll.listExpenses(this.year).subscribe((rows) => {
-      this.expenses = rows;
+    this.payroll.listExpenses(this.year, {
+      page: this.pageIndex,
+      size: this.pageSize,
+      sort: this.sortKey,
+      direction: this.sortDirection,
+    }).subscribe((page) => {
+      this.expenses = page?.content ?? [];
+      this.totalElements = page?.totalElements ?? 0;
+      this.totalPages = page?.totalPages ?? 0;
       this.cdr.markForCheck();
     });
     this.payroll.chart(this.year).subscribe((chart) => {

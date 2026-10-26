@@ -1,5 +1,7 @@
 package com.schoolms.notice;
 
+import com.schoolms.common.api.PageRequests;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.common.enums.NoticePriority;
 import com.schoolms.common.enums.NoticeStatus;
 import com.schoolms.common.enums.NoticeVisibility;
@@ -11,6 +13,8 @@ import com.schoolms.security.SecurityUtils;
 import com.schoolms.user.User;
 import com.schoolms.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,22 +36,24 @@ public class NoticeService {
     private final com.schoolms.academics.SchoolClassRepository classRepository;
     private final com.schoolms.academics.SectionRepository sectionRepository;
 
+    private static final Map<String, String> DIRECTORY_SORT = Map.of(
+            "title", "title",
+            "status", "status",
+            "publishAt", "publishAt",
+            "expiresAt", "expiresAt");
+
     @Transactional(readOnly = true)
-    public List<NoticeDto> list(String status, boolean mine) {
+    public PagedResponse<NoticeDto> list(String status, boolean mine, String query, int page, int size,
+                                         String sort, String direction) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        List<Notice> notices;
-        if (mine) {
-            UUID userId = SecurityUtils.currentUserId();
-            notices = noticeRepository.findBySchoolIdOrderByPublishAtDesc(schoolId).stream()
-                    .filter(n -> n.getAuthorId().equals(userId))
-                    .toList();
-        } else if (status != null && !status.isBlank()) {
-            NoticeStatus parsed = parseStatus(status);
-            notices = noticeRepository.findBySchoolIdAndStatusOrderByPublishAtDesc(schoolId, parsed);
-        } else {
-            notices = noticeRepository.findBySchoolIdOrderByPublishAtDesc(schoolId);
-        }
-        return notices.stream().map(this::toDto).toList();
+        UUID authorId = mine ? SecurityUtils.currentUserId() : null;
+        NoticeStatus parsed = status == null || status.isBlank() ? null : parseStatus(status);
+        String like = PageRequests.likePattern(query);
+        PageRequest pageable = PageRequests.of(page, size, sort,
+                direction == null || direction.isBlank() ? "desc" : direction,
+                "publishAt", DIRECTORY_SORT);
+        Page<Notice> result = noticeRepository.searchDirectory(schoolId, authorId, parsed, like, pageable);
+        return PagedResponse.from(result.map(this::toDto));
     }
 
     @Transactional(readOnly = true)

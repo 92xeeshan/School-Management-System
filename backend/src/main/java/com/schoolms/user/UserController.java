@@ -1,6 +1,7 @@
 package com.schoolms.user;
 
 import com.schoolms.common.api.ApiResponse;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.auth.CredentialService;
 import com.schoolms.auth.dto.CredentialAuditDto;
 import com.schoolms.auth.dto.ResetPasswordRequest;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -36,11 +38,16 @@ public class UserController {
     private final UserService userService;
     private final CredentialService credentialService;
 
-    @Operation(summary = "List users in the current school")
+    @Operation(summary = "List users in the current school (paginated, filterable and sortable)")
     @PreAuthorize("hasAuthority('USER_READ')")
     @GetMapping
-    public ApiResponse<List<UserDto>> list() {
-        return ApiResponse.ok(userService.list());
+    public ApiResponse<PagedResponse<UserDto>> list(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        return ApiResponse.ok(userService.list(query, page, size, sort, direction));
     }
 
     @Operation(summary = "Get a user")

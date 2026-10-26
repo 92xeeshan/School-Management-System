@@ -15,6 +15,7 @@ import com.schoolms.certificate.dto.CertificateRequestDto;
 import com.schoolms.certificate.dto.RejectCertificateRequest;
 import com.schoolms.certificate.dto.ReviewCertificateRequest;
 import com.schoolms.certificate.dto.SubmitCertificateRequest;
+import com.schoolms.common.api.PageRequests;
 import com.schoolms.common.api.PagedResponse;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
@@ -40,6 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -51,6 +53,10 @@ public class CertificateRequestService {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd MMM yyyy");
     private static final Set<CertificateRequestStatus> PENDING = Set.of(
             CertificateRequestStatus.SUBMITTED, CertificateRequestStatus.TEACHER_REVIEWED);
+    private static final Map<String, String> DIRECTORY_SORT = Map.of(
+            "type", "certificateType",
+            "status", "status",
+            "createdAt", "createdAt");
 
     private final CertificateRequestRepository requestRepository;
     private final CertificateIssuedRepository issuedRepository;
@@ -113,15 +119,27 @@ public class CertificateRequestService {
 
     @Transactional(readOnly = true)
     public PagedResponse<CertificateRequestDto> list(CertificateType type, CertificateRequestStatus status,
-                                                     int page, int size) {
+                                                     String query, int page, int size,
+                                                     String sort, String direction) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         UserPrincipal principal = SecurityUtils.currentPrincipal();
         if (!canStaff(principal)) {
             throw new AccessDeniedException("auth.access_denied");
         }
-        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        PageRequest pageable = PageRequests.of(page, size, sort,
+                direction == null || direction.isBlank() ? "desc" : direction,
+                "createdAt", DIRECTORY_SORT);
+        String like = PageRequests.likePattern(query);
         Set<UUID> scoped = scopedStudentIds(principal, schoolId);
-        Page<CertificateRequest> result = pageRequests(schoolId, scoped, type, status, pageable);
+        Page<CertificateRequest> result;
+        if (scoped != null) {
+            if (scoped.isEmpty()) {
+                return new PagedResponse<>(List.of(), pageable.getPageNumber(), pageable.getPageSize(), 0, 0);
+            }
+            result = requestRepository.searchDirectoryScoped(schoolId, scoped, type, status, like, pageable);
+        } else {
+            result = requestRepository.searchDirectory(schoolId, type, status, like, pageable);
+        }
         List<CertificateRequestDto> content = result.getContent().stream()
                 .map(row -> {
                     Student student = studentRepository.findByIdAndSchoolId(row.getStudentId(), schoolId).orElse(null);

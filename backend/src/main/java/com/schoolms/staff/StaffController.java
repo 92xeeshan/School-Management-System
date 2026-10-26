@@ -1,6 +1,7 @@
 package com.schoolms.staff;
 
 import com.schoolms.common.api.ApiResponse;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.staff.dto.ClassTeacherRequest;
 import com.schoolms.staff.dto.SectionRefDto;
 import com.schoolms.staff.dto.StaffMemberDto;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -32,11 +34,16 @@ public class StaffController {
 
     // ---- Teaching staff --------------------------------------------------
 
-    @Operation(summary = "List teaching staff")
+    @Operation(summary = "List teaching staff (paginated, filterable and sortable)")
     @PreAuthorize("hasAuthority('STAFF_READ')")
     @GetMapping("/teachers")
-    public ApiResponse<List<StaffMemberDto>> listTeachers() {
-        return ApiResponse.ok(staffService.listTeachingStaff());
+    public ApiResponse<PagedResponse<StaffMemberDto>> listTeachers(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        return ApiResponse.ok(staffService.listTeachingStaff(query, page, size, sort, direction));
     }
 
     @Operation(summary = "Create a teaching staff member")
@@ -72,11 +79,16 @@ public class StaffController {
 
     // ---- Non-teaching staff ----------------------------------------------
 
-    @Operation(summary = "List non-teaching staff")
+    @Operation(summary = "List non-teaching staff (paginated, filterable and sortable)")
     @PreAuthorize("hasAuthority('STAFF_READ')")
     @GetMapping("/non-teaching")
-    public ApiResponse<List<StaffMemberDto>> listNonTeaching() {
-        return ApiResponse.ok(staffService.listNonTeachingStaff());
+    public ApiResponse<PagedResponse<StaffMemberDto>> listNonTeaching(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        return ApiResponse.ok(staffService.listNonTeachingStaff(query, page, size, sort, direction));
     }
 
     @Operation(summary = "Create a non-teaching staff member")

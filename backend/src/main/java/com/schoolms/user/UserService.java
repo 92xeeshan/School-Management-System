@@ -4,6 +4,8 @@ import com.schoolms.auth.CredentialAccountService;
 import com.schoolms.auth.CredentialGenerator;
 import com.schoolms.auth.PasswordPolicy;
 import com.schoolms.auth.RefreshTokenRepository;
+import com.schoolms.common.api.PageRequests;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.common.enums.UserStatus;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.security.PermissionCacheService;
@@ -14,6 +16,8 @@ import com.schoolms.user.dto.RoleRequest;
 import com.schoolms.user.dto.UpdateUserRequest;
 import com.schoolms.user.dto.UserDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -36,12 +41,23 @@ public class UserService {
     private final CredentialAccountService credentialAccountService;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    private static final Map<String, String> DIRECTORY_SORT = Map.of(
+            "username", "username",
+            "name", "firstName",
+            "status", "status",
+            "createdAt", "createdAt",
+            "lastLogin", "lastLoginAt");
+
     @Transactional(readOnly = true)
-    public List<UserDto> list() {
+    public PagedResponse<UserDto> list(String query, int page, int size, String sort, String direction) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        return userRepository.findBySchoolIdOrderByCreatedAtDesc(schoolId).stream()
-                .map(user -> UserDto.from(user, rolesOf(user.getId())))
-                .toList();
+        String normalized = PageRequests.normalizeQuery(query);
+        PageRequest pageable = PageRequests.of(page, size, sort,
+                direction == null || direction.isBlank() ? "desc" : direction,
+                "createdAt", DIRECTORY_SORT);
+        Page<User> result = userRepository.searchDirectory(
+                schoolId, normalized, PageRequests.likePattern(normalized), pageable);
+        return PagedResponse.from(result.map(user -> UserDto.from(user, rolesOf(user.getId()))));
     }
 
     @Transactional(readOnly = true)

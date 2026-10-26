@@ -1,5 +1,7 @@
 package com.schoolms.expense;
 
+import com.schoolms.common.api.PageRequests;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.common.enums.PaymentMethod;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
@@ -12,6 +14,8 @@ import com.schoolms.expense.dto.ExpenseDto;
 import com.schoolms.expense.dto.ExpenseRequest;
 import com.schoolms.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,8 +57,15 @@ public class ExpenseService {
         return ExpenseCategoryDto.from(categoryRepository.save(category));
     }
 
+    private static final Map<String, String> DIRECTORY_SORT = Map.of(
+            "expenseDate", "expenseDate",
+            "amount", "amount",
+            "vendor", "vendor",
+            "paymentMethod", "paymentMethod");
+
     @Transactional(readOnly = true)
-    public List<ExpenseDto> list(Integer year, Integer month) {
+    public PagedResponse<ExpenseDto> list(Integer year, Integer month, int page, int size,
+                                          String sort, String direction) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         LocalDate from;
         LocalDate to;
@@ -71,10 +82,11 @@ public class ExpenseService {
             to = LocalDate.of(current, 12, 31);
         }
         Map<UUID, ExpenseCategory> categories = categoriesById(schoolId);
-        return expenseRepository.findBySchoolIdAndExpenseDateBetweenOrderByExpenseDateDesc(schoolId, from, to)
-                .stream()
-                .map(row -> toDto(row, categories.get(row.getCategoryId())))
-                .toList();
+        PageRequest pageable = PageRequests.of(page, size, sort,
+                direction == null || direction.isBlank() ? "desc" : direction,
+                "expenseDate", DIRECTORY_SORT);
+        Page<Expense> result = expenseRepository.findBySchoolIdAndExpenseDateBetween(schoolId, from, to, pageable);
+        return PagedResponse.from(result.map(row -> toDto(row, categories.get(row.getCategoryId()))));
     }
 
     @Transactional

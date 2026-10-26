@@ -1,6 +1,7 @@
 package com.schoolms.quiz;
 
 import com.schoolms.common.api.ApiResponse;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.quiz.dto.QuizAttemptDto;
 import com.schoolms.quiz.dto.QuizDto;
 import com.schoolms.quiz.dto.QuizGradeRequest;
@@ -50,14 +51,20 @@ public class QuizController {
         return ApiResponse.ok(quizService.options());
     }
 
-    @Operation(summary = "List question bank")
+    @Operation(summary = "List question bank (paginated, filterable and sortable)")
     @PreAuthorize("hasAnyAuthority('QUIZ_READ', 'QUIZ_MANAGE')")
     @GetMapping("/questions")
-    public ApiResponse<List<QuizQuestionDto>> listQuestions(
+    public ApiResponse<PagedResponse<QuizQuestionDto>> listQuestions(
             @RequestParam(required = false) UUID subjectId,
             @RequestParam(required = false) UUID classId,
-            @RequestParam(required = false) String questionType) {
-        return ApiResponse.ok(quizService.listQuestions(subjectId, classId, questionType));
+            @RequestParam(required = false) String questionType,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        return ApiResponse.ok(quizService.listQuestions(
+                subjectId, classId, questionType, query, page, size, sort, direction));
     }
 
     @Operation(summary = "Create a question")
@@ -83,18 +90,28 @@ public class QuizController {
         return ApiResponse.okMessage("quiz.question_deleted");
     }
 
-    @Operation(summary = "List quizzes")
+    @Operation(summary = "List quizzes. Omit page/size to return the full filtered list (dashboard).")
     @PreAuthorize("hasAnyAuthority('QUIZ_READ', 'QUIZ_MANAGE')")
     @GetMapping
-    public ApiResponse<List<QuizDto>> list(
+    public ApiResponse<?> list(
             @RequestParam(required = false) UUID academicYearId,
             @RequestParam(required = false) UUID classId,
             @RequestParam(required = false) UUID sectionId,
             @RequestParam(required = false) UUID subjectId,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) UUID studentId) {
+            @RequestParam(required = false) UUID studentId,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        if (page == null && size == null) {
+            return ApiResponse.ok(quizService.listQuizzes(
+                    academicYearId, classId, sectionId, subjectId, status, studentId));
+        }
         return ApiResponse.ok(quizService.listQuizzes(
-                academicYearId, classId, sectionId, subjectId, status, studentId));
+                academicYearId, classId, sectionId, subjectId, status, studentId,
+                query, page == null ? 0 : page, size == null ? 20 : size, sort, direction));
     }
 
     @Operation(summary = "Get a quiz")

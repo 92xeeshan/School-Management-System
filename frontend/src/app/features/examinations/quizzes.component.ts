@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
-import { ApiError, ApiResponse } from '../../core/models/api.model';
+import { ApiError, ApiResponse, PagedResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { DirectoryPagerComponent, SortDirection, sortIndicator, toggleSort } from '../../layout/directory-pager/directory-pager.component';
 
 interface YearOption { id: string; name: string; current: boolean }
 interface SectionOption { id: string; name: string }
@@ -157,7 +158,7 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
 
 @Component({
   selector: 'app-quizzes',
-  imports: [TranslateModule, ReactiveFormsModule],
+  imports: [TranslateModule, ReactiveFormsModule, DirectoryPagerComponent],
   template: `
     <div class="tab-page">
       <div class="page-header">
@@ -233,6 +234,8 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
                 <option [value]="status">{{ statusLabel(status) | translate }}</option>
               }
             </select>
+            <input type="search" [value]="quizQuery" [placeholder]="'common.search' | translate"
+                   (input)="onQuizSearch($any($event.target).value)" />
           } @else {
             <select [value]="bankClassId" (change)="onBankClass($event)">
               <option value="">{{ 'examinations.schedulesPage.allClasses' | translate }}</option>
@@ -252,6 +255,8 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
                 <option [value]="type">{{ typeLabel(type) | translate }}</option>
               }
             </select>
+            <input type="search" [value]="bankQuery" [placeholder]="'common.search' | translate"
+                   (input)="onBankSearch($any($event.target).value)" />
           }
         </div>
       }
@@ -262,13 +267,13 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
             <table>
               <thead>
                 <tr>
-                  <th>{{ 'examinations.quizzesPage.titleField' | translate }}</th>
-                  <th>{{ 'examinations.quizzesPage.class' | translate }}</th>
-                  <th>{{ 'examinations.quizzesPage.subject' | translate }}</th>
+                  <th class="sortable" (click)="sortQuizzesBy('title')">{{ 'examinations.quizzesPage.titleField' | translate }}<span class="sort-ind">{{ quizIndicator('title') }}</span></th>
+                  <th class="sortable" (click)="sortQuizzesBy('class')">{{ 'examinations.quizzesPage.class' | translate }}<span class="sort-ind">{{ quizIndicator('class') }}</span></th>
+                  <th class="sortable" (click)="sortQuizzesBy('subject')">{{ 'examinations.quizzesPage.subject' | translate }}<span class="sort-ind">{{ quizIndicator('subject') }}</span></th>
                   <th>{{ 'examinations.quizzesPage.duration' | translate }}</th>
                   <th>{{ 'examinations.quizzesPage.questionCount' | translate }}</th>
                   <th>{{ 'examinations.quizzesPage.maxScore' | translate }}</th>
-                  <th>{{ 'examinations.quizzesPage.status' | translate }}</th>
+                  <th class="sortable" (click)="sortQuizzesBy('status')">{{ 'examinations.quizzesPage.status' | translate }}<span class="sort-ind">{{ quizIndicator('status') }}</span></th>
                   <th>{{ 'common.actions' | translate }}</th>
                 </tr>
               </thead>
@@ -332,6 +337,10 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
               </tbody>
             </table>
           </div>
+          <app-directory-pager
+            [pageIndex]="quizPageIndex" [pageSize]="quizPageSize"
+            [totalElements]="quizTotalElements" [totalPages]="quizTotalPages"
+            (pageChange)="onQuizPage($event)" (pageSizeChange)="onQuizPageSize($event)" />
         </div>
       }
 
@@ -341,11 +350,11 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
             <table>
               <thead>
                 <tr>
-                  <th>{{ 'examinations.quizzesPage.prompt' | translate }}</th>
-                  <th>{{ 'examinations.quizzesPage.questionType' | translate }}</th>
-                  <th>{{ 'examinations.quizzesPage.subject' | translate }}</th>
-                  <th>{{ 'examinations.quizzesPage.class' | translate }}</th>
-                  <th>{{ 'examinations.quizzesPage.marks' | translate }}</th>
+                  <th class="sortable" (click)="sortQuestionsBy('prompt')">{{ 'examinations.quizzesPage.prompt' | translate }}<span class="sort-ind">{{ bankIndicator('prompt') }}</span></th>
+                  <th class="sortable" (click)="sortQuestionsBy('questionType')">{{ 'examinations.quizzesPage.questionType' | translate }}<span class="sort-ind">{{ bankIndicator('questionType') }}</span></th>
+                  <th class="sortable" (click)="sortQuestionsBy('subject')">{{ 'examinations.quizzesPage.subject' | translate }}<span class="sort-ind">{{ bankIndicator('subject') }}</span></th>
+                  <th class="sortable" (click)="sortQuestionsBy('class')">{{ 'examinations.quizzesPage.class' | translate }}<span class="sort-ind">{{ bankIndicator('class') }}</span></th>
+                  <th class="sortable" (click)="sortQuestionsBy('marks')">{{ 'examinations.quizzesPage.marks' | translate }}<span class="sort-ind">{{ bankIndicator('marks') }}</span></th>
                   <th>{{ 'common.actions' | translate }}</th>
                 </tr>
               </thead>
@@ -383,7 +392,7 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
         <div class="filters">
           <select [value]="selectedQuizId" (change)="onSelectedQuiz($event)">
             <option value="">{{ 'examinations.quizzesPage.quizzes' | translate }}</option>
-            @for (quiz of quizzes; track quiz.id) {
+            @for (quiz of quizChoices; track quiz.id) {
               <option [value]="quiz.id">{{ quiz.title }} — {{ quiz.className }}</option>
             }
           </select>
@@ -436,10 +445,14 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
                   } @empty {
                     <tr><td colspan="5" class="center">{{ 'common.noData' | translate }}</td></tr>
                   }
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
           </div>
+          <app-directory-pager
+            [pageIndex]="bankPageIndex" [pageSize]="bankPageSize"
+            [totalElements]="bankTotalElements" [totalPages]="bankTotalPages"
+            (pageChange)="onBankPage($event)" (pageSizeChange)="onBankPageSize($event)" />
+        </div>
           @if (offlineGrid.canEdit) {
             <div class="form-actions inline">
               <button class="btn btn-primary" type="button" (click)="saveOffline()" [disabled]="busy">
@@ -876,6 +889,7 @@ type PageTab = 'quizzes' | 'bank' | 'offline' | 'results';
 export class QuizzesComponent implements OnInit, OnDestroy {
   options: QuizOptions | null = null;
   quizzes: QuizRow[] = [];
+  quizChoices: QuizRow[] = [];
   questions: QuizQuestion[] = [];
   results: ResultRow[] = [];
   offlineGrid: OfflineGrid | null = null;
@@ -892,6 +906,22 @@ export class QuizzesComponent implements OnInit, OnDestroy {
   bankClassId = '';
   bankSubjectId = '';
   bankType = '';
+  quizQuery = '';
+  bankQuery = '';
+  quizPageIndex = 0;
+  quizPageSize = 25;
+  quizTotalElements = 0;
+  quizTotalPages = 0;
+  quizSortKey = 'createdAt';
+  quizSortDirection: SortDirection = 'desc';
+  bankPageIndex = 0;
+  bankPageSize = 25;
+  bankTotalElements = 0;
+  bankTotalPages = 0;
+  bankSortKey = 'createdAt';
+  bankSortDirection: SortDirection = 'desc';
+  private quizSearchTimer: ReturnType<typeof setTimeout> | null = null;
+  private bankSearchTimer: ReturnType<typeof setTimeout> | null = null;
   selectedQuizId = '';
   loading = false;
   saving = false;
@@ -1026,16 +1056,12 @@ export class QuizzesComponent implements OnInit, OnDestroy {
     } else if (tab === 'bank') {
       this.reloadQuestions();
     } else if (tab === 'offline') {
-      if (!this.quizzes.length) {
-        this.reloadQuizzes();
-      }
+      this.reloadQuizChoices();
       if (this.selectedQuizId) {
         this.reloadOffline();
       }
     } else {
-      if (!this.quizzes.length) {
-        this.reloadQuizzes();
-      }
+      this.reloadQuizChoices();
       if (this.selectedQuizId) {
         this.reloadResults();
       }
@@ -1045,42 +1071,118 @@ export class QuizzesComponent implements OnInit, OnDestroy {
 
   onYearChange(event: Event): void {
     this.yearId = (event.target as HTMLSelectElement).value;
+    this.quizPageIndex = 0;
     this.reloadQuizzes();
   }
 
   onClassFilter(event: Event): void {
     this.classId = (event.target as HTMLSelectElement).value;
     this.sectionId = '';
+    this.quizPageIndex = 0;
     this.reloadQuizzes();
   }
 
   onSectionFilter(event: Event): void {
     this.sectionId = (event.target as HTMLSelectElement).value;
+    this.quizPageIndex = 0;
     this.reloadQuizzes();
   }
 
   onSubjectFilter(event: Event): void {
     this.subjectId = (event.target as HTMLSelectElement).value;
+    this.quizPageIndex = 0;
     this.reloadQuizzes();
   }
 
   onStatusFilter(event: Event): void {
     this.statusFilter = (event.target as HTMLSelectElement).value;
+    this.quizPageIndex = 0;
     this.reloadQuizzes();
+  }
+
+  onQuizSearch(value: string): void {
+    this.quizQuery = value;
+    if (this.quizSearchTimer) {
+      clearTimeout(this.quizSearchTimer);
+    }
+    this.quizSearchTimer = setTimeout(() => {
+      this.quizPageIndex = 0;
+      this.reloadQuizzes();
+    }, 300);
+  }
+
+  onBankSearch(value: string): void {
+    this.bankQuery = value;
+    if (this.bankSearchTimer) {
+      clearTimeout(this.bankSearchTimer);
+    }
+    this.bankSearchTimer = setTimeout(() => {
+      this.bankPageIndex = 0;
+      this.reloadQuestions();
+    }, 300);
+  }
+
+  sortQuizzesBy(key: string): void {
+    const next = toggleSort(this.quizSortKey, key, this.quizSortDirection);
+    this.quizSortKey = next.key;
+    this.quizSortDirection = next.direction;
+    this.quizPageIndex = 0;
+    this.reloadQuizzes();
+  }
+
+  sortQuestionsBy(key: string): void {
+    const next = toggleSort(this.bankSortKey, key, this.bankSortDirection);
+    this.bankSortKey = next.key;
+    this.bankSortDirection = next.direction;
+    this.bankPageIndex = 0;
+    this.reloadQuestions();
+  }
+
+  quizIndicator(key: string): string {
+    return sortIndicator(this.quizSortKey, key, this.quizSortDirection);
+  }
+
+  bankIndicator(key: string): string {
+    return sortIndicator(this.bankSortKey, key, this.bankSortDirection);
+  }
+
+  onQuizPage(page: number): void {
+    this.quizPageIndex = page;
+    this.reloadQuizzes();
+  }
+
+  onQuizPageSize(size: number): void {
+    this.quizPageSize = size;
+    this.quizPageIndex = 0;
+    this.reloadQuizzes();
+  }
+
+  onBankPage(page: number): void {
+    this.bankPageIndex = page;
+    this.reloadQuestions();
+  }
+
+  onBankPageSize(size: number): void {
+    this.bankPageSize = size;
+    this.bankPageIndex = 0;
+    this.reloadQuestions();
   }
 
   onBankClass(event: Event): void {
     this.bankClassId = (event.target as HTMLSelectElement).value;
+    this.bankPageIndex = 0;
     this.reloadQuestions();
   }
 
   onBankSubject(event: Event): void {
     this.bankSubjectId = (event.target as HTMLSelectElement).value;
+    this.bankPageIndex = 0;
     this.reloadQuestions();
   }
 
   onBankType(event: Event): void {
     this.bankType = (event.target as HTMLSelectElement).value;
+    this.bankPageIndex = 0;
     this.reloadQuestions();
   }
 
@@ -1563,9 +1665,7 @@ export class QuizzesComponent implements OnInit, OnDestroy {
     });
   }
 
-  private reloadQuizzes(): void {
-    this.loading = true;
-    this.pageError = '';
+  private quizFilterParams(): HttpParams {
     let params = new HttpParams();
     if (this.yearId) {
       params = params.set('academicYearId', this.yearId);
@@ -1586,9 +1686,25 @@ export class QuizzesComponent implements OnInit, OnDestroy {
     if (this.auth.hasRole('PARENT') && childId) {
       params = params.set('studentId', childId);
     }
-    this.http.get<ApiResponse<QuizRow[]>>('/api/quizzes', { params }).subscribe({
+    return params;
+  }
+
+  private reloadQuizzes(): void {
+    this.loading = true;
+    this.pageError = '';
+    let params = this.quizFilterParams()
+      .set('page', String(this.quizPageIndex))
+      .set('size', String(this.quizPageSize))
+      .set('sort', this.quizSortKey)
+      .set('direction', this.quizSortDirection);
+    if (this.quizQuery.trim()) {
+      params = params.set('query', this.quizQuery.trim());
+    }
+    this.http.get<ApiResponse<PagedResponse<QuizRow>>>('/api/quizzes', { params }).subscribe({
       next: (res) => {
-        this.quizzes = res.data ?? [];
+        this.quizzes = res.data?.content ?? [];
+        this.quizTotalElements = res.data?.totalElements ?? 0;
+        this.quizTotalPages = res.data?.totalPages ?? 0;
         this.loading = false;
         if (!this.selectedQuizId && this.quizzes[0]) {
           this.selectedQuizId = this.quizzes[0].id;
@@ -1602,9 +1718,26 @@ export class QuizzesComponent implements OnInit, OnDestroy {
     });
   }
 
+  private reloadQuizChoices(): void {
+    this.http.get<ApiResponse<QuizRow[]>>('/api/quizzes', { params: this.quizFilterParams() }).subscribe({
+      next: (res) => {
+        this.quizChoices = res.data ?? [];
+        if (!this.selectedQuizId && this.quizChoices[0]) {
+          this.selectedQuizId = this.quizChoices[0].id;
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => this.failPage(err),
+    });
+  }
+
   private reloadQuestions(): void {
     this.loading = true;
-    let params = new HttpParams();
+    let params = new HttpParams()
+      .set('page', String(this.bankPageIndex))
+      .set('size', String(this.bankPageSize))
+      .set('sort', this.bankSortKey)
+      .set('direction', this.bankSortDirection);
     if (this.bankClassId) {
       params = params.set('classId', this.bankClassId);
     }
@@ -1614,9 +1747,14 @@ export class QuizzesComponent implements OnInit, OnDestroy {
     if (this.bankType) {
       params = params.set('questionType', this.bankType);
     }
-    this.http.get<ApiResponse<QuizQuestion[]>>('/api/quizzes/questions', { params }).subscribe({
+    if (this.bankQuery.trim()) {
+      params = params.set('query', this.bankQuery.trim());
+    }
+    this.http.get<ApiResponse<PagedResponse<QuizQuestion>>>('/api/quizzes/questions', { params }).subscribe({
       next: (res) => {
-        this.questions = res.data ?? [];
+        this.questions = res.data?.content ?? [];
+        this.bankTotalElements = res.data?.totalElements ?? 0;
+        this.bankTotalPages = res.data?.totalPages ?? 0;
         this.loading = false;
         this.cdr.markForCheck();
       },

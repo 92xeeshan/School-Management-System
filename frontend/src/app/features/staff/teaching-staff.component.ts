@@ -8,10 +8,11 @@ import { StaffService } from './staff.service';
 import { createStaffForm, staffFormToPayload, staffFormValue } from './staff-form.util';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/credential-handover/credential-handover.component';
+import { DirectoryPagerComponent, SortDirection, sortIndicator, toggleSort } from '../../layout/directory-pager/directory-pager.component';
 
 @Component({
   selector: 'app-teaching-staff',
-  imports: [TranslateModule, ReactiveFormsModule, EmptyStateComponent, CredentialHandoverComponent],
+  imports: [TranslateModule, ReactiveFormsModule, EmptyStateComponent, CredentialHandoverComponent, DirectoryPagerComponent],
   template: `
     <app-credential-handover [credentials]="issuedCredentials" (closed)="issuedCredentials = null" />
     @if (pageError) {
@@ -20,15 +21,15 @@ import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/cre
 
     <div class="card">
       <div class="card-toolbar">
-        <input class="search" type="search" [placeholder]="'common.search' | translate"
-               (input)="filter = $any($event.target).value" />
+        <input class="search" type="search" [value]="filter" [placeholder]="'common.search' | translate"
+               (input)="onSearch($any($event.target).value)" />
         @if (canCreate) {
           <button class="btn btn-primary" type="button" (click)="openAddModal()">
             {{ 'staff.addTeacher' | translate }}
           </button>
         }
       </div>
-      @if (filteredMembers.length === 0) {
+      @if (members.length === 0) {
         <app-empty-state icon="groups" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate">
           @if (canCreate) {
             <button class="btn btn-primary" type="button" (click)="openAddModal()">{{ 'staff.addTeacher' | translate }}</button>
@@ -39,20 +40,20 @@ import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/cre
         <table class="data-table">
           <thead>
             <tr>
-              <th>{{ 'staff.employeeNo' | translate }}</th>
-              <th>{{ 'staff.name' | translate }}</th>
-              <th>{{ 'staff.designation' | translate }}</th>
-              <th>{{ 'staff.department' | translate }}</th>
+              <th class="sortable" (click)="sortBy('employeeNo')">{{ 'staff.employeeNo' | translate }}<span class="sort-ind">{{ indicator('employeeNo') }}</span></th>
+              <th class="sortable" (click)="sortBy('name')">{{ 'staff.name' | translate }}<span class="sort-ind">{{ indicator('name') }}</span></th>
+              <th class="sortable" (click)="sortBy('designation')">{{ 'staff.designation' | translate }}<span class="sort-ind">{{ indicator('designation') }}</span></th>
+              <th class="sortable" (click)="sortBy('department')">{{ 'staff.department' | translate }}<span class="sort-ind">{{ indicator('department') }}</span></th>
               <th>{{ 'staff.employmentType' | translate }}</th>
               <th>{{ 'staff.classTeacher' | translate }}</th>
-              <th>{{ 'common.status' | translate }}</th>
+              <th class="sortable" (click)="sortBy('status')">{{ 'common.status' | translate }}<span class="sort-ind">{{ indicator('status') }}</span></th>
               @if (canUpdate || canDelete) {
                 <th>{{ 'common.actions' | translate }}</th>
               }
             </tr>
           </thead>
           <tbody>
-            @for (member of filteredMembers; track member.id) {
+            @for (member of members; track member.id) {
               <tr>
                 <td class="strong">{{ member.employeeNo }}</td>
                 <td>
@@ -109,6 +110,10 @@ import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/cre
           </tbody>
         </table>
       </div>
+      <app-directory-pager
+        [pageIndex]="pageIndex" [pageSize]="pageSize"
+        [totalElements]="totalElements" [totalPages]="totalPages"
+        (pageChange)="onPage($event)" (pageSizeChange)="onPageSize($event)" />
       }
     </div>
 
@@ -280,6 +285,13 @@ export class TeachingStaffComponent implements OnInit {
   members: StaffMember[] = [];
   sections: SectionRef[] = [];
   filter = '';
+  pageIndex = 0;
+  pageSize = 25;
+  totalElements = 0;
+  totalPages = 0;
+  sortKey = 'name';
+  sortDirection: SortDirection = 'asc';
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
   pageError: string | null = null;
 
   showModal = false;
@@ -322,15 +334,38 @@ export class TeachingStaffComponent implements OnInit {
     return this.auth.hasPermission('STAFF_DELETE');
   }
 
-  get filteredMembers(): StaffMember[] {
-    const query = this.filter.trim().toLowerCase();
-    if (!query) {
-      return this.members;
+  onSearch(value: string): void {
+    this.filter = value;
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
     }
-    return this.members.filter((member) =>
-      [member.displayName, member.employeeNo, member.designation, member.department]
-        .some((value) => (value ?? '').toLowerCase().includes(query))
-    );
+    this.searchTimer = setTimeout(() => {
+      this.pageIndex = 0;
+      this.load();
+    }, 300);
+  }
+
+  sortBy(key: string): void {
+    const next = toggleSort(this.sortKey, key, this.sortDirection);
+    this.sortKey = next.key;
+    this.sortDirection = next.direction;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  indicator(key: string): string {
+    return sortIndicator(this.sortKey, key, this.sortDirection);
+  }
+
+  onPage(page: number): void {
+    this.pageIndex = page;
+    this.load();
+  }
+
+  onPageSize(size: number): void {
+    this.pageSize = size;
+    this.pageIndex = 0;
+    this.load();
   }
 
   employmentLabel(type: string): string {
@@ -478,11 +513,19 @@ export class TeachingStaffComponent implements OnInit {
 
   private load(): void {
     this.staffService
-      .listTeaching()
+      .listTeaching({
+        query: this.filter.trim() || undefined,
+        page: this.pageIndex,
+        size: this.pageSize,
+        sort: this.sortKey,
+        direction: this.sortDirection,
+      })
       .pipe(finalize(() => this.cdr.markForCheck()))
       .subscribe({
-        next: (members) => {
-          this.members = members;
+        next: (page) => {
+          this.members = page?.content ?? [];
+          this.totalElements = page?.totalElements ?? 0;
+          this.totalPages = page?.totalPages ?? 0;
           this.pageError = null;
         },
         error: () => {

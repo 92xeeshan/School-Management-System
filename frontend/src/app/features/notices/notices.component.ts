@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@
 import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
-import { ApiResponse } from '../../core/models/api.model';
+import { ApiResponse, PagedResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
+import { DirectoryPagerComponent, SortDirection, sortIndicator, toggleSort } from '../../layout/directory-pager/directory-pager.component';
 
 interface Notice {
   id: string;
@@ -41,7 +42,7 @@ function toNotice(n: BackendNotice): Notice {
 
 @Component({
   selector: 'app-notices',
-  imports: [TranslateModule, ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent],
+  imports: [TranslateModule, ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent, DirectoryPagerComponent],
   template: `
     <div class="page">
       <app-page-header [title]="'notices.title' | translate" [subtitle]="'notices.subtitle' | translate" />
@@ -87,6 +88,10 @@ function toNotice(n: BackendNotice): Notice {
       }
 
       <div class="card">
+        <div class="card-toolbar">
+          <input class="search" type="search" [value]="query" [placeholder]="'common.search' | translate"
+                 (input)="onSearch($any($event.target).value)" />
+        </div>
         @if (notices.length === 0) {
           <app-empty-state icon="campaign" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate" />
         } @else {
@@ -94,11 +99,11 @@ function toNotice(n: BackendNotice): Notice {
           <table class="data-table">
             <thead>
               <tr>
-                <th>{{ 'notices.titleField' | translate }}</th>
+                <th class="sortable" (click)="sortBy('title')">{{ 'notices.titleField' | translate }}<span class="sort-ind">{{ indicator('title') }}</span></th>
                 <th>{{ 'notices.audience' | translate }}</th>
-                <th>{{ 'notices.publishedOn' | translate }}</th>
-                <th>{{ 'notices.expiresOn' | translate }}</th>
-                <th>{{ 'common.status' | translate }}</th>
+                <th class="sortable" (click)="sortBy('publishAt')">{{ 'notices.publishedOn' | translate }}<span class="sort-ind">{{ indicator('publishAt') }}</span></th>
+                <th class="sortable" (click)="sortBy('expiresAt')">{{ 'notices.expiresOn' | translate }}<span class="sort-ind">{{ indicator('expiresAt') }}</span></th>
+                <th class="sortable" (click)="sortBy('status')">{{ 'common.status' | translate }}<span class="sort-ind">{{ indicator('status') }}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -116,6 +121,10 @@ function toNotice(n: BackendNotice): Notice {
             </tbody>
           </table>
         </div>
+        <app-directory-pager
+          [pageIndex]="pageIndex" [pageSize]="pageSize"
+          [totalElements]="totalElements" [totalPages]="totalPages"
+          (pageChange)="onPage($event)" (pageSizeChange)="onPageSize($event)" />
         }
       </div>
     </div>
@@ -149,6 +158,14 @@ export class NoticesComponent implements OnInit {
   });
 
   notices: Notice[] = [];
+  query = '';
+  pageIndex = 0;
+  pageSize = 25;
+  totalElements = 0;
+  totalPages = 0;
+  sortKey = 'publishAt';
+  sortDirection: SortDirection = 'desc';
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private auth: AuthService) {}
 
@@ -157,9 +174,58 @@ export class NoticesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.http.get<ApiResponse<BackendNotice[]>>('/api/notices').subscribe({
+    this.load();
+  }
+
+  onSearch(value: string): void {
+    this.query = value;
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.searchTimer = setTimeout(() => {
+      this.pageIndex = 0;
+      this.load();
+    }, 300);
+  }
+
+  sortBy(key: string): void {
+    const next = toggleSort(this.sortKey, key, this.sortDirection);
+    this.sortKey = next.key;
+    this.sortDirection = next.direction;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  indicator(key: string): string {
+    return sortIndicator(this.sortKey, key, this.sortDirection);
+  }
+
+  onPage(page: number): void {
+    this.pageIndex = page;
+    this.load();
+  }
+
+  onPageSize(size: number): void {
+    this.pageSize = size;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  private load(): void {
+    const params: Record<string, string> = {
+      page: String(this.pageIndex),
+      size: String(this.pageSize),
+      sort: this.sortKey,
+      direction: this.sortDirection,
+    };
+    if (this.query.trim()) {
+      params['query'] = this.query.trim();
+    }
+    this.http.get<ApiResponse<PagedResponse<BackendNotice>>>('/api/notices', { params }).subscribe({
       next: (res) => {
-        this.notices = res.data.map(toNotice);
+        this.notices = (res.data?.content ?? []).map(toNotice);
+        this.totalElements = res.data?.totalElements ?? 0;
+        this.totalPages = res.data?.totalPages ?? 0;
         this.cdr.markForCheck();
       },
       error: () => {
@@ -185,8 +251,8 @@ export class NoticesComponent implements OnInit {
     };
     this.http.post<ApiResponse<BackendNotice>>('/api/notices', payload).subscribe({
       next: (res) => {
-        this.notices = [toNotice(res.data), ...this.notices];
-        this.cdr.markForCheck();
+        this.pageIndex = 0;
+        this.load();
       },
       error: () => {
         this.cdr.markForCheck();

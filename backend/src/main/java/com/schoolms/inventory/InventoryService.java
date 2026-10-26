@@ -3,6 +3,8 @@ package com.schoolms.inventory;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvValidationException;
+import com.schoolms.common.api.PageRequests;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.common.enums.InventoryCondition;
 import com.schoolms.common.enums.InventoryTransactionType;
 import com.schoolms.common.exception.BusinessException;
@@ -19,6 +21,8 @@ import com.schoolms.student.dto.ImportResult;
 import com.schoolms.user.User;
 import com.schoolms.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -81,6 +85,13 @@ public class InventoryService {
         categoryRepository.delete(category);
     }
 
+    private static final Map<String, String> DIRECTORY_SORT = Map.of(
+            "name", "name",
+            "sku", "sku",
+            "quantity", "quantity",
+            "location", "location",
+            "condition", "condition");
+
     @Transactional(readOnly = true)
     public List<InventoryItemDto> listItems(UUID categoryId, String location, String condition, Boolean lowStock) {
         UUID schoolId = SecurityUtils.currentSchoolId();
@@ -95,6 +106,22 @@ public class InventoryService {
                 .filter(item -> lowStock == null || !lowStock || item.isLowStock())
                 .map(item -> toItemDto(item, categories.get(item.getCategoryId()), names))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<InventoryItemDto> listItems(UUID categoryId, String location, String condition,
+                                                     Boolean lowStock, String query, int page, int size,
+                                                     String sort, String direction) {
+        UUID schoolId = SecurityUtils.currentSchoolId();
+        Map<UUID, InventoryCategory> categories = categoriesById(schoolId);
+        Map<UUID, String> names = userNames(schoolId);
+        InventoryCondition parsedCondition = parseCondition(condition);
+        String locationKey = location == null || location.isBlank() ? null : location.trim().toLowerCase(Locale.ROOT);
+        String like = PageRequests.likePattern(query);
+        PageRequest pageable = PageRequests.of(page, size, sort, direction, "name", DIRECTORY_SORT);
+        Page<InventoryItem> result = itemRepository.searchDirectory(
+                schoolId, categoryId, locationKey, parsedCondition, lowStock, like, pageable);
+        return PagedResponse.from(result.map(item -> toItemDto(item, categories.get(item.getCategoryId()), names)));
     }
 
     @Transactional(readOnly = true)

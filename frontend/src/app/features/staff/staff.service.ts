@@ -1,17 +1,25 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { ApiResponse } from '../../core/models/api.model';
+import { ApiResponse, PagedResponse } from '../../core/models/api.model';
 import { SectionRef, StaffMember, StaffMemberPayload } from './staff.model';
+
+export interface DirectoryQuery {
+  query?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+  direction?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class StaffService {
   constructor(private http: HttpClient) {}
 
-  listTeaching(): Observable<StaffMember[]> {
+  listTeaching(opts: DirectoryQuery = {}): Observable<PagedResponse<StaffMember>> {
     return this.http
-      .get<ApiResponse<StaffMember[]>>('/api/staff/teachers')
-      .pipe(map((res) => res.data ?? []));
+      .get<ApiResponse<PagedResponse<StaffMember>>>('/api/staff/teachers', { params: this.params(opts) })
+      .pipe(map((res) => res.data));
   }
 
   createTeaching(payload: StaffMemberPayload): Observable<StaffMember> {
@@ -36,10 +44,10 @@ export class StaffService {
       .pipe(map((res) => res.data));
   }
 
-  listNonTeaching(): Observable<StaffMember[]> {
+  listNonTeaching(opts: DirectoryQuery = {}): Observable<PagedResponse<StaffMember>> {
     return this.http
-      .get<ApiResponse<StaffMember[]>>('/api/staff/non-teaching')
-      .pipe(map((res) => res.data ?? []));
+      .get<ApiResponse<PagedResponse<StaffMember>>>('/api/staff/non-teaching', { params: this.params(opts) })
+      .pipe(map((res) => res.data));
   }
 
   createNonTeaching(payload: StaffMemberPayload): Observable<StaffMember> {
@@ -62,5 +70,21 @@ export class StaffService {
     return this.http
       .get<ApiResponse<SectionRef[]>>('/api/staff/sections')
       .pipe(map((res) => res.data ?? []));
+  }
+
+  private params(opts: DirectoryQuery): HttpParams {
+    let params = new HttpParams()
+      .set('page', String(opts.page ?? 0))
+      .set('size', String(opts.size ?? 25));
+    if (opts.query) {
+      params = params.set('query', opts.query);
+    }
+    if (opts.sort) {
+      params = params.set('sort', opts.sort);
+    }
+    if (opts.direction) {
+      params = params.set('direction', opts.direction);
+    }
+    return params;
   }
 }

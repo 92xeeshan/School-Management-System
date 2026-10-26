@@ -101,9 +101,12 @@ public class CertificateController {
     public ApiResponse<PagedResponse<CertificateRequestDto>> listRequests(
             @RequestParam(required = false) CertificateType type,
             @RequestParam(required = false) CertificateRequestStatus status,
+            @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(requestService.list(type, status, page, size));
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        return ApiResponse.ok(requestService.list(type, status, query, page, size, sort, direction));
     }
 
     @Operation(summary = "Class teacher forwards a request to principal")
@@ -146,8 +149,10 @@ public class CertificateController {
             @RequestParam(required = false) CertificateStatus status,
             @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(certificateService.register(type, status, query, page, size));
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        return ApiResponse.ok(certificateService.register(type, status, query, page, size, sort, direction));
     }
 
     @Operation(summary = "Certificates issued to the current learner")
