@@ -138,6 +138,66 @@ public class NotificationTriggerService {
     }
 
     @Transactional
+    public void onLeaveRequested(UUID schoolId, String staffName, String typeLabel, LocalDate from, LocalDate to,
+                                 BigDecimal days, String reason, UUID actorId) {
+        String message = staffName + " requested " + typeLabel + " from " + from + " to " + to
+                + " (" + strip(days) + " days). " + (reason == null ? "" : reason.trim());
+        List<UUID> recipients = this.recipients.adminReviewers(schoolId).stream()
+                .filter(id -> actorId == null || !id.equals(actorId))
+                .toList();
+        notificationService.notifyUsers(
+                schoolId,
+                recipients,
+                "Leave request submitted",
+                message.trim(),
+                "LEAVE",
+                "/leave/approvals",
+                null);
+    }
+
+    @Transactional
+    public void onLeaveDecision(UUID schoolId, UUID employeeUserId, boolean approved, String typeLabel,
+                                LocalDate from, LocalDate to, String comment) {
+        if (employeeUserId == null) {
+            return;
+        }
+        String title = approved ? "Leave approved" : "Leave rejected";
+        String message = typeLabel + " from " + from + " to " + to
+                + (approved ? " was approved." : " was rejected.");
+        if (comment != null && !comment.isBlank()) {
+            message = message + " " + comment.trim();
+        }
+        notificationService.notifyUsers(
+                schoolId,
+                List.of(employeeUserId),
+                title,
+                message,
+                "LEAVE",
+                "/leave/mine",
+                null);
+    }
+
+    @Transactional
+    public void onLeaveCancelled(UUID schoolId, String staffName, String typeLabel, LocalDate from, LocalDate to,
+                                 String reason, UUID actorId) {
+        String message = staffName + " cancelled " + typeLabel + " from " + from + " to " + to + ".";
+        if (reason != null && !reason.isBlank()) {
+            message = message + " " + reason.trim();
+        }
+        List<UUID> recipients = this.recipients.adminReviewers(schoolId).stream()
+                .filter(id -> actorId == null || !id.equals(actorId))
+                .toList();
+        notificationService.notifyUsers(
+                schoolId,
+                recipients,
+                "Leave cancelled",
+                message,
+                "LEAVE",
+                "/leave/approvals",
+                null);
+    }
+
+    @Transactional
     public void onTransferCertificateIssued(UUID schoolId, UUID studentId, String deactivationDate) {
         notificationService.notifyUsers(
                 schoolId,
