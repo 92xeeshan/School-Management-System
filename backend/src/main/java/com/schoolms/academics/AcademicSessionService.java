@@ -9,6 +9,7 @@ import com.schoolms.academics.dto.PromotionBatchDto;
 import com.schoolms.academics.dto.PromotionPreviewDto;
 import com.schoolms.academics.dto.PromotionPreviewRequest;
 import com.schoolms.academics.dto.PromotionStudentDto;
+import com.schoolms.common.RecordIdGenerator;
 import com.schoolms.common.enums.AcademicTermStatus;
 import com.schoolms.common.enums.PromotionOutcome;
 import com.schoolms.common.enums.StudentStatus;
@@ -44,6 +45,7 @@ public class AcademicSessionService {
     private final StudentRepository studentRepository;
     private final PromotionBatchRepository promotionBatchRepository;
     private final PromotionBatchItemRepository promotionItemRepository;
+    private final RecordIdGenerator recordIdGenerator;
 
     @Transactional(readOnly = true)
     public List<AcademicYearDetailDto> listSessions() {
@@ -218,6 +220,8 @@ public class AcademicSessionService {
 
         int promoted = 0;
         int skipped = 0;
+        int nextRoll = recordIdGenerator.nextRollNumber(
+                request.destinationSectionId(), request.destinationYearId());
         List<PromotionBatchItem> items = new ArrayList<>();
         LocalDate today = LocalDate.now();
         for (PromotionStudentDto row : preview.students()) {
@@ -239,7 +243,7 @@ public class AcademicSessionService {
                 destination.setStudentId(row.studentId());
                 destination.setSectionId(request.destinationSectionId());
                 destination.setAcademicYearId(request.destinationYearId());
-                destination.setRollNumber(source.getRollNumber());
+                destination.setRollNumber(nextRoll++);
                 destination.setEnrollmentDate(today);
                 destination.setStatus("ACTIVE");
                 destination = enrollmentRepository.save(destination);

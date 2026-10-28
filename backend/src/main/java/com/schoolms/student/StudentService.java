@@ -16,6 +16,7 @@ import com.schoolms.attendance.dto.AttendanceSummaryDto;
 import com.schoolms.auth.CredentialAccountService;
 import com.schoolms.auth.CredentialService;
 import com.schoolms.auth.dto.ResetPasswordRequest;
+import com.schoolms.common.RecordIdGenerator;
 import com.schoolms.common.exception.AuthException;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
@@ -86,6 +87,7 @@ public class StudentService {
     private final CredentialService credentialService;
     private final SchoolRepository schoolRepository;
     private final StudentDirectoryPdfService directoryPdfService;
+    private final RecordIdGenerator recordIdGenerator;
 
     @Transactional(readOnly = true)
     public Page<StudentListItemDto> list(int page, int size, String query) {
@@ -202,6 +204,18 @@ public class StudentService {
         }
     }
 
+    private String resolveAdmissionNo(UUID schoolId, String requested) {
+        String admissionNo = blankToNull(requested);
+        return admissionNo == null ? recordIdGenerator.nextAdmissionNo(schoolId) : admissionNo;
+    }
+
+    private static String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
     private static String value(String text) {
         return text == null ? "" : text;
     }
@@ -293,11 +307,13 @@ public class StudentService {
     @Transactional
     public StudentDto create(StudentRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        if (studentRepository.existsBySchoolIdAndAdmissionNo(schoolId, request.admissionNo())) {
+        String admissionNo = resolveAdmissionNo(schoolId, request.admissionNo());
+        if (studentRepository.existsBySchoolIdAndAdmissionNo(schoolId, admissionNo)) {
             throw new BusinessException("student.admission_exists");
         }
         Student student = new Student();
         apply(student, request);
+        student.setAdmissionNo(admissionNo);
         student.setSchoolId(schoolId);
         ProvisionedAccount account = null;
         if (student.getUserId() == null) {
@@ -314,7 +330,11 @@ public class StudentService {
     @Transactional
     public StudentDto update(UUID id, StudentRequest request) {
         Student student = findStudent(id);
+        String previousAdmissionNo = student.getAdmissionNo();
         apply(student, request);
+        if (blankToNull(request.admissionNo()) == null) {
+            student.setAdmissionNo(previousAdmissionNo);
+        }
         return StudentDto.from(studentRepository.save(student));
     }
 
@@ -340,9 +360,13 @@ public class StudentService {
                 .findByStudentIdAndAcademicYearId(studentId, request.academicYearId());
         if (existing.isPresent()) {
             StudentEnrollment enrollment = existing.get();
+            boolean sectionChanged = !request.sectionId().equals(enrollment.getSectionId());
             enrollment.setSectionId(request.sectionId());
             if (request.rollNumber() != null) {
                 enrollment.setRollNumber(request.rollNumber());
+            } else if (sectionChanged || enrollment.getRollNumber() == null) {
+                enrollment.setRollNumber(recordIdGenerator.nextRollNumber(
+                        request.sectionId(), request.academicYearId()));
             }
             enrollment.setStatus("ACTIVE");
             return enrollmentRepository.save(enrollment);
@@ -352,7 +376,9 @@ public class StudentService {
         enrollment.setStudentId(studentId);
         enrollment.setSectionId(request.sectionId());
         enrollment.setAcademicYearId(request.academicYearId());
-        enrollment.setRollNumber(request.rollNumber());
+        enrollment.setRollNumber(request.rollNumber() != null
+                ? request.rollNumber()
+                : recordIdGenerator.nextRollNumber(request.sectionId(), request.academicYearId()));
         enrollment.setEnrollmentDate(LocalDate.now());
         enrollment.setStatus("ACTIVE");
         return enrollmentRepository.save(enrollment);
@@ -470,7 +496,7 @@ public class StudentService {
                            Map<String, AcademicYear> yearsByName,
                            Map<String, SchoolClass> classesByName,
                            Map<String, Section> sectionsByName) {
-        String admissionNo = row[0].trim();
+        String admissionNo = resolveAdmissionNo(schoolId, row.length > 0 ? row[0] : null);
         String firstName = row[1].trim();
         String lastName = row.length > 2 ? row[2] : null;
         LocalDate dob = row.length > 3 && !row[3].isBlank() ? LocalDate.parse(row[3].trim()) : null;
@@ -506,7 +532,8 @@ public class StudentService {
                 enrollment.setSectionId(section.getId());
                 enrollment.setAcademicYearId(year.getId());
                 enrollment.setRollNumber(row.length > 7 && !row[7].isBlank()
-                        ? Integer.parseInt(row[7].trim()) : null);
+                        ? Integer.parseInt(row[7].trim())
+                        : recordIdGenerator.nextRollNumber(section.getId(), year.getId()));
                 enrollment.setEnrollmentDate(LocalDate.now());
                 enrollment.setStatus("ACTIVE");
                 enrollmentRepository.save(enrollment);

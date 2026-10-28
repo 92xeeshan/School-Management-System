@@ -37,4 +37,10 @@ public interface NonTeachingStaffRepository extends JpaRepository<NonTeachingSta
     boolean existsBySchoolIdAndEmployeeNo(UUID schoolId, String employeeNo);
 
     boolean existsBySchoolIdAndEmployeeNoAndIdNot(UUID schoolId, String employeeNo, UUID id);
+
+    @Query("""
+            select s.employeeNo from NonTeachingStaff s
+            where s.schoolId = :schoolId and s.employeeNo like concat(:prefix, '%')
+            """)
+    List<String> findEmployeeNosByPrefix(@Param("schoolId") UUID schoolId, @Param("prefix") String prefix);
 }

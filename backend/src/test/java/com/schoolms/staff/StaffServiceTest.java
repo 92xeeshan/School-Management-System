@@ -53,6 +53,7 @@ class StaffServiceTest {
     @Mock private SchoolClassRepository classRepository;
     @Mock private AcademicYearRepository academicYearRepository;
     @Mock private CredentialAccountService credentialAccountService;
+    @Mock private com.schoolms.common.RecordIdGenerator recordIdGenerator;
 
     private StaffService staffService;
 
@@ -63,7 +64,7 @@ class StaffServiceTest {
     void setUp() {
         staffService = new StaffService(teacherRepository, teacherSubjectRepository,
                 teacherSectionRepository, nonTeachingStaffRepository, sectionRepository,
-                classRepository, academicYearRepository, credentialAccountService);
+                classRepository, academicYearRepository, credentialAccountService, recordIdGenerator);
         TestSecurity.loginAsAdmin();
     }
 
@@ -89,6 +90,20 @@ class StaffServiceTest {
         assertEquals("EMP100", saved.getEmployeeNo());
         assertEquals(EmploymentType.FULL_TIME, saved.getEmploymentType());
         assertEquals(StaffType.TEACHING, dto.staffType());
+        verify(recordIdGenerator, never()).nextTeacherEmployeeNo(any());
+    }
+
+    @Test
+    void createTeachingStaffGeneratesEmployeeNoWhenBlank() {
+        when(recordIdGenerator.nextTeacherEmployeeNo(schoolId)).thenReturn("EMP2026001");
+        when(teacherRepository.existsBySchoolIdAndEmployeeNo(schoolId, "EMP2026001")).thenReturn(false);
+        when(credentialAccountService.provision(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new ProvisionedAccount(UUID.randomUUID(), "TCH2026001", "Alis@4323"));
+        when(teacherRepository.save(any(TeacherProfile.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        StaffMemberDto dto = staffService.createTeachingStaff(request(null));
+
+        assertEquals("EMP2026001", dto.employeeNo());
     }
 
     @Test

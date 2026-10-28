@@ -93,6 +93,8 @@ class StudentServiceTest {
     private com.schoolms.school.SchoolRepository schoolRepository;
     @Mock
     private StudentDirectoryPdfService directoryPdfService;
+    @Mock
+    private com.schoolms.common.RecordIdGenerator recordIdGenerator;
 
     private StudentService studentService;
 
@@ -104,7 +106,7 @@ class StudentServiceTest {
                 studentGuardianRepository, enrollmentRepository, classRepository,
                 sectionRepository, academicYearRepository, teacherRepository,
                 teacherSectionRepository, attendanceService, credentialAccountService,
-                credentialService, schoolRepository, directoryPdfService);
+                credentialService, schoolRepository, directoryPdfService, recordIdGenerator);
         TestSecurity.loginAsAdmin();
     }
 
@@ -143,6 +145,29 @@ class StudentServiceTest {
         assertEquals(schoolId, captor.getValue().getSchoolId());
         assertEquals("ADM100", captor.getValue().getAdmissionNo());
         assertEquals("Meera", dto.firstName());
+        verify(recordIdGenerator, never()).nextAdmissionNo(any());
+    }
+
+    @Test
+    void createStudentGeneratesAdmissionNoWhenBlank() {
+        StudentRequest request = new StudentRequest("  ", "Meera", "Sharma",
+                LocalDate.of(2014, 5, 10), "FEMALE", null, null, null,
+                LocalDate.of(2025, 4, 1), null, null, null, null, null, null);
+        when(recordIdGenerator.nextAdmissionNo(schoolId)).thenReturn("ADM2026001");
+        when(studentRepository.existsBySchoolIdAndAdmissionNo(schoolId, "ADM2026001")).thenReturn(false);
+        when(credentialAccountService.provision(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new ProvisionedAccount(UUID.randomUUID(), "STD2026001", "Meer@4321"));
+        when(studentRepository.save(any(Student.class))).thenAnswer(invocation -> {
+            Student s = invocation.getArgument(0);
+            if (s.getId() == null) {
+                s.setId(UUID.randomUUID());
+            }
+            return s;
+        });
+
+        StudentDto dto = studentService.create(request);
+
+        assertEquals("ADM2026001", dto.admissionNo());
     }
 
     @Test
@@ -195,14 +220,43 @@ class StudentServiceTest {
         existing.setRollNumber(4);
         when(enrollmentRepository.findByStudentIdAndAcademicYearId(studentId, yearId))
                 .thenReturn(Optional.of(existing));
+        when(recordIdGenerator.nextRollNumber(sectionId, yearId)).thenReturn(1);
         when(enrollmentRepository.save(any(StudentEnrollment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         EnrollRequest request = new EnrollRequest(classId, sectionId, yearId, null);
         StudentEnrollment saved = studentService.enroll(studentId, request);
 
         assertEquals(sectionId, saved.getSectionId());
-        assertEquals(4, saved.getRollNumber());
+        assertEquals(1, saved.getRollNumber());
         verify(enrollmentRepository).save(existing);
+    }
+
+    @Test
+    void enrollAssignsNextRollNumberWhenOmitted() {
+        UUID studentId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        UUID sectionId = UUID.randomUUID();
+        UUID yearId = UUID.randomUUID();
+        Student student = new Student();
+        student.setId(studentId);
+        student.setSchoolId(schoolId);
+        when(studentRepository.findByIdAndSchoolId(studentId, schoolId)).thenReturn(Optional.of(student));
+
+        Section section = new Section();
+        section.setId(sectionId);
+        section.setClassId(classId);
+        when(sectionRepository.findByIdAndSchoolId(sectionId, schoolId)).thenReturn(Optional.of(section));
+        when(academicYearRepository.findByIdAndSchoolId(yearId, schoolId))
+                .thenReturn(Optional.of(new com.schoolms.academics.AcademicYear()));
+        when(enrollmentRepository.findByStudentIdAndAcademicYearId(studentId, yearId))
+                .thenReturn(Optional.empty());
+        when(recordIdGenerator.nextRollNumber(sectionId, yearId)).thenReturn(2);
+        when(enrollmentRepository.save(any(StudentEnrollment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        StudentEnrollment saved = studentService.enroll(studentId, new EnrollRequest(classId, sectionId, yearId, null));
+
+        assertEquals(2, saved.getRollNumber());
+        assertEquals(sectionId, saved.getSectionId());
     }
 
     @Test

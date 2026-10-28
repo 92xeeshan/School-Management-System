@@ -127,8 +127,8 @@ import { DirectoryPagerComponent, SortDirection, sortIndicator, toggleSort } fro
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="form-grid">
               <div class="field">
-                <label>{{ 'staff.employeeNo' | translate }} *</label>
-                <input type="text" formControlName="employeeNo" placeholder="EMP010" />
+                <label>{{ 'staff.employeeNo' | translate }}{{ editingId ? ' *' : '' }}</label>
+                <input type="text" formControlName="employeeNo" [placeholder]="editingId ? '' : ('staff.employeeNoHint' | translate)" />
               </div>
               <div class="field">
                 <label>{{ 'staff.firstName' | translate }} *</label>

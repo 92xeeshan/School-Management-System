@@ -15,6 +15,7 @@ import com.schoolms.academics.TeacherSubjectRepository;
 import com.schoolms.auth.CredentialAccountService;
 import com.schoolms.common.api.PageRequests;
 import com.schoolms.common.api.PagedResponse;
+import com.schoolms.common.RecordIdGenerator;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
 import com.schoolms.security.SecurityUtils;
@@ -58,6 +59,7 @@ public class StaffService {
     private final SchoolClassRepository classRepository;
     private final AcademicYearRepository academicYearRepository;
     private final CredentialAccountService credentialAccountService;
+    private final RecordIdGenerator recordIdGenerator;
 
     // ---- Teaching staff --------------------------------------------------
 
@@ -78,13 +80,14 @@ public class StaffService {
     @Transactional
     public StaffMemberDto createTeachingStaff(StaffMemberRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        if (teacherRepository.existsBySchoolIdAndEmployeeNo(schoolId, request.employeeNo())) {
+        String employeeNo = resolveEmployeeNo(schoolId, request.employeeNo(), true);
+        if (teacherRepository.existsBySchoolIdAndEmployeeNo(schoolId, employeeNo)) {
             throw new BusinessException("staff.employee_no_exists");
         }
         TeacherProfile teacher = new TeacherProfile();
         teacher.setSchoolId(schoolId);
         teacher.setStatus(ACTIVE);
-        apply(teacher, request);
+        apply(teacher, request, employeeNo);
         ProvisionedAccount account = provisionIfNeeded(schoolId, "TEACHER", request);
         if (account != null) {
             teacher.setUserId(account.userId());
@@ -97,12 +100,14 @@ public class StaffService {
     public StaffMemberDto updateTeachingStaff(UUID id, StaffMemberRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         TeacherProfile teacher = findTeacher(id, schoolId);
-        if (!request.employeeNo().equals(teacher.getEmployeeNo())
-                && teacherRepository.existsBySchoolIdAndEmployeeNoAndIdNot(
-                        schoolId, request.employeeNo(), id)) {
+        String employeeNo = blankToNull(request.employeeNo());
+        if (employeeNo == null) {
+            employeeNo = teacher.getEmployeeNo();
+        } else if (!employeeNo.equals(teacher.getEmployeeNo())
+                && teacherRepository.existsBySchoolIdAndEmployeeNoAndIdNot(schoolId, employeeNo, id)) {
             throw new BusinessException("staff.employee_no_exists");
         }
-        apply(teacher, request);
+        apply(teacher, request, employeeNo);
         teacher = teacherRepository.save(teacher);
         UUID yearId = currentYearIdOrNull(schoolId);
         return toDto(teacher, schoolId, classTeacherRefs(teacher, schoolId, yearId));
@@ -168,13 +173,14 @@ public class StaffService {
     @Transactional
     public StaffMemberDto createNonTeachingStaff(StaffMemberRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        if (nonTeachingStaffRepository.existsBySchoolIdAndEmployeeNo(schoolId, request.employeeNo())) {
+        String employeeNo = resolveEmployeeNo(schoolId, request.employeeNo(), false);
+        if (nonTeachingStaffRepository.existsBySchoolIdAndEmployeeNo(schoolId, employeeNo)) {
             throw new BusinessException("staff.employee_no_exists");
         }
         NonTeachingStaff staff = new NonTeachingStaff();
         staff.setSchoolId(schoolId);
         staff.setStatus(ACTIVE);
-        apply(staff, request);
+        apply(staff, request, employeeNo);
         ProvisionedAccount account = provisionIfNeeded(schoolId, "ADMIN", request);
         if (account != null) {
             staff.setUserId(account.userId());
@@ -189,12 +195,14 @@ public class StaffService {
     public StaffMemberDto updateNonTeachingStaff(UUID id, StaffMemberRequest request) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         NonTeachingStaff staff = findNonTeachingStaff(id, schoolId);
-        if (!request.employeeNo().equals(staff.getEmployeeNo())
-                && nonTeachingStaffRepository.existsBySchoolIdAndEmployeeNoAndIdNot(
-                        schoolId, request.employeeNo(), id)) {
+        String employeeNo = blankToNull(request.employeeNo());
+        if (employeeNo == null) {
+            employeeNo = staff.getEmployeeNo();
+        } else if (!employeeNo.equals(staff.getEmployeeNo())
+                && nonTeachingStaffRepository.existsBySchoolIdAndEmployeeNoAndIdNot(schoolId, employeeNo, id)) {
             throw new BusinessException("staff.employee_no_exists");
         }
-        apply(staff, request);
+        apply(staff, request, employeeNo);
         return StaffMemberDto.from(nonTeachingStaffRepository.save(staff));
     }
 
@@ -235,8 +243,8 @@ public class StaffService {
 
     // ---- Helpers ---------------------------------------------------------
 
-    private void apply(TeacherProfile teacher, StaffMemberRequest request) {
-        teacher.setEmployeeNo(request.employeeNo().trim());
+    private void apply(TeacherProfile teacher, StaffMemberRequest request, String employeeNo) {
+        teacher.setEmployeeNo(employeeNo);
         teacher.setFirstName(request.firstName().trim());
         teacher.setLastName(blankToNull(request.lastName()));
         teacher.setEmail(blankToNull(request.email()));
@@ -252,8 +260,8 @@ public class StaffService {
         teacher.setUserId(request.userId());
     }
 
-    private void apply(NonTeachingStaff staff, StaffMemberRequest request) {
-        staff.setEmployeeNo(request.employeeNo().trim());
+    private void apply(NonTeachingStaff staff, StaffMemberRequest request, String employeeNo) {
+        staff.setEmployeeNo(employeeNo);
         staff.setFirstName(request.firstName().trim());
         staff.setLastName(blankToNull(request.lastName()));
         staff.setEmail(blankToNull(request.email()));
@@ -366,6 +374,16 @@ public class StaffService {
 
     private String sectionLabel(String className, String sectionName) {
         return className == null || className.isBlank() ? sectionName : className + " - " + sectionName;
+    }
+
+    private String resolveEmployeeNo(UUID schoolId, String requested, boolean teaching) {
+        String employeeNo = blankToNull(requested);
+        if (employeeNo != null) {
+            return employeeNo;
+        }
+        return teaching
+                ? recordIdGenerator.nextTeacherEmployeeNo(schoolId)
+                : recordIdGenerator.nextNonTeachingEmployeeNo(schoolId);
     }
 
     private String blankToNull(String value) {

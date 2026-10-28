@@ -38,4 +38,10 @@ public interface TeacherProfileRepository extends JpaRepository<TeacherProfile, 
     boolean existsBySchoolIdAndEmployeeNo(UUID schoolId, String employeeNo);
 
     boolean existsBySchoolIdAndEmployeeNoAndIdNot(UUID schoolId, String employeeNo, UUID id);
+
+    @Query("""
+            select t.employeeNo from TeacherProfile t
+            where t.schoolId = :schoolId and t.employeeNo like concat(:prefix, '%')
+            """)
+    List<String> findEmployeeNosByPrefix(@Param("schoolId") UUID schoolId, @Param("prefix") String prefix);
 }
