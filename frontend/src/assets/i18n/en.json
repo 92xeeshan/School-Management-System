@@ -33,7 +33,9 @@
     "yes": "Yes",
     "no": "No",
     "confirm": "Confirm",
-    "close": "Close"
+    "close": "Close",
+    "pageInfo": "Showing {{from}}-{{to}} of {{total}}",
+    "rowsPerPage": "Rows per page"
   },
   "login": {
     "title": "Sign In",

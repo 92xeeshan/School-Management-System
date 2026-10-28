@@ -41,6 +41,48 @@ public interface CertificateIssuedRepository extends JpaRepository<CertificateIs
             UUID schoolId, Collection<UUID> studentIds, CertificateType type, CertificateStatus status, Pageable pageable);
 
     @Query("""
+            SELECT c FROM CertificateIssued c
+            WHERE c.schoolId = :schoolId
+              AND (:type IS NULL OR c.certificateType = :type)
+              AND (:status IS NULL OR c.status = :status)
+              AND (:like IS NULL
+                OR LOWER(COALESCE(c.certificateNo, '')) LIKE :like
+                OR EXISTS (
+                    SELECT 1 FROM Student s
+                    WHERE s.id = c.studentId AND s.schoolId = :schoolId
+                      AND (LOWER(s.firstName) LIKE :like
+                        OR LOWER(COALESCE(s.lastName, '')) LIKE :like
+                        OR LOWER(s.admissionNo) LIKE :like)))
+            """)
+    Page<CertificateIssued> searchDirectory(@Param("schoolId") UUID schoolId,
+                                            @Param("type") CertificateType type,
+                                            @Param("status") CertificateStatus status,
+                                            @Param("like") String like,
+                                            Pageable pageable);
+
+    @Query("""
+            SELECT c FROM CertificateIssued c
+            WHERE c.schoolId = :schoolId
+              AND c.studentId IN :studentIds
+              AND (:type IS NULL OR c.certificateType = :type)
+              AND (:status IS NULL OR c.status = :status)
+              AND (:like IS NULL
+                OR LOWER(COALESCE(c.certificateNo, '')) LIKE :like
+                OR EXISTS (
+                    SELECT 1 FROM Student s
+                    WHERE s.id = c.studentId AND s.schoolId = :schoolId
+                      AND (LOWER(s.firstName) LIKE :like
+                        OR LOWER(COALESCE(s.lastName, '')) LIKE :like
+                        OR LOWER(s.admissionNo) LIKE :like)))
+            """)
+    Page<CertificateIssued> searchDirectoryScoped(@Param("schoolId") UUID schoolId,
+                                                  @Param("studentIds") Collection<UUID> studentIds,
+                                                  @Param("type") CertificateType type,
+                                                  @Param("status") CertificateStatus status,
+                                                  @Param("like") String like,
+                                                  Pageable pageable);
+
+    @Query("""
             select count(c) from CertificateIssued c
             where c.schoolId = :schoolId
               and c.certificateType = :type

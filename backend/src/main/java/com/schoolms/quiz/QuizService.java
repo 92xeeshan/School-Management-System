@@ -18,6 +18,8 @@ import com.schoolms.academics.TeacherSection;
 import com.schoolms.academics.TeacherSectionRepository;
 import com.schoolms.academics.TeacherSubject;
 import com.schoolms.academics.TeacherSubjectRepository;
+import com.schoolms.common.api.PageRequests;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.common.enums.QuizAttemptStatus;
 import com.schoolms.common.enums.QuizQuestionType;
 import com.schoolms.common.enums.QuizStatus;
@@ -151,6 +153,27 @@ public class QuizService {
 
     @Transactional(readOnly = true)
     public List<QuizQuestionDto> listQuestions(UUID subjectId, UUID classId, String questionType) {
+        return listQuestionDtos(subjectId, classId, questionType);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<QuizQuestionDto> listQuestions(UUID subjectId, UUID classId, String questionType,
+                                                        String query, int page, int size, String sort, String direction) {
+        List<QuizQuestionDto> questions = listQuestionDtos(subjectId, classId, questionType);
+        String normalized = PageRequests.normalizeQuery(query);
+        if (normalized != null) {
+            String needle = normalized.toLowerCase(Locale.ROOT);
+            questions = questions.stream()
+                    .filter(q -> containsIgnoreCase(q.prompt(), needle)
+                            || containsIgnoreCase(q.subjectName(), needle)
+                            || containsIgnoreCase(q.className(), needle))
+                    .toList();
+        }
+        questions = sortQuestions(questions, sort, direction);
+        return PageRequests.fromList(questions, page, size);
+    }
+
+    private List<QuizQuestionDto> listQuestionDtos(UUID subjectId, UUID classId, String questionType) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         TeacherScope scope = teacherScope(schoolId, SecurityUtils.currentPrincipal());
         QuizQuestionType type = parseQuestionType(questionType, false);
@@ -206,6 +229,30 @@ public class QuizService {
     @Transactional(readOnly = true)
     public List<QuizDto> listQuizzes(UUID academicYearId, UUID classId, UUID sectionId, UUID subjectId,
                                      String status, UUID studentId) {
+        return listQuizDtos(academicYearId, classId, sectionId, subjectId, status, studentId);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<QuizDto> listQuizzes(UUID academicYearId, UUID classId, UUID sectionId, UUID subjectId,
+                                              String status, UUID studentId, String query, int page, int size,
+                                              String sort, String direction) {
+        List<QuizDto> quizzes = listQuizDtos(academicYearId, classId, sectionId, subjectId, status, studentId);
+        String normalized = PageRequests.normalizeQuery(query);
+        if (normalized != null) {
+            String needle = normalized.toLowerCase(Locale.ROOT);
+            quizzes = quizzes.stream()
+                    .filter(q -> containsIgnoreCase(q.title(), needle)
+                            || containsIgnoreCase(q.className(), needle)
+                            || containsIgnoreCase(q.subjectName(), needle)
+                            || containsIgnoreCase(q.sectionName(), needle))
+                    .toList();
+        }
+        quizzes = sortQuizzes(quizzes, sort, direction);
+        return PageRequests.fromList(quizzes, page, size);
+    }
+
+    private List<QuizDto> listQuizDtos(UUID academicYearId, UUID classId, UUID sectionId, UUID subjectId,
+                                       String status, UUID studentId) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         UserPrincipal principal = SecurityUtils.currentPrincipal();
         TeacherScope scope = teacherScope(schoolId, principal);
@@ -1237,6 +1284,46 @@ public class QuizService {
                 })
                 .thenComparing(Student::getLastName, Comparator.nullsLast(String::compareToIgnoreCase))
                 .thenComparing(Student::getFirstName, Comparator.nullsLast(String::compareToIgnoreCase));
+    }
+
+    private static boolean containsIgnoreCase(String value, String needle) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    private static List<QuizQuestionDto> sortQuestions(List<QuizQuestionDto> questions, String sort, String direction) {
+        boolean desc = "desc".equalsIgnoreCase(direction);
+        Comparator<QuizQuestionDto> cmp = switch (sort == null ? "" : sort) {
+            case "prompt" -> Comparator.comparing(q -> nullToEmpty(q.prompt()), String.CASE_INSENSITIVE_ORDER);
+            case "questionType" -> Comparator.comparing(q -> nullToEmpty(q.questionType()), String.CASE_INSENSITIVE_ORDER);
+            case "subject" -> Comparator.comparing(q -> nullToEmpty(q.subjectName()), String.CASE_INSENSITIVE_ORDER);
+            case "class" -> Comparator.comparing(q -> nullToEmpty(q.className()), String.CASE_INSENSITIVE_ORDER);
+            case "marks" -> Comparator.comparing(q -> q.marks() == null ? BigDecimal.ZERO : q.marks());
+            default -> Comparator.comparing(QuizQuestionDto::createdAt, Comparator.nullsLast(Comparator.naturalOrder()));
+        };
+        if (desc || ((sort == null || sort.isBlank()) && !"asc".equalsIgnoreCase(direction))) {
+            cmp = cmp.reversed();
+        }
+        return questions.stream().sorted(cmp).toList();
+    }
+
+    private static List<QuizDto> sortQuizzes(List<QuizDto> quizzes, String sort, String direction) {
+        boolean desc = "desc".equalsIgnoreCase(direction);
+        Comparator<QuizDto> cmp = switch (sort == null ? "" : sort) {
+            case "title" -> Comparator.comparing(q -> nullToEmpty(q.title()), String.CASE_INSENSITIVE_ORDER);
+            case "class" -> Comparator.comparing(q -> nullToEmpty(q.className()), String.CASE_INSENSITIVE_ORDER);
+            case "subject" -> Comparator.comparing(q -> nullToEmpty(q.subjectName()), String.CASE_INSENSITIVE_ORDER);
+            case "status" -> Comparator.comparing(q -> nullToEmpty(q.status()), String.CASE_INSENSITIVE_ORDER);
+            case "startAt" -> Comparator.comparing(QuizDto::startAt, Comparator.nullsLast(Comparator.naturalOrder()));
+            default -> Comparator.comparing(QuizDto::createdAt, Comparator.nullsLast(Comparator.naturalOrder()));
+        };
+        if (desc || ((sort == null || sort.isBlank()) && !"asc".equalsIgnoreCase(direction))) {
+            cmp = cmp.reversed();
+        }
+        return quizzes.stream().sorted(cmp).toList();
     }
 
     private record TeacherScope(Set<UUID> sections, Set<UUID> subjects) {

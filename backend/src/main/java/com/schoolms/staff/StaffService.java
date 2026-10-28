@@ -13,6 +13,8 @@ import com.schoolms.academics.TeacherSectionRepository;
 import com.schoolms.academics.TeacherSubject;
 import com.schoolms.academics.TeacherSubjectRepository;
 import com.schoolms.auth.CredentialAccountService;
+import com.schoolms.common.api.PageRequests;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.common.RecordIdGenerator;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.common.exception.ResourceNotFoundException;
@@ -23,6 +25,8 @@ import com.schoolms.staff.dto.SectionRefDto;
 import com.schoolms.staff.dto.StaffMemberDto;
 import com.schoolms.staff.dto.StaffMemberRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +44,12 @@ public class StaffService {
 
     private static final String ACTIVE = "ACTIVE";
     private static final String INACTIVE = "INACTIVE";
+    private static final Map<String, String> DIRECTORY_SORT = Map.of(
+            "employeeNo", "employeeNo",
+            "name", "firstName",
+            "designation", "designation",
+            "department", "department",
+            "status", "status");
 
     private final TeacherProfileRepository teacherRepository;
     private final TeacherSubjectRepository teacherSubjectRepository;
@@ -54,14 +64,17 @@ public class StaffService {
     // ---- Teaching staff --------------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<StaffMemberDto> listTeachingStaff() {
+    public PagedResponse<StaffMemberDto> listTeachingStaff(String query, int page, int size,
+                                                           String sort, String direction) {
         UUID schoolId = SecurityUtils.currentSchoolId();
         UUID yearId = currentYearIdOrNull(schoolId);
         Map<UUID, List<SectionRefDto>> classTeacherByTeacher = classTeacherRefsByTeacher(schoolId, yearId);
-        return teacherRepository.findBySchoolIdOrderByFirstNameAsc(schoolId).stream()
-                .map(teacher -> toDto(teacher, schoolId,
-                        classTeacherByTeacher.getOrDefault(teacher.getId(), List.of())))
-                .toList();
+        String normalized = PageRequests.normalizeQuery(query);
+        PageRequest pageable = PageRequests.of(page, size, sort, direction, "firstName", DIRECTORY_SORT);
+        Page<TeacherProfile> result = teacherRepository.searchDirectory(
+                schoolId, normalized, PageRequests.likePattern(normalized), pageable);
+        return PagedResponse.from(result.map(teacher -> toDto(teacher, schoolId,
+                classTeacherByTeacher.getOrDefault(teacher.getId(), List.of()))));
     }
 
     @Transactional
@@ -147,11 +160,14 @@ public class StaffService {
     // ---- Non-teaching staff ----------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<StaffMemberDto> listNonTeachingStaff() {
+    public PagedResponse<StaffMemberDto> listNonTeachingStaff(String query, int page, int size,
+                                                              String sort, String direction) {
         UUID schoolId = SecurityUtils.currentSchoolId();
-        return nonTeachingStaffRepository.findBySchoolIdOrderByFirstNameAsc(schoolId).stream()
-                .map(StaffMemberDto::from)
-                .toList();
+        String normalized = PageRequests.normalizeQuery(query);
+        PageRequest pageable = PageRequests.of(page, size, sort, direction, "firstName", DIRECTORY_SORT);
+        Page<NonTeachingStaff> result = nonTeachingStaffRepository.searchDirectory(
+                schoolId, normalized, PageRequests.likePattern(normalized), pageable);
+        return PagedResponse.from(result.map(StaffMemberDto::from));
     }
 
     @Transactional

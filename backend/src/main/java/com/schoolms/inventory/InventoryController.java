@@ -1,6 +1,7 @@
 package com.schoolms.inventory;
 
 import com.schoolms.common.api.ApiResponse;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.inventory.dto.InventoryAssigneeDto;
 import com.schoolms.inventory.dto.InventoryCategoryDto;
 import com.schoolms.inventory.dto.InventoryCategoryRequest;
@@ -67,15 +68,21 @@ public class InventoryController {
         return ApiResponse.ok(inventoryService.listAssignees());
     }
 
-    @Operation(summary = "List inventory items")
+    @Operation(summary = "List inventory items (paginated, filterable and sortable)")
     @PreAuthorize("hasAuthority('INVENTORY_READ')")
     @GetMapping("/items")
-    public ApiResponse<List<InventoryItemDto>> listItems(
+    public ApiResponse<PagedResponse<InventoryItemDto>> listItems(
             @RequestParam(required = false) UUID category,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String condition,
-            @RequestParam(required = false) Boolean lowStock) {
-        return ApiResponse.ok(inventoryService.listItems(category, location, condition, lowStock));
+            @RequestParam(required = false) Boolean lowStock,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        return ApiResponse.ok(inventoryService.listItems(
+                category, location, condition, lowStock, query, page, size, sort, direction));
     }
 
     @Operation(summary = "Get an inventory item")

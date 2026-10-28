@@ -42,6 +42,8 @@ export class CertificateService {
     query?: string;
     page?: number;
     size?: number;
+    sort?: string;
+    direction?: string;
   }): Observable<PagedResponse<CertificateIssued>> {
     let params = new HttpParams();
     if (opts.type) {
@@ -53,7 +55,13 @@ export class CertificateService {
     if (opts.query) {
       params = params.set('query', opts.query);
     }
-    params = params.set('page', String(opts.page ?? 0)).set('size', String(opts.size ?? 20));
+    params = params.set('page', String(opts.page ?? 0)).set('size', String(opts.size ?? 25));
+    if (opts.sort) {
+      params = params.set('sort', opts.sort);
+    }
+    if (opts.direction) {
+      params = params.set('direction', opts.direction);
+    }
     return this.http.get<ApiResponse<PagedResponse<CertificateIssued>>>('/api/certificates', { params }).pipe(
       map((res) => res.data),
     );
@@ -106,8 +114,11 @@ export class CertificateService {
   listRequests(opts: {
     type?: CertificateType | '';
     status?: CertificateRequestStatus | '';
+    query?: string;
     page?: number;
     size?: number;
+    sort?: string;
+    direction?: string;
   }): Observable<PagedResponse<CertificateRequest>> {
     let params = new HttpParams();
     if (opts.type) {
@@ -116,7 +127,16 @@ export class CertificateService {
     if (opts.status) {
       params = params.set('status', opts.status);
     }
-    params = params.set('page', String(opts.page ?? 0)).set('size', String(opts.size ?? 20));
+    if (opts.query) {
+      params = params.set('query', opts.query);
+    }
+    params = params.set('page', String(opts.page ?? 0)).set('size', String(opts.size ?? 25));
+    if (opts.sort) {
+      params = params.set('sort', opts.sort);
+    }
+    if (opts.direction) {
+      params = params.set('direction', opts.direction);
+    }
     return this.http.get<ApiResponse<PagedResponse<CertificateRequest>>>('/api/certificates/requests', { params }).pipe(
       map((res) => res.data),
     );

@@ -1,6 +1,7 @@
 package com.schoolms.notice;
 
 import com.schoolms.common.api.ApiResponse;
+import com.schoolms.common.api.PagedResponse;
 import com.schoolms.notice.dto.NoticeDto;
 import com.schoolms.notice.dto.NoticeRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,13 +28,18 @@ public class NoticeController {
 
     private final NoticeService noticeService;
 
-    @Operation(summary = "List notices (optionally filtered by status or only mine)")
+    @Operation(summary = "List notices (paginated, filterable and sortable)")
     @PreAuthorize("hasAnyAuthority('NOTICE_READ','STUDENT_READ')")
     @GetMapping
-    public ApiResponse<List<NoticeDto>> list(
+    public ApiResponse<PagedResponse<NoticeDto>> list(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false, defaultValue = "false") boolean mine) {
-        return ApiResponse.ok(noticeService.list(status, mine));
+            @RequestParam(required = false, defaultValue = "false") boolean mine,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction) {
+        return ApiResponse.ok(noticeService.list(status, mine, query, page, size, sort, direction));
     }
 
     @Operation(summary = "List published notices visible to the current user")

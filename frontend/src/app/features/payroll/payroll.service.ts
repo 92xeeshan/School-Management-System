@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { ApiResponse } from '../../core/models/api.model';
+import { ApiResponse, PagedResponse } from '../../core/models/api.model';
 import {
   Expense,
   ExpenseCategory,
@@ -22,11 +22,25 @@ export class PayrollService {
       .pipe(map((res) => res.data ?? []));
   }
 
-  listExpenses(year: number): Observable<Expense[]> {
-    const params = new HttpParams().set('year', String(year));
+  listExpenses(year: number, opts: {
+    page?: number;
+    size?: number;
+    sort?: string;
+    direction?: string;
+  } = {}): Observable<PagedResponse<Expense>> {
+    let params = new HttpParams()
+      .set('year', String(year))
+      .set('page', String(opts.page ?? 0))
+      .set('size', String(opts.size ?? 25));
+    if (opts.sort) {
+      params = params.set('sort', opts.sort);
+    }
+    if (opts.direction) {
+      params = params.set('direction', opts.direction);
+    }
     return this.http
-      .get<ApiResponse<Expense[]>>('/api/expenses', { params })
-      .pipe(map((res) => res.data ?? []));
+      .get<ApiResponse<PagedResponse<Expense>>>('/api/expenses', { params })
+      .pipe(map((res) => res.data));
   }
 
   createExpense(payload: ExpensePayload): Observable<Expense> {

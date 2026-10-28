@@ -1,6 +1,8 @@
 package com.schoolms.user;
 
 import com.schoolms.auth.AuthUserView;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +18,22 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByIdAndSchoolId(UUID id, UUID schoolId);
 
     List<User> findBySchoolIdOrderByCreatedAtDesc(UUID schoolId);
+
+    Page<User> findBySchoolId(UUID schoolId, Pageable pageable);
+
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.schoolId = :schoolId
+              AND (:query IS NULL
+                OR LOWER(u.username) LIKE :like
+                OR LOWER(u.firstName) LIKE :like
+                OR LOWER(COALESCE(u.lastName, '')) LIKE :like
+                OR LOWER(COALESCE(u.email, '')) LIKE :like)
+            """)
+    Page<User> searchDirectory(@Param("schoolId") UUID schoolId,
+                               @Param("query") String query,
+                               @Param("like") String like,
+                               Pageable pageable);
 
     boolean existsByUsernameAndSchoolId(String username, UUID schoolId);
 

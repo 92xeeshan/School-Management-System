@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { ApiResponse } from '../../core/models/api.model';
+import { ApiResponse, PagedResponse } from '../../core/models/api.model';
 import {
   InventoryAssignee,
   InventoryCategory,
@@ -45,8 +45,15 @@ export class InventoryService {
     location?: string;
     condition?: string;
     lowStock?: boolean;
-  }): Observable<InventoryItem[]> {
-    let params = new HttpParams();
+    query?: string;
+    page?: number;
+    size?: number;
+    sort?: string;
+    direction?: string;
+  }): Observable<PagedResponse<InventoryItem>> {
+    let params = new HttpParams()
+      .set('page', String(filters?.page ?? 0))
+      .set('size', String(filters?.size ?? 25));
     if (filters?.category) {
       params = params.set('category', filters.category);
     }
@@ -59,9 +66,18 @@ export class InventoryService {
     if (filters?.lowStock) {
       params = params.set('lowStock', 'true');
     }
+    if (filters?.query) {
+      params = params.set('query', filters.query);
+    }
+    if (filters?.sort) {
+      params = params.set('sort', filters.sort);
+    }
+    if (filters?.direction) {
+      params = params.set('direction', filters.direction);
+    }
     return this.http
-      .get<ApiResponse<InventoryItem[]>>('/api/inventory/items', { params })
-      .pipe(map((res) => res.data ?? []));
+      .get<ApiResponse<PagedResponse<InventoryItem>>>('/api/inventory/items', { params })
+      .pipe(map((res) => res.data));
   }
 
   createItem(payload: InventoryItemPayload): Observable<InventoryItem> {

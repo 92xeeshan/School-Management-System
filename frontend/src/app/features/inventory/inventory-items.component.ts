@@ -17,10 +17,11 @@ import {
   STOCK_TYPES,
 } from './inventory.model';
 import { InventoryService } from './inventory.service';
+import { DirectoryPagerComponent, SortDirection, sortIndicator, toggleSort } from '../../layout/directory-pager/directory-pager.component';
 
 @Component({
   selector: 'app-inventory-items',
-  imports: [ReactiveFormsModule, TranslateModule, EmptyStateComponent],
+  imports: [ReactiveFormsModule, TranslateModule, EmptyStateComponent, DirectoryPagerComponent],
   template: `
     @if (pageError) {
       <p class="banner error">{{ pageError | translate }}</p>
@@ -40,8 +41,8 @@ import { InventoryService } from './inventory.service';
 
     <div class="card">
       <div class="card-toolbar filters">
-        <input class="search" type="search" [placeholder]="'common.search' | translate"
-               (input)="search = $any($event.target).value" />
+        <input class="search" type="search" [value]="search" [placeholder]="'common.search' | translate"
+               (input)="onSearch($any($event.target).value)" />
         <select [value]="categoryFilter" (change)="onCategory($any($event.target).value)">
           <option value="">{{ 'inventory.allCategories' | translate }}</option>
           @for (category of categories; track category.id) {
@@ -73,7 +74,7 @@ import { InventoryService } from './inventory.service';
         }
       </div>
 
-      @if (filteredItems.length === 0) {
+      @if (items.length === 0) {
         <app-empty-state icon="inventory_2" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate">
           @if (canManage) {
             <button class="btn btn-primary" type="button" (click)="openAdd()">{{ 'inventory.addItem' | translate }}</button>
@@ -84,12 +85,12 @@ import { InventoryService } from './inventory.service';
           <table class="data-table">
             <thead>
               <tr>
-                <th>{{ 'inventory.name' | translate }}</th>
+                <th class="sortable" (click)="sortBy('name')">{{ 'inventory.name' | translate }}<span class="sort-ind">{{ indicator('name') }}</span></th>
                 <th>{{ 'inventory.category' | translate }}</th>
-                <th>{{ 'inventory.sku' | translate }}</th>
-                <th>{{ 'inventory.quantity' | translate }}</th>
-                <th>{{ 'inventory.location' | translate }}</th>
-                <th>{{ 'inventory.conditionLabel' | translate }}</th>
+                <th class="sortable" (click)="sortBy('sku')">{{ 'inventory.sku' | translate }}<span class="sort-ind">{{ indicator('sku') }}</span></th>
+                <th class="sortable" (click)="sortBy('quantity')">{{ 'inventory.quantity' | translate }}<span class="sort-ind">{{ indicator('quantity') }}</span></th>
+                <th class="sortable" (click)="sortBy('location')">{{ 'inventory.location' | translate }}<span class="sort-ind">{{ indicator('location') }}</span></th>
+                <th class="sortable" (click)="sortBy('condition')">{{ 'inventory.conditionLabel' | translate }}<span class="sort-ind">{{ indicator('condition') }}</span></th>
                 <th>{{ 'inventory.assignedTo' | translate }}</th>
                 @if (canManage) {
                   <th>{{ 'common.actions' | translate }}</th>
@@ -97,7 +98,7 @@ import { InventoryService } from './inventory.service';
               </tr>
             </thead>
             <tbody>
-              @for (item of filteredItems; track item.id) {
+              @for (item of items; track item.id) {
                 <tr [class.low]="item.lowStock">
                   <td>
                     <div class="strong">{{ item.name }}</div>
@@ -140,6 +141,10 @@ import { InventoryService } from './inventory.service';
             </tbody>
           </table>
         </div>
+        <app-directory-pager
+          [pageIndex]="pageIndex" [pageSize]="pageSize"
+          [totalElements]="totalElements" [totalPages]="totalPages"
+          (pageChange)="onPage($event)" (pageSizeChange)="onPageSize($event)" />
       }
     </div>
 
@@ -362,6 +367,13 @@ export class InventoryItemsComponent implements OnInit {
   conditionFilter = '';
   locationFilter = '';
   lowStockOnly = false;
+  pageIndex = 0;
+  pageSize = 25;
+  totalElements = 0;
+  totalPages = 0;
+  sortKey = 'name';
+  sortDirection: SortDirection = 'asc';
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   showForm = false;
   editingId: string | null = null;
@@ -432,36 +444,61 @@ export class InventoryItemsComponent implements OnInit {
     return this.txnForm.controls.type.value === 'CHECKOUT';
   }
 
-  get filteredItems(): InventoryItem[] {
-    const q = this.search.trim().toLowerCase();
-    if (!q) {
-      return this.items;
+  onSearch(value: string): void {
+    this.search = value;
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
     }
-    return this.items.filter((item) =>
-      item.name.toLowerCase().includes(q) ||
-      (item.sku ?? '').toLowerCase().includes(q) ||
-      (item.location ?? '').toLowerCase().includes(q) ||
-      (item.vendor ?? '').toLowerCase().includes(q)
-    );
+    this.searchTimer = setTimeout(() => {
+      this.pageIndex = 0;
+      this.loadItems();
+    }, 300);
+  }
+
+  sortBy(key: string): void {
+    const next = toggleSort(this.sortKey, key, this.sortDirection);
+    this.sortKey = next.key;
+    this.sortDirection = next.direction;
+    this.pageIndex = 0;
+    this.loadItems();
+  }
+
+  indicator(key: string): string {
+    return sortIndicator(this.sortKey, key, this.sortDirection);
+  }
+
+  onPage(page: number): void {
+    this.pageIndex = page;
+    this.loadItems();
+  }
+
+  onPageSize(size: number): void {
+    this.pageSize = size;
+    this.pageIndex = 0;
+    this.loadItems();
   }
 
   onCategory(value: string): void {
     this.categoryFilter = value;
+    this.pageIndex = 0;
     this.loadItems();
   }
 
   onCondition(value: string): void {
     this.conditionFilter = value;
+    this.pageIndex = 0;
     this.loadItems();
   }
 
   onLocation(value: string): void {
     this.locationFilter = value;
+    this.pageIndex = 0;
     this.loadItems();
   }
 
   onLowStock(value: boolean): void {
     this.lowStockOnly = value;
+    this.pageIndex = 0;
     this.loadItems();
   }
 
@@ -700,9 +737,16 @@ export class InventoryItemsComponent implements OnInit {
       location: this.locationFilter || undefined,
       condition: this.conditionFilter || undefined,
       lowStock: this.lowStockOnly || undefined,
+      query: this.search.trim() || undefined,
+      page: this.pageIndex,
+      size: this.pageSize,
+      sort: this.sortKey,
+      direction: this.sortDirection,
     }).subscribe({
-      next: (items) => {
-        this.items = items;
+      next: (page) => {
+        this.items = page?.content ?? [];
+        this.totalElements = page?.totalElements ?? 0;
+        this.totalPages = page?.totalPages ?? 0;
         this.pageError = '';
         this.cdr.markForCheck();
       },

@@ -128,6 +128,56 @@
   background: var(--color-primary-soft);
 }
 
+.data-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.data-table thead th.sortable:hover {
+  color: var(--color-primary);
+}
+
+.sort-ind {
+  margin-left: 4px;
+  font-size: .7rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.pagination .spacer {
+  flex: 1;
+}
+
+.page-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .82rem;
+  color: var(--color-muted);
+}
+
+.page-size select {
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  line-height: 1.2;
+}
+
 .empty-state {
   padding: 40px 24px;
   text-align: center;

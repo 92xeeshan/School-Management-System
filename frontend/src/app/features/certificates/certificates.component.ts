@@ -16,12 +16,13 @@ import {
 import { ApiError } from '../../core/models/api.model';
 import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
+import { DirectoryPagerComponent, SortDirection, sortIndicator, toggleSort } from '../../layout/directory-pager/directory-pager.component';
 
 const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_COMPLETION'];
 
 @Component({
   selector: 'app-certificates',
-  imports: [TranslateModule, FormsModule, PageHeaderComponent, EmptyStateComponent],
+  imports: [TranslateModule, FormsModule, PageHeaderComponent, EmptyStateComponent, DirectoryPagerComponent],
   template: `
     <div class="page">
       <app-page-header [title]="'certificates.title' | translate" [subtitle]="'certificates.subtitle' | translate" />
@@ -68,13 +69,13 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
       <div class="card">
         <h2>{{ 'certificates.queue' | translate }}</h2>
         <div class="card-toolbar">
-          <select [(ngModel)]="requestTypeFilter" (ngModelChange)="loadRequests()">
+          <select [(ngModel)]="requestTypeFilter" (ngModelChange)="onRequestFilter()">
             <option value="">{{ 'certificates.allTypes' | translate }}</option>
             @for (t of types; track t) {
               <option [value]="t">{{ ('certificates.types.' + t) | translate }}</option>
             }
           </select>
-          <select [(ngModel)]="requestStatusFilter" (ngModelChange)="loadRequests()">
+          <select [(ngModel)]="requestStatusFilter" (ngModelChange)="onRequestFilter()">
             <option value="">{{ 'certificates.allStatuses' | translate }}</option>
             <option value="SUBMITTED">{{ 'certificates.statuses.SUBMITTED' | translate }}</option>
             <option value="TEACHER_REVIEWED">{{ 'certificates.statuses.TEACHER_REVIEWED' | translate }}</option>
@@ -95,8 +96,8 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
             <thead>
               <tr>
                 <th>{{ 'certificates.student' | translate }}</th>
-                <th>{{ 'certificates.type' | translate }}</th>
-                <th>{{ 'common.status' | translate }}</th>
+                <th class="sortable" (click)="sortRequestsBy('type')">{{ 'certificates.type' | translate }}<span class="sort-ind">{{ requestIndicator('type') }}</span></th>
+                <th class="sortable" (click)="sortRequestsBy('status')">{{ 'common.status' | translate }}<span class="sort-ind">{{ requestIndicator('status') }}</span></th>
                 <th>{{ 'certificates.requestReason' | translate }}</th>
                 <th>{{ 'common.actions' | translate }}</th>
               </tr>
@@ -134,6 +135,10 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
             </tbody>
           </table>
         </div>
+        <app-directory-pager
+          [pageIndex]="requestPageIndex" [pageSize]="requestPageSize"
+          [totalElements]="requestTotalElements" [totalPages]="requestTotalPages"
+          (pageChange)="onRequestPage($event)" (pageSizeChange)="onRequestPageSize($event)" />
         }
       </div>
 
@@ -141,13 +146,13 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
         <h2>{{ 'certificates.register' | translate }}</h2>
         <div class="card-toolbar">
           <input type="text" [(ngModel)]="query" (keyup.enter)="load()" [placeholder]="'certificates.search' | translate" />
-          <select [(ngModel)]="typeFilter" (ngModelChange)="load()">
+          <select [(ngModel)]="typeFilter" (ngModelChange)="onRegisterFilter()">
             <option value="">{{ 'certificates.allTypes' | translate }}</option>
             @for (t of types; track t) {
               <option [value]="t">{{ ('certificates.types.' + t) | translate }}</option>
             }
           </select>
-          <select [(ngModel)]="statusFilter" (ngModelChange)="load()">
+          <select [(ngModel)]="statusFilter" (ngModelChange)="onRegisterFilter()">
             <option value="">{{ 'certificates.allStatuses' | translate }}</option>
             <option value="DRAFT">{{ 'certificates.statuses.DRAFT' | translate }}</option>
             <option value="ISSUED">{{ 'certificates.statuses.ISSUED' | translate }}</option>
@@ -164,11 +169,11 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
           <table class="data-table">
             <thead>
               <tr>
-                <th>{{ 'certificates.number' | translate }}</th>
+                <th class="sortable" (click)="sortRegisterBy('certificateNo')">{{ 'certificates.number' | translate }}<span class="sort-ind">{{ registerIndicator('certificateNo') }}</span></th>
                 <th>{{ 'certificates.student' | translate }}</th>
-                <th>{{ 'certificates.type' | translate }}</th>
-                <th>{{ 'common.status' | translate }}</th>
-                <th>{{ 'certificates.issuedOn' | translate }}</th>
+                <th class="sortable" (click)="sortRegisterBy('type')">{{ 'certificates.type' | translate }}<span class="sort-ind">{{ registerIndicator('type') }}</span></th>
+                <th class="sortable" (click)="sortRegisterBy('status')">{{ 'common.status' | translate }}<span class="sort-ind">{{ registerIndicator('status') }}</span></th>
+                <th class="sortable" (click)="sortRegisterBy('issuedDate')">{{ 'certificates.issuedOn' | translate }}<span class="sort-ind">{{ registerIndicator('issuedDate') }}</span></th>
                 <th>{{ 'certificates.issuedBy' | translate }}</th>
                 <th>{{ 'common.actions' | translate }}</th>
               </tr>
@@ -204,6 +209,10 @@ const CERT_TYPES: CertificateType[] = ['BONAFIDE', 'TC', 'CHARACTER', 'COURSE_CO
             </tbody>
           </table>
         </div>
+        <app-directory-pager
+          [pageIndex]="pageIndex" [pageSize]="pageSize"
+          [totalElements]="totalElements" [totalPages]="totalPages"
+          (pageChange)="onRegisterPage($event)" (pageSizeChange)="onRegisterPageSize($event)" />
         }
       </div>
     </div>
@@ -316,6 +325,18 @@ export class CertificatesComponent implements OnInit {
   statusFilter: CertificateStatus | '' = '';
   requestTypeFilter: CertificateType | '' = '';
   requestStatusFilter: CertificateRequestStatus | '' = '';
+  pageIndex = 0;
+  pageSize = 25;
+  totalElements = 0;
+  totalPages = 0;
+  sortKey = 'createdAt';
+  sortDirection: SortDirection = 'desc';
+  requestPageIndex = 0;
+  requestPageSize = 25;
+  requestTotalElements = 0;
+  requestTotalPages = 0;
+  requestSortKey = 'createdAt';
+  requestSortDirection: SortDirection = 'desc';
   error = '';
   requestError = '';
   templateType: CertificateType = 'BONAFIDE';
@@ -352,15 +373,77 @@ export class CertificatesComponent implements OnInit {
     }
   }
 
+  onRegisterFilter(): void {
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  onRequestFilter(): void {
+    this.requestPageIndex = 0;
+    this.loadRequests();
+  }
+
+  sortRegisterBy(key: string): void {
+    const next = toggleSort(this.sortKey, key, this.sortDirection);
+    this.sortKey = next.key;
+    this.sortDirection = next.direction;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  sortRequestsBy(key: string): void {
+    const next = toggleSort(this.requestSortKey, key, this.requestSortDirection);
+    this.requestSortKey = next.key;
+    this.requestSortDirection = next.direction;
+    this.requestPageIndex = 0;
+    this.loadRequests();
+  }
+
+  registerIndicator(key: string): string {
+    return sortIndicator(this.sortKey, key, this.sortDirection);
+  }
+
+  requestIndicator(key: string): string {
+    return sortIndicator(this.requestSortKey, key, this.requestSortDirection);
+  }
+
+  onRegisterPage(page: number): void {
+    this.pageIndex = page;
+    this.load();
+  }
+
+  onRegisterPageSize(size: number): void {
+    this.pageSize = size;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  onRequestPage(page: number): void {
+    this.requestPageIndex = page;
+    this.loadRequests();
+  }
+
+  onRequestPageSize(size: number): void {
+    this.requestPageSize = size;
+    this.requestPageIndex = 0;
+    this.loadRequests();
+  }
+
   load(): void {
     this.error = '';
     this.certificates.register({
       type: this.typeFilter,
       status: this.statusFilter,
       query: this.query.trim(),
+      page: this.pageIndex,
+      size: this.pageSize,
+      sort: this.sortKey,
+      direction: this.sortDirection,
     }).subscribe({
       next: (page) => {
         this.rows = page.content ?? [];
+        this.totalElements = page.totalElements ?? 0;
+        this.totalPages = page.totalPages ?? 0;
         this.cdr.markForCheck();
       },
       error: () => {
@@ -375,9 +458,15 @@ export class CertificatesComponent implements OnInit {
     this.certificates.listRequests({
       type: this.requestTypeFilter,
       status: this.requestStatusFilter,
+      page: this.requestPageIndex,
+      size: this.requestPageSize,
+      sort: this.requestSortKey,
+      direction: this.requestSortDirection,
     }).subscribe({
       next: (page) => {
         this.requests = page.content ?? [];
+        this.requestTotalElements = page.totalElements ?? 0;
+        this.requestTotalPages = page.totalPages ?? 0;
         this.cdr.markForCheck();
       },
       error: () => {

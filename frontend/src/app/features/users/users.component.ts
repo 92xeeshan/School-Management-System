@@ -2,17 +2,18 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
-import { ApiResponse } from '../../core/models/api.model';
+import { ApiResponse, PagedResponse } from '../../core/models/api.model';
 import { AppUser, CredentialAudit } from '../../core/auth/auth.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/credential-handover/credential-handover.component';
 import { PasswordResetDialogComponent, PasswordResetPayload } from '../../layout/credential-handover/password-reset-dialog.component';
+import { DirectoryPagerComponent, SortDirection, sortIndicator, toggleSort } from '../../layout/directory-pager/directory-pager.component';
 
 @Component({
   selector: 'app-users',
-  imports: [ReactiveFormsModule, TranslateModule, PageHeaderComponent, EmptyStateComponent, CredentialHandoverComponent, PasswordResetDialogComponent],
+  imports: [ReactiveFormsModule, TranslateModule, PageHeaderComponent, EmptyStateComponent, CredentialHandoverComponent, PasswordResetDialogComponent, DirectoryPagerComponent],
   template: `
     <app-page-header [title]="'users.title' | translate">
       @if (canCreate) {
@@ -27,6 +28,10 @@ import { PasswordResetDialogComponent, PasswordResetPayload } from '../../layout
     }
 
     <div class="card">
+      <div class="card-toolbar">
+        <input class="search" type="search" [value]="query" [placeholder]="'common.search' | translate"
+               (input)="onSearch($any($event.target).value)" />
+      </div>
       @if (users.length === 0) {
         <app-empty-state icon="manage_accounts" [title]="'common.noData' | translate" [hint]="'common.emptyHint' | translate" />
       } @else {
@@ -34,12 +39,12 @@ import { PasswordResetDialogComponent, PasswordResetPayload } from '../../layout
           <table class="data-table">
             <thead>
               <tr>
-                <th>{{ 'users.username' | translate }}</th>
-                <th>{{ 'users.name' | translate }}</th>
+                <th class="sortable" (click)="sortBy('username')">{{ 'users.username' | translate }}<span class="sort-ind">{{ indicator('username') }}</span></th>
+                <th class="sortable" (click)="sortBy('name')">{{ 'users.name' | translate }}<span class="sort-ind">{{ indicator('name') }}</span></th>
                 <th>{{ 'users.roles' | translate }}</th>
-                <th>{{ 'common.status' | translate }}</th>
+                <th class="sortable" (click)="sortBy('status')">{{ 'common.status' | translate }}<span class="sort-ind">{{ indicator('status') }}</span></th>
                 <th>{{ 'users.mustChange' | translate }}</th>
-                <th>{{ 'users.lastLogin' | translate }}</th>
+                <th class="sortable" (click)="sortBy('lastLogin')">{{ 'users.lastLogin' | translate }}<span class="sort-ind">{{ indicator('lastLogin') }}</span></th>
                 @if (canUpdate) {
                   <th>{{ 'common.actions' | translate }}</th>
                 }
@@ -66,6 +71,10 @@ import { PasswordResetDialogComponent, PasswordResetPayload } from '../../layout
             </tbody>
           </table>
         </div>
+        <app-directory-pager
+          [pageIndex]="pageIndex" [pageSize]="pageSize"
+          [totalElements]="totalElements" [totalPages]="totalPages"
+          (pageChange)="onPage($event)" (pageSizeChange)="onPageSize($event)" />
       }
     </div>
 
@@ -153,6 +162,14 @@ import { PasswordResetDialogComponent, PasswordResetPayload } from '../../layout
 export class UsersComponent implements OnInit {
   users: AppUser[] = [];
   audit: CredentialAudit[] = [];
+  query = '';
+  pageIndex = 0;
+  pageSize = 25;
+  totalElements = 0;
+  totalPages = 0;
+  sortKey = 'createdAt';
+  sortDirection: SortDirection = 'desc';
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
   pageError = '';
   showModal = false;
   saving = false;
@@ -265,10 +282,55 @@ export class UsersComponent implements OnInit {
     }
   }
 
+  onSearch(value: string): void {
+    this.query = value;
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.searchTimer = setTimeout(() => {
+      this.pageIndex = 0;
+      this.load();
+    }, 300);
+  }
+
+  sortBy(key: string): void {
+    const next = toggleSort(this.sortKey, key, this.sortDirection);
+    this.sortKey = next.key;
+    this.sortDirection = next.direction;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  indicator(key: string): string {
+    return sortIndicator(this.sortKey, key, this.sortDirection);
+  }
+
+  onPage(page: number): void {
+    this.pageIndex = page;
+    this.load();
+  }
+
+  onPageSize(size: number): void {
+    this.pageSize = size;
+    this.pageIndex = 0;
+    this.load();
+  }
+
   private load(): void {
-    this.http.get<ApiResponse<AppUser[]>>('/api/users').subscribe({
+    const params: Record<string, string> = {
+      page: String(this.pageIndex),
+      size: String(this.pageSize),
+      sort: this.sortKey,
+      direction: this.sortDirection,
+    };
+    if (this.query.trim()) {
+      params['query'] = this.query.trim();
+    }
+    this.http.get<ApiResponse<PagedResponse<AppUser>>>('/api/users', { params }).subscribe({
       next: (res) => {
-        this.users = res.data ?? [];
+        this.users = res.data?.content ?? [];
+        this.totalElements = res.data?.totalElements ?? 0;
+        this.totalPages = res.data?.totalPages ?? 0;
         this.pageError = '';
         this.cdr.markForCheck();
       },
