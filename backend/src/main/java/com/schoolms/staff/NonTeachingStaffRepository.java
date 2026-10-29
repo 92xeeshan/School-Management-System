@@ -34,6 +34,8 @@ public interface NonTeachingStaffRepository extends JpaRepository<NonTeachingSta
 
     Optional<NonTeachingStaff> findByIdAndSchoolId(UUID id, UUID schoolId);
 
+    Optional<NonTeachingStaff> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
+
     boolean existsBySchoolIdAndEmployeeNo(UUID schoolId, String employeeNo);
 
     boolean existsBySchoolIdAndEmployeeNoAndIdNot(UUID schoolId, String employeeNo, UUID id);

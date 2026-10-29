@@ -312,6 +312,57 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'leave',
+        loadComponent: () =>
+          import('./features/leave/leave-shell.component').then((m) => m.LeaveShellComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['LEAVE_READ', 'LEAVE_APPLY', 'LEAVE_APPROVE', 'LEAVE_MANAGE'] },
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            redirectTo: () => {
+              const auth = inject(AuthService);
+              if (auth.hasAnyPermission(['LEAVE_READ', 'LEAVE_APPLY'])) {
+                return 'mine';
+              }
+              if (auth.hasPermission('LEAVE_APPROVE')) {
+                return 'approvals';
+              }
+              return 'setup';
+            },
+          },
+          {
+            path: 'mine',
+            loadComponent: () =>
+              import('./features/leave/my-leave.component').then((m) => m.MyLeaveComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['LEAVE_READ', 'LEAVE_APPLY'] },
+          },
+          {
+            path: 'approvals',
+            loadComponent: () =>
+              import('./features/leave/leave-approvals.component').then((m) => m.LeaveApprovalsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['LEAVE_APPROVE'] },
+          },
+          {
+            path: 'setup',
+            loadComponent: () =>
+              import('./features/leave/leave-setup.component').then((m) => m.LeaveSetupComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['LEAVE_MANAGE'] },
+          },
+          {
+            path: 'reports',
+            loadComponent: () =>
+              import('./features/leave/leave-reports.component').then((m) => m.LeaveReportsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['LEAVE_MANAGE'] },
+          },
+        ],
+      },
+      {
         path: 'inventory',
         loadComponent: () =>
           import('./features/inventory/inventory-shell.component').then((m) => m.InventoryShellComponent),
