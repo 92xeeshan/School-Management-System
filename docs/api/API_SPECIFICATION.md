@@ -356,6 +356,57 @@ PDF/ZIP: 200 file body with `Content-Disposition`. 400 if unpublished when expor
 
 Types: `TC`, `BONAFIDE`, `CHARACTER`, `COURSE_COMPLETION`.
 
+---
+
+### 3.13 Employee leave — `/api/leave`
+
+Staff only. Students and parents receive 403. Apply/approve/cancel also require a `teacher_profile` or `non_teaching_staff` row (`leave.not_staff`).
+
+| Method | Path | Permission | Purpose |
+|---|---|---|---|
+| GET | `/types` | `LEAVE_READ` or `LEAVE_MANAGE` | Leave types |
+| POST | `/types` | `LEAVE_MANAGE` | Create type |
+| PUT | `/types/{id}` | `LEAVE_MANAGE` | Update type |
+| POST | `/types/{id}/deactivate` | `LEAVE_MANAGE` | Soft-deactivate |
+| GET | `/policies` | `LEAVE_READ` or `LEAVE_MANAGE` | Policies |
+| POST | `/policies` | `LEAVE_MANAGE` | Create policy |
+| PUT | `/policies/{id}` | `LEAVE_MANAGE` | Update policy |
+| GET | `/year` | `LEAVE_READ` or `LEAVE_MANAGE` | Leave year window |
+| PUT | `/year` | `LEAVE_MANAGE` | `ACADEMIC` or `CALENDAR` |
+| GET | `/assignments` | `LEAVE_MANAGE` | Policy assignments |
+| GET | `/staff` | `LEAVE_MANAGE` | Assignable staff |
+| POST | `/assignments` | `LEAVE_MANAGE` | Assign policy to staff |
+| GET | `/balances/mine` | `LEAVE_READ` | Own balances |
+| GET | `/balances` | `LEAVE_MANAGE` | All staff balances |
+| POST | `/balances/adjust` | `LEAVE_MANAGE` | Manual ADJUST ledger |
+| GET | `/days?from=&to=` | `LEAVE_READ` or `LEAVE_APPLY` | Working-day preview |
+| POST | `/requests` | `LEAVE_APPLY` | JSON apply |
+| POST | `/requests` (multipart) | `LEAVE_APPLY` | Apply with file |
+| GET | `/requests/mine` | `LEAVE_READ` | Own history (paged) |
+| GET | `/requests` | `LEAVE_APPROVE` or `LEAVE_MANAGE` | Queue (paged) |
+| POST | `/requests/{id}/approve` | `LEAVE_APPROVE` | Approve |
+| POST | `/requests/{id}/reject` | `LEAVE_APPROVE` | Body `{ "rejectionReason" }` |
+| POST | `/requests/{id}/cancel` | `LEAVE_APPLY` or `LEAVE_MANAGE` | Body `{ "reason" }` |
+| GET | `/reports/today` | `LEAVE_APPROVE` or `LEAVE_MANAGE` | On leave today |
+| GET | `/reports/taken` | `LEAVE_MANAGE` | Leave taken this year |
+| GET | `/reports/balances.xlsx` | `LEAVE_MANAGE` | Excel balances |
+| GET | `/reports/taken.xlsx` | `LEAVE_MANAGE` | Excel taken |
+
+Apply JSON:
+
+```json
+{
+  "leaveTypeId": "a1000000-0000-0000-0000-000000000001",
+  "fromDate": "2026-06-01",
+  "toDate": "2026-06-03",
+  "reason": "Family function"
+}
+```
+
+Business codes: `leave.overlap`, `leave.duplicate`, `leave.insufficient_balance`, `leave.no_working_days`, `leave.self_approve`, `leave.already_actioned`, `leave.cancel_started`, `leave.not_staff`, `leave.no_policy`, `leave.type_ineligible`.
+
+Days exclude Saturday, Sunday, and `school_event` `HOLIDAY`. Supporting files go to MinIO prefix `leave-docs`.
+
 Request example:
 
 ```json

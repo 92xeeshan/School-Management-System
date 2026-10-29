@@ -1,7 +1,7 @@
 # Database Schema and Data Dictionary
 
 **Engine:** PostgreSQL 15
-**Migrations:** Flyway `backend/src/main/resources/db/migration/V1` through `V28` (no V7)
+**Migrations:** Flyway `backend/src/main/resources/db/migration/V1` through `V37` (no V7). Employee leave is V37.
 **Conventions:** UUID primary keys, `school_id` on tenant tables, VARCHAR enums with CHECK, `created_at` / `updated_at` on most entities
 
 Runtime role: `app_rls`. Migrations role: `schoolms`. RLS helpers: `app_set_school_id`, `app_current_school_id`, `app_bypass_rls`. Policy predicate: `school_id = app_current_school_id() OR app_bypass_rls()`.
@@ -30,6 +30,11 @@ erDiagram
     student ||--o{ fee_payment : pays
     student ||--o{ certificate_issued : receives
     student ||--o{ certificate_request : requests
+    teacher_profile ||--o{ leave_assignment : teaching
+    non_teaching_staff ||--o{ leave_assignment : non_teaching
+    leave_policy ||--o{ leave_policy_item : items
+    leave_type ||--o{ leave_policy_item : quota
+    leave_type ||--o{ leave_request : requests
     exam_schedule ||--o{ exam_schedule_invigilator : staffed
     exam_entry ||--o{ exam_mark : scores
     grading_scheme ||--o{ grade_boundary : bands
@@ -194,7 +199,7 @@ Admit cards are **generated**, not stored as a table.
 |---|---|
 | `school_event` | V16/V23; types include PTM/SPORTS/NOTICE; visibility ROLE + `audience_role`; index date |
 | `award` | `idx_award_school_date`, `idx_award_student`; no REST API |
-| `notifications` | V26; unique `(school_id, recipient_id, source_key)` where source_key present; categories EXAM, ATTENDANCE, FEE, ASSIGNMENT, CERTIFICATE |
+| `notifications` | V26/V37; unique `(school_id, recipient_id, source_key)` where source_key present; categories EXAM, ATTENDANCE, FEE, ASSIGNMENT, CERTIFICATE, LEAVE |
 
 ### 2.9 Certificates
 
@@ -205,6 +210,24 @@ Admit cards are **generated**, not stored as a table.
 | `certificate_request` | partial unique pending `(school_id, student_id, certificate_type)` for SUBMITTED/TEACHER_REVIEWED | V28 |
 
 All three have RLS.
+
+### 2.10 Employee leave (V37)
+
+Staff only (`TEACHING` / `NON_TEACHING`). RLS on every table below.
+
+| Table | Unique / checks | Notes |
+|---|---|---|
+| `leave_type` | `(school_id, code)`; quota >= 0 | code, name, yearly_quota, paid, reason_mandatory, active |
+| `leave_policy` | `(school_id, name)`; category TEACHING / NON_TEACHING / ALL | |
+| `leave_policy_item` | `(policy_id, leave_type_id)` | yearly_quota per type |
+| `leave_year_setting` | `(school_id)`; mode ACADEMIC / CALENDAR | One row per school |
+| `leave_assignment` | `(school_id, staff_type, staff_id)` | One policy per staff |
+| `leave_balance` | `(school_id, staff_type, staff_id, leave_type_id, year_start)` | entitled / used / pending >= 0 |
+| `leave_balance_ledger` | entry_type CREDIT / PENDING / USED / RELEASE / ADJUST | Immutable history |
+| `leave_request` | dates `to_date >= from_date`; days > 0; status PENDING / APPROVED / REJECTED / CANCELLED; partial unique pending same staff+type+dates | Optional MinIO `supporting_doc_key` |
+| `leave_audit` | entity_type + action + changed_by | Workflow trail |
+
+Demo seed: types CL/ML/EL/MAT/PAT/LWP; Teaching and Non-teaching policies; assignments and CREDIT balances for existing DEMO staff; year mode ACADEMIC.
 
 ---
 
@@ -227,6 +250,7 @@ All three have RLS.
 - `idx_notifications_recipient`
 - `idx_non_teaching_staff_school`
 - Certificate issued indexes on student/status/type (V27)
+- Leave: `idx_leave_type_school`, `idx_leave_assignment_policy`, `idx_leave_balance_staff`, `idx_leave_ledger_staff`, `idx_leave_request_staff`, `idx_leave_request_status`, `idx_leave_audit_school`
 
 Query pattern: always include `school_id` (RLS adds it for `app_rls`). List endpoints paginate in the service layer.
 

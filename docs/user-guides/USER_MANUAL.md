@@ -68,6 +68,8 @@ Password recovery is **not** self-service in this version. Ask an administrator 
 
 **Certificates:** You may generate certificates and **review** requests for your class. You cannot give final approval.
 
+**Leave:** Sidebar **Leave** → My leave. Apply for a date range (working days only: no Sat/Sun/holidays), see balances, cancel a pending request or an approved request before it starts. You cannot approve leave or open Setup/Reports.
+
 **Calendar / Notices:** Read school events and notices.
 
 ### 2.3 Parent
@@ -78,7 +80,7 @@ Password recovery is **not** self-service in this version. Ask an administrator 
 
 **Notices / Calendar / Dashboard:** Read-only.
 
-Parents do not get admit-card menu access.
+Parents do not get admit-card menu access. Parents do not see **Leave**.
 
 ### 2.4 Student
 
@@ -89,6 +91,8 @@ Parents do not get admit-card menu access.
 **Downloads:** Admit/report/marksheet when published. Request certificates the same way as parents.
 
 **Examinations:** Admit cards / report cards routes if your permissions include them.
+
+Students do not see **Leave**.
 
 ### 2.5 Admin (day-to-day school)
 
@@ -106,6 +110,9 @@ Use this as the office playbook. Details for configuration are in `ADMIN_GUIDE.m
 | Calendar event | Calendar → add (if you have manage) |
 | Approve results | Downloads → Marksheet → approve / publish |
 | Approve certificates | Certificates → request queue → approve |
+| Apply / approve leave | Leave → My leave / Approvals |
+| Leave types and policies | Leave → Setup |
+| Leave reports / Excel | Leave → Reports |
 
 Print/PDF for admit cards, report cards, and marksheets only works when the record is **published**. Print layout is white A4.
 
@@ -117,7 +124,9 @@ Print/PDF for admit cards, report cards, and marksheets only works when the reco
 |---|---|
 | Login error | Backend must be running. Demo password is `Admin@123`. |
 | Blank page after login | Hard refresh. Clear site data for `schoolms.auth` if the session is corrupt. |
-| Menu item missing | Your role does not include that permission. This is expected for students/parents. |
+| Menu item missing | Your role does not include that permission. This is expected for students/parents. Leave is staff-only. |
+| Leave apply fails `leave.not_staff` | Your login is not linked to a teacher or non-teaching staff record. |
+| Cannot approve own leave | Self-approve is blocked; another admin must decide. |
 | Cannot print admit card | Schedule/cards not published yet. |
 | Certificate request rejected immediately | A request of that type is already pending. |
 | Language mixed | Switch language again; Urdu should flip the layout. |

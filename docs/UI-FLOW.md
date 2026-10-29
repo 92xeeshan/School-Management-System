@@ -4,7 +4,7 @@ This document walks through the complete end-to-end user journey for every
 role. The same application is used by all roles; the menus and the actions
 available depend on the logged-in user's role and permissions.
 
-The UI has six navigation items (left sidebar):
+Sidebar items are permission-gated. Staff leave sits under Payroll:
 
 | Menu        | Route        | What it contains                               |
 |-------------|--------------|------------------------------------------------|
@@ -13,6 +13,8 @@ The UI has six navigation items (left sidebar):
 | Academics   | `/academics` | Classes, sections, subjects, timetable         |
 | Attendance  | `/attendance`| Mark and review daily attendance               |
 | Fees        | `/fees`      | Fee structures, assignments, payments, receipts|
+| Payroll     | `/payroll`   | Expenses, payroll, payslips                    |
+| Leave       | `/leave`     | Mine, approvals, setup, reports (staff only)   |
 | Notices     | `/notices`   | Create, publish and read notices               |
 
 Every page can show the menu icons only when the user's role is granted the
@@ -111,10 +113,15 @@ The Admin runs the school day to day. This is the richest workflow.
       class-wide), priority, and publish date.
    2. Save as **Draft**, then **Publish** when ready (`NOTICE_PUBLISH`),
       or **Archive**/delete.
-8. **Users** – create school users and assign roles (admin only).
-9. **Language** – switch the UI language from the top bar; the choice is
-   saved per user and remembered next login.
-10. **Logout**.
+ 8. **Leave** (`/leave`) — staff only (`LEAVE_*`). Students/parents never see this item.
+    1. **Setup** — leave types, policies, year mode (ACADEMIC/CALENDAR), assign policies (`LEAVE_MANAGE`).
+    2. **Approvals** — pending queue; approve or reject with a reason (`LEAVE_APPROVE`). Cannot approve your own request.
+    3. **Reports** — on leave today, leave taken, Excel export (`LEAVE_MANAGE`).
+    4. **My leave** — apply (weekdays minus holidays), balances, cancel pending or future approved leave.
+ 9. **Users** – create school users and assign roles (admin only).
+ 10. **Language** – switch the UI language from the top bar; the choice is
+    saved per user and remembered next login.
+ 11. **Logout**.
 
 ---
 
@@ -131,8 +138,10 @@ The Admin runs the school day to day. This is the richest workflow.
    (`TIMETABLE_READ`).
 5. **Students** – read-only access to the students in your sections
    (`STUDENT_READ`).
-6. **Notices** – read school notices (`NOTICE_READ`).
-7. **Logout**.
+ 6. **Notices** – read school notices (`NOTICE_READ`).
+ 7. **Leave** (`/leave/mine`) — apply for leave, see balances and history
+    (`LEAVE_READ`, `LEAVE_APPLY`). Teachers cannot open Setup or Approvals.
+ 8. **Logout**.
 
 ---
 
@@ -146,9 +155,10 @@ The Admin runs the school day to day. This is the richest workflow.
 4. **Fees** – view your child's fee assignments, installments and payment
    history, and download receipts (`FEE_READ`, `FEE_RECEIPT_VIEW`).
 5. **Notices** – read school-wide notices (`NOTICE_READ`).
-6. **Timetable** – view your child's class timetable
-   (`TIMETABLE_READ`).
-7. **Logout**.
+ 6. **Timetable** – view your child's class timetable
+    (`TIMETABLE_READ`).
+ 7. Parents do not see **Leave** (no `LEAVE_*` permissions).
+ 8. **Logout**.
 
 ---
 
@@ -159,8 +169,9 @@ The Admin runs the school day to day. This is the richest workflow.
 3. **Timetable** – your class timetable (`TIMETABLE_READ`).
 4. **Attendance** – see your own attendance records
    (`ATTENDANCE_READ`).
-5. **Notices** – read school notices (`NOTICE_READ`).
-6. **Logout**.
+ 5. **Notices** – read school notices (`NOTICE_READ`).
+ 6. Students do not see **Leave**.
+ 7. **Logout**.
 
 ---
 
@@ -192,6 +203,7 @@ A typical day for the school Admin, in order:
 | Attendance            | mark/read   | mark/read | mark | read | read |
 | Fees (structure/payment) | yes     | yes   | -       | -       | read   |
 | Notices               | create/publish | create/publish | read | read | read |
+| Leave                 | manage/approve | manage/approve | apply/read | - | - |
 | Dashboard             | yes         | yes   | yes     | yes     | yes    |
 
 The matrix above is enforced on the backend through the `role_permission`

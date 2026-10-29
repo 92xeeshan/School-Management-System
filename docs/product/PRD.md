@@ -21,8 +21,8 @@ Navigation is **permission-based**. Role names are labels; APIs check permission
 | Persona | Login (demo, password `Admin@123`) | Typical permission set |
 |---|---|---|
 | Super Admin | `superadmin` | All permissions + `SCHOOL_READ` / `SCHOOL_MANAGE`; RLS bypass |
-| Admin | `admin` | All school-level permissions including exam manage, staff CRUD, certificate approve |
-| Teacher | `teacher` (Asha Sharma, EMP001, class teacher Class 5-A) | Read students/classes; mark attendance; exam read/mark; certificate generate/review |
+| Admin | `admin` | All school-level permissions including exam manage, staff CRUD, certificate approve, leave manage/approve |
+| Teacher | `teacher` (Asha Sharma, EMP001, class teacher Class 5-A) | Read students/classes; mark attendance; exam read/mark; certificate generate/review; apply/read own leave |
 | Parent | `parent` (Rajesh Kumar, guardian of ADM0001) | Timetable, attendance, fees, notices, events, report/marksheet read, certificate request |
 | Student | `student` (Aarav Kumar, ADM0001) | Timetable, attendance, notices, events, admit/report/marksheet read, certificate request |
 
@@ -34,6 +34,7 @@ See `docs/security/SECURITY.md` for the full RBAC matrix.
 - Examinations re-evaluation tab is a placeholder.
 - There is no dedicated Users admin screen in the Angular app; user APIs exist for admin/super-admin clients.
 - Parents have `ADMIT_CARD_READ` for linked children only.
+- Students and parents never see employee leave (no `LEAVE_*` permissions).
 
 ---
 
@@ -132,7 +133,41 @@ Types: `TC`, `BONAFIDE`, `CHARACTER`, `COURSE_COMPLETION`.
 - Sequential certificate numbers; TC can deactivate student + user.
 - Downloads: `/certificates` (staff queue requires generate/approve in nav), `/downloads/certificates` (self-service).
 
-### PR-12 Presentation
+### PR-12 Employee leave
+
+Staff-only module. Separate from student attendance status `LEAVE`. Package `com.schoolms.leave`. UI `/leave`.
+
+Permissions (Flyway V37):
+
+| Code | SUPER_ADMIN | ADMIN | TEACHER | STUDENT | PARENT |
+|---|---|---|---|---|---|
+| `LEAVE_READ` | yes | yes | yes | no | no |
+| `LEAVE_APPLY` | yes | yes | yes | no | no |
+| `LEAVE_MANAGE` | yes | yes | no | no | no |
+| `LEAVE_APPROVE` | yes | yes | no | no | no |
+
+- Leave types (code, name, yearly quota, paid, reason mandatory, active). Seed: CL 12, ML 10, EL 15, MAT 180, PAT 15, LWP 0 unpaid.
+- Policies for `TEACHING` / `NON_TEACHING` / `ALL` with per-type quotas; assign one policy per staff.
+- Leave year: `ACADEMIC` (current academic year dates, default) or `CALENDAR` (1 Jan–31 Dec). Demo seed is `ACADEMIC`.
+- Apply JSON or multipart (`leave-docs` in MinIO). Days = range minus Sat/Sun minus `school_event` type `HOLIDAY`.
+- Status: `PENDING` / `APPROVED` / `REJECTED` / `CANCELLED`. Overlap of PENDING/APPROVED blocked. Duplicate pending same type+dates blocked.
+- Approve/reject requires `LEAVE_APPROVE`. Self-approve blocked. Cancel own PENDING anytime; cancel APPROVED only before `fromDate`. Admin (`LEAVE_MANAGE`) may cancel others.
+- Balance: `available = entitled - used - pending`. Ledger: CREDIT / PENDING / USED / RELEASE / ADJUST.
+- Apply/approve/cancel require a `teacher_profile` or `non_teaching_staff` row for the user (`leave.not_staff` otherwise).
+- Reports: on leave today, leave taken this year, Excel balances and taken (`LEAVE_MANAGE`).
+- Notifications category `LEAVE`; failures must not fail the leave action.
+- Out of this phase: multi-level approval, half-days, carry-forward, substitute teachers.
+
+**Acceptance (GWT)**
+
+- Given a teacher with a policy and balance, when they apply for working days within quota, then the request is PENDING and pending days increase.
+- Given overlapping PENDING/APPROVED dates, when they apply again, then the API returns `leave.overlap`.
+- Given `LEAVE_APPROVE` and a pending request that is not their own, when they approve, then status is APPROVED and used increases.
+- Given the same user as the requester, when they approve, then the API returns `leave.self_approve`.
+- Given an APPROVED request whose `fromDate` is today or past, when cancel is called, then the API returns `leave.cancel_started`.
+- Given a student or parent JWT, when they call `/api/leave/**`, then the API returns 403.
+
+### PR-13 Presentation
 
 - Languages: English (ltr), Hindi (ltr), Urdu (rtl). Persisted `schoolms.locale`.
 - Material M3 theme, light/dark (`schoolms.theme`), collapsible sidenav (`schoolms.sidenav.collapsed`).
@@ -179,6 +214,12 @@ Types: `TC`, `BONAFIDE`, `CHARACTER`, `COURSE_COMPLETION`.
 - Given unpublished marksheets, when a student calls `/api/marksheets/mine`, then unpublished results are redacted/blocked as implemented.
 - Given `MARKSHEET_MANAGE`, when admin approves, then status becomes published and PDF export is allowed.
 
+### Leave
+
+- Given `LEAVE_APPLY` and sufficient balance, when a teacher posts `/api/leave/requests`, then status is PENDING.
+- Given `LEAVE_APPROVE`, when admin approves another staff member’s request, then status is APPROVED.
+- Given a student token, when they GET `/api/leave/balances/mine`, then 403.
+
 ### Certificates
 
 - Given a student with no pending request, when they submit a bonafide request, then it appears in the staff queue as `SUBMITTED`.
@@ -202,6 +243,7 @@ There are no Figma files in the repository. Interaction specs follow the shipped
 | Shell | `MainLayoutComponent` | Material sidenav + toolbar, profile menu, language select, theme toggle, notification bell |
 | Lists | Students, fees, attendance, notices, staff, exams | `app-page-header`, `.card-toolbar`, `.data-table`, `app-empty-state` |
 | Student profile | `/students/:id` | Sections: personal, academic, attendance; actions by permission |
+| Leave | `/leave` | Tabs: mine, approvals, setup, reports (permission-gated) |
 | Certificates | `/certificates` | Tabs: templates, request queue, issued register |
 | Downloads | `/downloads/marksheet`, `/downloads/certificates` | Filters, selection, publish actions, print/PDF |
 | Print preview | Admit / report / marksheet modals | A4, white background |

@@ -22,6 +22,7 @@ SchoolMS is a multi-tenant web application that gives one school (or a platform 
 - Daily attendance, fee collection, notices, and academic calendar
 - Examination schedules, marks, admit cards, report cards, and marksheets
 - Transfer / bonafide / character / course-completion certificates with approval
+- Employee leave for teaching and non-teaching staff (apply, approve, balances)
 - Role-based dashboards and in-app notifications
 
 The product is designed for Indian school operations (INR, Asia/Kolkata, en/hi/ur UI) but is not limited to a single board.
@@ -37,12 +38,12 @@ A permission-driven school operating system where every role (super admin, schoo
 | Persona | Role code | Primary goals | Typical actions |
 |---|---|---|---|
 | Platform operator | `SUPER_ADMIN` | Onboard schools, inspect all tenants | Create/update schools, platform users |
-| School administrator | `ADMIN` | Run the school day to day | Students, staff, academics, fees, exams, certificates, notices |
-| Class / subject teacher | `TEACHER` | Teach and record outcomes | Mark attendance, enter marks, review certificate requests, view assigned sections |
+| School administrator | `ADMIN` | Run the school day to day | Students, staff, academics, fees, exams, certificates, leave, notices |
+| Class / subject teacher | `TEACHER` | Teach and record outcomes | Mark attendance, enter marks, apply for leave, review certificate requests, view assigned sections |
 | Parent / guardian | `PARENT` | Track a child | Attendance, fees, notices, calendar, report cards, certificate requests |
 | Student | `STUDENT` | Self-serve academic records | Timetable, attendance, notices, admit/report cards, certificate requests |
 
-There is **no `PRINCIPAL` role**. Certificate “principal approval” is the `CERTIFICATE_APPROVE` permission, granted to `ADMIN` and `SUPER_ADMIN`.
+There is **no `PRINCIPAL` role**. Certificate “principal approval” is the `CERTIFICATE_APPROVE` permission, granted to `ADMIN` and `SUPER_ADMIN`. Employee leave approval is `LEAVE_APPROVE` on the same roles.
 
 Supporting stakeholders: engineering (Spring Boot / Angular), school IT (PostgreSQL, Docker), and accounts staff (non-teaching records; fee collection via admin).
 
@@ -70,6 +71,7 @@ Prioritized by operational impact. Requirement IDs are reused in `PRD.md` and `d
 | BR-14 | Role dashboards and in-app notifications | Daily awareness |
 | BR-15 | i18n (English, Hindi, Urdu RTL) and light/dark theme | Accessibility for staff/parents |
 | BR-16 | File storage (MinIO) for PDFs and attachments | Receipts and supporting docs |
+| BR-17 | Employee leave (types, policies, apply/approve, balances) | Staff absence control without student/parent access |
 
 ---
 
@@ -114,3 +116,4 @@ Formal production SLOs (uptime, p95 latency) are not instrumented yet; see `docs
 - Syllabus and exam-term configuration UIs (placeholders)
 - Exam re-evaluation module (placeholder)
 - Dedicated HIPAA alignment (not a health product)
+- Multi-level leave approval, half-days, carry-forward, substitute teachers

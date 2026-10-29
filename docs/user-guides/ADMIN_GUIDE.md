@@ -78,6 +78,8 @@ Change or disable `Admin@123` before loading real data.
 
 Certificate templates (letterhead HTML, requires-approval flag): Certificates → Templates (`CERTIFICATE_MANAGE`).
 
+Employee leave (Flyway V37): Leave → Setup (`LEAVE_MANAGE`). Seeded types CL/ML/EL/MAT/PAT/LWP and Teaching / Non-teaching policies. Assign a policy to each staff member before they can apply. Year mode `ACADEMIC` (current academic year) or `CALENDAR`. Approvals use `LEAVE_APPROVE` (ADMIN / SUPER_ADMIN). Do not create a `PRINCIPAL` role. Supporting files need MinIO (`leave-docs`).
+
 Fee categories/structures: Fees module (`FEE_STRUCTURE_MANAGE`).
 
 Exam grading: Academics → Examinations tab (`EXAM_MANAGE`).
@@ -92,7 +94,8 @@ There is **no** audit-log screen. To investigate:
 2. Table timestamps (`created_at`, `updated_at`) and actor columns (`recorded_by`, `marked_by`, `issued_by_user_id`).
 3. `app_user.last_login_at`.
 4. `refresh_token.revoked_at` for session revocation.
-5. Certificate request status history and marksheet status.
+ 5. Certificate request status history and marksheet status.
+ 6. Leave: `leave_audit`, `leave_balance_ledger`, `leave_request` status.
 
 Filter in SQL as role `app_admin` / `schoolms` (bypasses RLS as owner). Do not use `app_rls` for cross-tenant forensics.
 
@@ -106,7 +109,8 @@ Filter in SQL as role `app_admin` / `schoolms` (bypasses RLS as owner). Do not u
 4. Define fee structures and assign to students.
 5. Teachers mark attendance daily.
 6. Build exam schedule, enter marks, **submit**, admin **approve/publish** before students can download.
-7. Certificate requests: class teacher forwards → admin approves.
-8. Publish notices rather than leaving drafts.
+ 7. Certificate requests: class teacher forwards → admin approves.
+ 8. Leave: assign policies, then staff apply; admin approves/rejects. Cancel approved leave only before the start date.
+ 9. Publish notices rather than leaving drafts.
 
 Print: only published admit cards, report cards, and marksheets. Keep printer on A4 portrait.

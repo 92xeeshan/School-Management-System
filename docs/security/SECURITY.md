@@ -40,12 +40,16 @@ APIs check **permission codes**. UI nav uses the same codes (`hasAnyPermission`)
 | `CERTIFICATE_READ` | yes | yes | yes | yes | yes |
 | `CERTIFICATE_GENERATE` | yes | yes | yes | no | no |
 | `CERTIFICATE_MANAGE`, `CERTIFICATE_APPROVE` | yes | yes | no | no | no |
+| `LEAVE_READ`, `LEAVE_APPLY` | yes | yes | yes | no | no |
+| `LEAVE_MANAGE`, `LEAVE_APPROVE` | yes | yes | no | no | no |
 
 SUPER_ADMIN also bypasses RLS (`school_id` NULL). ADMIN is tenant-scoped with the same school-level permissions except school platform APIs.
 
 Class-teacher extra rules are **in services** (student profile edit, certificate request review), not extra roles.
 
 Nav mismatch: Certificates sidenav requires `CERTIFICATE_GENERATE` or `CERTIFICATE_APPROVE`, while the route also allows `CERTIFICATE_READ`. Students/parents use **Downloads → Certificates**.
+
+Leave sidenav requires any of `LEAVE_READ` / `LEAVE_APPLY` / `LEAVE_APPROVE` / `LEAVE_MANAGE`. Students and parents have none of these, so the item is hidden. Apply/approve also require a `teacher_profile` or `non_teaching_staff` row (`leave.not_staff`). Self-approve is blocked in the service.
 
 ---
 
@@ -80,6 +84,7 @@ There is **no** dedicated audit table or SIEM export.
 | Mutations | `created_at` / `updated_at`; actor ids such as `marked_by`, `recorded_by`, `issued_by_user_id` |
 | Refresh revoke | `refresh_token.revoked_at` |
 | Certificate / marksheet workflow | Status columns and request history fields |
+| Employee leave | `leave_audit` (entity_type, action, details, changed_by); `leave_balance_ledger` |
 | Application logs | `com.schoolms` DEBUG (dev) / INFO (prod) |
 
 Logged security-relevant HTTP outcomes: 401/403 via `RestAuthEntryPoint` / `GlobalExceptionHandler`. Retention of log files is the host’s concern. Suggested retention for production logs: 90 days.

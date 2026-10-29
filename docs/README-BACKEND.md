@@ -2,7 +2,7 @@
 
 REST API for the School Management System: JWT auth + refresh tokens, RBAC,
 multi-tenant data isolation via PostgreSQL Row-Level Security, attendance,
-fees, notices and academics modules.
+fees, notices, academics, and employee leave modules.
 
 **Stack:** Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA,
 PostgreSQL 15, Caffeine cache, Flyway, MinIO (optional), JasperReports, OpenAPI/Swagger.
@@ -167,6 +167,7 @@ Seeded by Flyway. Password for every account is `Admin@123`:
 | `/api/attendance`                 | Attendance APIs                 |
 | `/api/fees`                       | Fees APIs                       |
 | `/api/notices`                    | Notices APIs                    |
+| `/api/leave`                      | Employee leave (staff only)     |
 | `/api/schools`                    | Schools (super admin)           |
 | `/api/users`                      | Users (admin)                   |
 

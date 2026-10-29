@@ -61,7 +61,7 @@ flowchart TB
 | Frontend gateway | nginx (`frontend/nginx.conf`) or `ng serve` proxy | SPA routing; reverse-proxy `/api/` |
 | Backend | Spring Boot 3.5.16, Java 21 | REST, security, JasperReports PDFs |
 | Database | PostgreSQL 15 | System of record + RLS |
-| Object storage | MinIO | Receipts, photos, certificate attachments |
+| Object storage | MinIO | Receipts, photos, certificate attachments, leave supporting docs |
 | Cache | Caffeine | Permission authorities, 5-minute TTL |
 
 There is **one backend deployable**. Packages under `com.schoolms.*` are modules, not independently deployed services.
@@ -102,7 +102,7 @@ Communication pattern: **synchronous REST over HTTP**. No WebSockets, no GraphQL
 | API | Spring Web MVC | Resource-oriented `/api/*` |
 | Security | Spring Security + JJWT 0.12.6 | Stateless JWT, permission authorities |
 | Persistence | Spring Data JPA, `ddl-auto: none` | Flyway owns schema |
-| Migrations | Flyway V1–V28 | Repeatable, reviewed SQL |
+| Migrations | Flyway V1–V37 | Repeatable, reviewed SQL |
 | Database | PostgreSQL 15 | RLS, GUCs `app.school_id` / `app.bypass_rls` |
 | Cache | Caffeine | In-process; Redis was removed |
 | Files | MinIO 8.x client | S3-compatible, local or compose |
@@ -136,6 +136,7 @@ Communication pattern: **synchronous REST over HTTP**. No WebSockets, no GraphQL
 | `com.schoolms.event` | Academic calendar |
 | `com.schoolms.notification` | In-app inbox |
 | `com.schoolms.certificate` | Templates, generate, request, approve, PDF |
+| `com.schoolms.leave` | Employee leave types, policies, apply/approve, balances, Excel |
 | `com.schoolms.file` | MinIO |
 | `com.schoolms.award` | Entity/repo only; no REST controller |
 | `com.schoolms.common` | `ApiResponse`, errors, enums |

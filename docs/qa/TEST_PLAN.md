@@ -66,6 +66,8 @@ There is no Jest, PyTest, Cypress, Playwright, or K6 in this repository.
 | `CertificateServiceTest` | Generate, numbers, TC |
 | `CertificateRequestServiceTest` | Submit, duplicate, review scope, approve/reject |
 | `CertificateLifecycleServiceTest` | TC deactivation |
+| `LeaveServiceTest` | Apply, overlap, approve, self-approve, cancel-started, learner 403 |
+| `LeaveDayCalculatorTest` | Weekends and HOLIDAY exclusion |
 
 Helper: `com.schoolms.TestSecurity`.
 
