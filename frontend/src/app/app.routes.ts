@@ -8,6 +8,12 @@ import { MainLayoutComponent } from './layout/main-layout/main-layout.component'
 
 export const routes: Routes = [
   {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/public/public-home.component').then((m) => m.PublicHomeComponent),
+  },
+  {
     path: 'login',
     loadComponent: () =>
       import('./features/login/login.component').then((m) => m.LoginComponent),
@@ -28,7 +34,7 @@ export const routes: Routes = [
     component: MainLayoutComponent,
     canActivate: [AuthGuard],
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'users',
         loadComponent: () =>
@@ -310,6 +316,20 @@ export const routes: Routes = [
             data: { permissions: ['PAYSLIP_READ'] },
           },
         ],
+      },
+      {
+        path: 'website',
+        loadComponent: () =>
+          import('./features/website/website-editor.component').then((m) => m.WebsiteEditorComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['PUBLIC_SITE_MANAGE'] },
+      },
+      {
+        path: 'enquiries',
+        loadComponent: () =>
+          import('./features/website/enquiry-inbox.component').then((m) => m.EnquiryInboxComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['ENQUIRY_READ', 'ENQUIRY_MANAGE'] },
       },
       {
         path: 'leave',

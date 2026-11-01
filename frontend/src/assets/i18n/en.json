@@ -46,7 +46,8 @@
     "serverError": "Unable to reach the server. Please try again.",
     "welcomeBack": "Welcome back, please sign in to continue.",
     "forgotPassword": "Forgot password?",
-    "accountLocked": "Too many failed sign-in attempts. Try again in 15 minutes."
+    "accountLocked": "Too many failed sign-in attempts. Try again in 15 minutes.",
+    "publicSite": "School website"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -57,6 +58,8 @@
     "fees": "Fees",
     "payroll": "Payroll",
     "leave": "Leave",
+    "website": "Public site",
+    "enquiries": "Enquiries",
     "notices": "Notices",
     "staff": "Staff Management",
     "calendar": "Calendar",
@@ -1528,6 +1531,68 @@
       "TEACHING": "Teaching",
       "NON_TEACHING": "Non-teaching",
       "ALL": "All staff"
+    }
+  },
+  "public": {
+    "staffLogin": "Staff login",
+    "dashboard": "Open dashboard",
+    "enquireCta": "Enquire about admission",
+    "about": "About the school",
+    "principal": "Principal's message",
+    "facilities": "Facilities",
+    "notices": "Notices",
+    "events": "Upcoming events",
+    "enquire": "Admission enquiry",
+    "enquireHint": "Share your details and we will contact you.",
+    "enquireThanks": "Thank you. We have received your enquiry.",
+    "parentName": "Parent name",
+    "phone": "Phone",
+    "email": "Email",
+    "class": "Class",
+    "classOptional": "Select class (optional)",
+    "message": "Message",
+    "submit": "Submit enquiry",
+    "contact": "Contact",
+    "loadFailed": "Could not load the school page.",
+    "submitFailed": "Could not submit enquiry.",
+    "rateLimited": "Too many requests. Please wait and try again."
+  },
+  "website": {
+    "title": "Public site",
+    "subtitle": "Edit the school landing page shown to visitors.",
+    "published": "Published",
+    "principalName": "Principal name",
+    "heroImageUrl": "Hero image URL",
+    "copyEn": "English copy",
+    "copyHi": "Hindi copy",
+    "copyUr": "Urdu copy",
+    "tagline": "Tagline",
+    "about": "About",
+    "principalMessage": "Principal message",
+    "facilities": "Facilities (one per line)",
+    "saved": "Public site saved.",
+    "loadFailed": "Could not load public site.",
+    "saveFailed": "Could not save public site."
+  },
+  "enquiry": {
+    "title": "Admission enquiries",
+    "subtitle": "Review and follow up public admission enquiries.",
+    "parentName": "Parent",
+    "phone": "Phone",
+    "email": "Email",
+    "class": "Class",
+    "message": "Message",
+    "received": "Received",
+    "allStatuses": "All statuses",
+    "empty": "No enquiries",
+    "markContacted": "Mark contacted",
+    "close": "Close",
+    "loadFailed": "Could not load enquiries.",
+    "updateFailed": "Could not update enquiry.",
+    "status": {
+      "NEW": "New",
+      "CONTACTED": "Contacted",
+      "CLOSED": "Closed"
     }
   }
 }

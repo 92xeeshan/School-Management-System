@@ -167,6 +167,34 @@ Permissions (Flyway V37):
 - Given an APPROVED request whose `fromDate` is today or past, when cancel is called, then the API returns `leave.cancel_started`.
 - Given a student or parent JWT, when they call `/api/leave/**`, then the API returns 403.
 
+### PR-14 Public landing and enquiry
+
+Anonymous brochure at `/` (not the Material shell). Staff login stays `/login`. Package `com.schoolms.website`. Flyway V38.
+
+Permissions:
+
+| Code | SUPER_ADMIN | ADMIN | TEACHER | STUDENT | PARENT |
+|---|---|---|---|---|---|
+| `PUBLIC_SITE_MANAGE` | yes | yes | no | no | no |
+| `ENQUIRY_READ` | yes | yes | no | no | no |
+| `ENQUIRY_MANAGE` | yes | yes | no | no | no |
+
+- Public `GET /api/public/{schoolCode}` (default DEMO) returns school name, logo, contact, hero, en/hi/ur copy, school-wide published notices, upcoming school-wide events, and classes for the enquiry form.
+- Tenant is bound via `school.code` then `TenantBinder.bind(schoolId)`. Unpublished or unknown schools return 404.
+- Public copy locales: `en`, `hi`, `ur`. Staff UI locale is unchanged.
+- Enquiry: short form (parent name, phone, optional email/class/message). `POST /api/public/{schoolCode}/enquiries`. Rate limit 5 POSTs / 60 GETs per IP per minute (`429 error.rate_limited`). No email/SMS.
+- Staff inbox `/enquiries` (`ENQUIRY_READ`) with status `NEW` / `CONTACTED` / `CLOSED`. Updates require `ENQUIRY_MANAGE`.
+- Site editor `/website` (`PUBLIC_SITE_MANAGE`).
+- Notification category `ENQUIRY` to ADMIN / SUPER_ADMIN; failure must not fail the enquiry.
+- Out of this phase: admission cycles, seats, apply, convert-to-student, custom domains, maps, image pipeline, board-ranked toppers.
+
+**Acceptance (GWT)**
+
+- Given school code `DEMO` and a published site, when a visitor opens `/`, then they see brochure content without signing in.
+- Given a valid parent name and phone, when they submit an enquiry, then status is `NEW` and admins receive an in-app notification.
+- Given more than 5 enquiry posts in a minute from the same IP, when they submit again, then the API returns 429.
+- Given a teacher JWT, when they call `/api/enquiries` or `/api/website`, then the API returns 403.
+
 ### PR-13 Presentation
 
 - Languages: English (ltr), Hindi (ltr), Urdu (rtl). Persisted `schoolms.locale`.

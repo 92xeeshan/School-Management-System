@@ -198,6 +198,21 @@ public class NotificationTriggerService {
     }
 
     @Transactional
+    public void onEnquirySubmitted(UUID schoolId, String parentName, String className, String phone, UUID enquiryId) {
+        String who = parentName == null || parentName.isBlank() ? "A parent" : parentName.trim();
+        String forClass = className == null || className.isBlank() ? "" : " for " + className.trim();
+        String contact = phone == null || phone.isBlank() ? "" : " Phone: " + phone.trim() + ".";
+        notificationService.notifyUsers(
+                schoolId,
+                recipients.adminReviewers(schoolId),
+                "New admission enquiry",
+                who + " submitted an admission enquiry" + forClass + "." + contact,
+                "ENQUIRY",
+                "/enquiries",
+                enquiryId == null ? null : "enquiry:" + enquiryId);
+    }
+
+    @Transactional
     public void onTransferCertificateIssued(UUID schoolId, UUID studentId, String deactivationDate) {
         notificationService.notifyUsers(
                 schoolId,

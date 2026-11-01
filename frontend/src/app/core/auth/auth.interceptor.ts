@@ -11,6 +11,7 @@ const PUBLIC_AUTH = [
   '/api/auth/refresh',
   '/api/auth/forgot',
   '/api/auth/questions',
+  '/api/public/',
 ];
 
 function isPublicAuth(url: string): boolean {

@@ -1,7 +1,7 @@
 # Database Schema and Data Dictionary
 
 **Engine:** PostgreSQL 15
-**Migrations:** Flyway `backend/src/main/resources/db/migration/V1` through `V37` (no V7). Employee leave is V37.
+**Migrations:** Flyway `backend/src/main/resources/db/migration/V1` through `V38` (no V7). Public site and enquiry are V38.
 **Conventions:** UUID primary keys, `school_id` on tenant tables, VARCHAR enums with CHECK, `created_at` / `updated_at` on most entities
 
 Runtime role: `app_rls`. Migrations role: `schoolms`. RLS helpers: `app_set_school_id`, `app_current_school_id`, `app_bypass_rls`. Policy predicate: `school_id = app_current_school_id() OR app_bypass_rls()`.
@@ -35,6 +35,9 @@ erDiagram
     leave_policy ||--o{ leave_policy_item : items
     leave_type ||--o{ leave_policy_item : quota
     leave_type ||--o{ leave_request : requests
+    school ||--o{ public_site : brochure
+    public_site ||--o{ public_site_copy : locales
+    school ||--o{ enquiry : inbox
     exam_schedule ||--o{ exam_schedule_invigilator : staffed
     exam_entry ||--o{ exam_mark : scores
     grading_scheme ||--o{ grade_boundary : bands
@@ -199,7 +202,7 @@ Admit cards are **generated**, not stored as a table.
 |---|---|
 | `school_event` | V16/V23; types include PTM/SPORTS/NOTICE; visibility ROLE + `audience_role`; index date |
 | `award` | `idx_award_school_date`, `idx_award_student`; no REST API |
-| `notifications` | V26/V37; unique `(school_id, recipient_id, source_key)` where source_key present; categories EXAM, ATTENDANCE, FEE, ASSIGNMENT, CERTIFICATE, LEAVE |
+| `notifications` | V26/V37/V38; unique `(school_id, recipient_id, source_key)` where source_key present; categories EXAM, ATTENDANCE, FEE, ASSIGNMENT, CERTIFICATE, LEAVE, ENQUIRY |
 
 ### 2.9 Certificates
 
@@ -229,6 +232,18 @@ Staff only (`TEACHING` / `NON_TEACHING`). RLS on every table below.
 
 Demo seed: types CL/ML/EL/MAT/PAT/LWP; Teaching and Non-teaching policies; assignments and CREDIT balances for existing DEMO staff; year mode ACADEMIC.
 
+### 2.11 Public site and enquiry (V38)
+
+RLS on every table below. `school_id` only (no branches).
+
+| Table | Unique / checks | Notes |
+|---|---|---|
+| `public_site` | `(school_id)` | published, hero_image_url, principal_name |
+| `public_site_copy` | `(school_id, locale)`; locale en / hi / ur | tagline, about, principal_message, facilities |
+| `enquiry` | status NEW / CONTACTED / CLOSED | parent_name, phone required; optional email, class_id, class_name, message, notes |
+
+Demo seed: published DEMO site with en/hi/ur copy and principal Dr. Meera Joshi.
+
 ---
 
 ## 3. Indexes and Partitioning
@@ -251,6 +266,7 @@ Demo seed: types CL/ML/EL/MAT/PAT/LWP; Teaching and Non-teaching policies; assig
 - `idx_non_teaching_staff_school`
 - Certificate issued indexes on student/status/type (V27)
 - Leave: `idx_leave_type_school`, `idx_leave_assignment_policy`, `idx_leave_balance_staff`, `idx_leave_ledger_staff`, `idx_leave_request_staff`, `idx_leave_request_status`, `idx_leave_audit_school`
+- Public: `idx_public_site_copy_school`, `idx_enquiry_school_status`, `idx_enquiry_school_created`
 
 Query pattern: always include `school_id` (RLS adds it for `app_rls`). List endpoints paginate in the service layer.
 

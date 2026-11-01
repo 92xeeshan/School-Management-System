@@ -137,6 +137,7 @@ Communication pattern: **synchronous REST over HTTP**. No WebSockets, no GraphQL
 | `com.schoolms.notification` | In-app inbox |
 | `com.schoolms.certificate` | Templates, generate, request, approve, PDF |
 | `com.schoolms.leave` | Employee leave types, policies, apply/approve, balances, Excel |
+| `com.schoolms.website` | Public landing, enquiry inbox, rate limit |
 | `com.schoolms.file` | MinIO |
 | `com.schoolms.award` | Entity/repo only; no REST controller |
 | `com.schoolms.common` | `ApiResponse`, errors, enums |

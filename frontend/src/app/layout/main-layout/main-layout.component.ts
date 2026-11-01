@@ -311,6 +311,8 @@ export class MainLayoutComponent implements OnInit {
     { route: '/fees', labelKey: 'nav.fees', icon: 'payments', permissions: ['FEE_READ', 'FEE_RECEIPT_VIEW', 'FEE_STRUCTURE_MANAGE'] },
     { route: '/payroll', labelKey: 'nav.payroll', icon: 'account_balance_wallet', permissions: ['EXPENSE_READ', 'PAYROLL_READ', 'PAYSLIP_READ'] },
     { route: '/leave', labelKey: 'nav.leave', icon: 'event_busy', permissions: ['LEAVE_READ', 'LEAVE_APPLY', 'LEAVE_APPROVE', 'LEAVE_MANAGE'] },
+    { route: '/website', labelKey: 'nav.website', icon: 'language', permissions: ['PUBLIC_SITE_MANAGE'] },
+    { route: '/enquiries', labelKey: 'nav.enquiries', icon: 'inbox', permissions: ['ENQUIRY_READ', 'ENQUIRY_MANAGE'] },
     { route: '/calendar', labelKey: 'nav.calendar', icon: 'calendar_month', permissions: ['EVENT_READ'] },
     { route: '/certificates', labelKey: 'nav.certificates', icon: 'workspace_premium', permissions: ['CERTIFICATE_GENERATE', 'CERTIFICATE_APPROVE'] },
     { route: '/downloads', labelKey: 'nav.downloads', icon: 'download', permissions: ['MARKSHEET_READ', 'CERTIFICATE_READ'] },
