@@ -19,7 +19,7 @@ There is no Principal login. Admin performs certificate approval.
 
 ### Sign in
 
-1. Open the app. If you are not signed in you land on `/login`.
+1. Open the app. Visitors see the public school page at `/`. Staff sign in at `/login`.
 2. Choose English, हिन्दी, or اردو (Urdu is right-to-left).
 3. Enter username and password. Click **Sign in**.
 4. You are taken to **Dashboard**.
@@ -113,6 +113,8 @@ Use this as the office playbook. Details for configuration are in `ADMIN_GUIDE.m
 | Apply / approve leave | Leave → My leave / Approvals |
 | Leave types and policies | Leave → Setup |
 | Leave reports / Excel | Leave → Reports |
+| Edit public landing | Public site |
+| Follow up admission enquiries | Enquiries |
 
 Print/PDF for admit cards, report cards, and marksheets only works when the record is **published**. Print layout is white A4.
 
@@ -124,7 +126,7 @@ Print/PDF for admit cards, report cards, and marksheets only works when the reco
 |---|---|
 | Login error | Backend must be running. Demo password is `Admin@123`. |
 | Blank page after login | Hard refresh. Clear site data for `schoolms.auth` if the session is corrupt. |
-| Menu item missing | Your role does not include that permission. This is expected for students/parents. Leave is staff-only. |
+| Menu item missing | Your role does not include that permission. This is expected for students/parents. Leave, Public site, and Enquiries are staff/admin. |
 | Leave apply fails `leave.not_staff` | Your login is not linked to a teacher or non-teaching staff record. |
 | Cannot approve own leave | Self-approve is blocked; another admin must decide. |
 | Cannot print admit card | Schedule/cards not published yet. |

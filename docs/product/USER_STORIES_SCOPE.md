@@ -20,6 +20,7 @@ flowchart LR
     Dash --> Exam["Exams and results"]
     Dash --> Cert["Certificates"]
     Dash --> Leave["Employee leave"]
+    Dash --> Site["Public site and enquiries"]
     Dash --> Comm["Notices calendar notifications"]
 ```
 
@@ -36,6 +37,7 @@ flowchart LR
 | E9 Assessment | Schedules, marks, admit cards, report cards, marksheet approval |
 | E10 Certificates | Request, review, approve, download TC/bonafide |
 | E11 Employee leave | Types, policies, apply, approve, balances, reports (staff only) |
+| E12 Public website | Anonymous landing, enquiry form, staff inbox |
 
 ---
 
@@ -156,6 +158,17 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 | US-105 | As a student or parent, I want no leave menu so that employee HR data stays internal | Must |
 | US-106 | As an admin, I want multi-level approval, half-days, carry-forward, and substitute teachers | Won't (this phase) |
 
+### E12 Public website and enquiry
+
+| ID | Story | MoSCoW |
+|---|---|---|
+| US-110 | As a visitor, I want to open `/` without signing in so that I can read the school brochure | Must |
+| US-111 | As a visitor, I want en/hi/ur copy so that families can read in their language | Must |
+| US-112 | As a parent, I want to submit a short enquiry so that the office can call me | Must |
+| US-113 | As an admin, I want an enquiry inbox so that I can mark contacted or closed | Must |
+| US-114 | As an admin, I want to edit landing copy so that the public page stays current | Must |
+| US-115 | As a visitor, I want admission cycles, online apply, and convert-to-student | Won't (this phase) |
+
 ---
 
 ## 3. Prioritization Matrix (MoSCoW)
@@ -168,6 +181,7 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 | Exams, admit/report/marksheet workflows | Grading schemes UI | Super-admin rich UI | GraphQL / WebSockets |
 | Certificates request/approve | Urdu RTL | Syllabus content | Kubernetes-required deploy |
 | Employee leave apply/approve | Leave Excel reports | Super-admin rich UI | Half-day / carry-forward leave |
+| Public landing + enquiry inbox | Public en/hi/ur copy | Custom domains / maps | Admission convert-to-student |
 | Dashboard + notifications | MinIO attachments | Re-evaluation | HIPAA program |
 | en/hi/ur | Docker Compose pack | Re-evaluation | GitHub Pages site |
 
@@ -178,7 +192,7 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 ### Included in current product (treat as v1.0 scope)
 
 - Docker Compose: PostgreSQL 15, MinIO, backend 8080, frontend nginx 4200
-- Flyway through **V37** (employee leave; earlier versions include certificates, exams, inventory)
+- Flyway through **V38** (public site and enquiry; earlier versions include leave, certificates, exams, inventory)
 - Angular Material M3 shell
 - Modules listed in Must-Have and Should-Have above
 - Live OpenAPI at `/v3/api-docs` and Swagger UI `/swagger-ui.html`

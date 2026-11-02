@@ -80,6 +80,8 @@ Certificate templates (letterhead HTML, requires-approval flag): Certificates �
 
 Employee leave (Flyway V37): Leave → Setup (`LEAVE_MANAGE`). Seeded types CL/ML/EL/MAT/PAT/LWP and Teaching / Non-teaching policies. Assign a policy to each staff member before they can apply. Year mode `ACADEMIC` (current academic year) or `CALENDAR`. Approvals use `LEAVE_APPROVE` (ADMIN / SUPER_ADMIN). Do not create a `PRINCIPAL` role. Supporting files need MinIO (`leave-docs`).
 
+Public site (Flyway V38): Public site (`PUBLIC_SITE_MANAGE`) edits the anonymous landing at `/`. Enquiries (`ENQUIRY_READ` / `ENQUIRY_MANAGE`) is the admission inbox. Statuses: NEW, CONTACTED, CLOSED. No email/SMS; follow up by phone. Unpublish the site to hide the brochure (404 on public API).
+
 Fee categories/structures: Fees module (`FEE_STRUCTURE_MANAGE`).
 
 Exam grading: Academics → Examinations tab (`EXAM_MANAGE`).

@@ -22,9 +22,11 @@ Status column is for execution records (leave blank until run).
 | PR-11 Certificates | TC-100, TC-101, TC-102, TC-103, TC-104 |
 | PR-12 Employee leave | TC-130, TC-131, TC-132, TC-133, TC-134, TC-135 |
 | PR-13 Presentation | TC-110, TC-111 |
-| NFR-03 Security | TC-003, TC-120, TC-121, TC-135 |
+| PR-14 Public site / enquiry | TC-140, TC-141, TC-142, TC-143, TC-144 |
+| NFR-03 Security | TC-003, TC-120, TC-121, TC-135, TC-144 |
 | BR-03 RLS | TC-010 |
 | BR-17 Leave | TC-130, TC-132, TC-135 |
+| BR-18 Public site | TC-140, TC-141, TC-144 |
 
 ---
 
@@ -282,14 +284,43 @@ Status column is for execution records (leave blank until run).
 - **Expected:** 403; Leave nav item not shown
 - **Pass/Fail:**
 
+### Public site and enquiry
+
+#### TC-140 Anonymous landing
+- **Requirement:** PR-14
+- **Preconditions:** V38 seed; DEMO site published
+- **Steps:** GET `/api/public/DEMO?locale=en` without Authorization
+- **Expected:** 200; school name, copy, classes; no JWT required
+- **Pass/Fail:**
+
+#### TC-141 Submit enquiry
+- **Steps:** POST `/api/public/DEMO/enquiries` with parentName and phone
+- **Expected:** 200 status `NEW`; admin in-app notification category `ENQUIRY`
+- **Pass/Fail:**
+
+#### TC-142 Rate limit
+- **Steps:** POST the enquiry endpoint 6 times in one minute from the same IP
+- **Expected:** sixth call 429 `error.rate_limited`
+- **Pass/Fail:**
+
+#### TC-143 Admin inbox
+- **Steps:** As `admin`, GET `/api/enquiries?status=NEW` then PUT status `CONTACTED`
+- **Expected:** 200 list then updated status
+- **Pass/Fail:**
+
+#### TC-144 Teacher denied
+- **Steps:** As `teacher`, GET `/api/website` and GET `/api/enquiries`
+- **Expected:** 403; Website/Enquiries nav hidden
+- **Pass/Fail:**
+
 ---
 
 ## 3. Coverage Boundaries
 
 | Kind | Examples in this suite |
 |---|---|
-| Positive | TC-001, TC-020, TC-050, TC-060, TC-094, TC-100, TC-130, TC-132 |
-| Negative / authz | TC-003, TC-023, TC-061, TC-093, TC-102, TC-120, TC-133, TC-135 |
+| Positive | TC-001, TC-020, TC-050, TC-060, TC-094, TC-100, TC-130, TC-132, TC-140, TC-141 |
+| Negative / authz | TC-003, TC-023, TC-061, TC-093, TC-102, TC-120, TC-133, TC-135, TC-144 |
 | Validation / unique | TC-021, TC-030, TC-041, TC-101 |
 | Security input | TC-121 |
 | Publish locks | TC-092, TC-094 |

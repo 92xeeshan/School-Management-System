@@ -39,6 +39,7 @@ public class SecurityConfig {
             "/api/auth/forgot/verify",
             "/api/auth/forgot/complete",
             "/api/auth/questions",
+            "/api/public/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/swagger-ui.html",

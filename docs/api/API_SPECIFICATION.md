@@ -3,7 +3,7 @@
 **Base path:** `/api`
 **Live OpenAPI:** `GET /v3/api-docs` (Swagger UI: `/swagger-ui.html`)
 **Style:** REST JSON unless noted (PDF/ZIP are `application/octet-stream` or `application/pdf`)
-**Auth:** Bearer JWT on all routes except login, refresh, Swagger, and `GET /actuator/health`
+**Auth:** Bearer JWT on all routes except login, refresh, `/api/public/**`, Swagger, and `GET /actuator/health`
 
 This document is the inventory of **implemented** Spring controllers. For request/response schemas generated from code, use springdoc.
 
@@ -32,7 +32,7 @@ JWT issuer `schoolms`. Claims: `sub` (user UUID), `schoolId`, `roles`, `locale`,
 
 Authorities are **permission codes** (`hasAuthority('STUDENT_READ')`), not `ROLE_*`.
 
-Public matchers: `/api/auth/login`, `/api/auth/refresh`, `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html`, `/actuator/health`, `/error`.
+Public matchers: `/api/auth/login`, `/api/auth/refresh`, `/api/public/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html`, `/actuator/health`, `/error`.
 
 ---
 
@@ -407,6 +407,26 @@ Business codes: `leave.overlap`, `leave.duplicate`, `leave.insufficient_balance`
 
 Days exclude Saturday, Sunday, and `school_event` `HOLIDAY`. Supporting files go to MinIO prefix `leave-docs`.
 
+### 3.14 Public website — `/api/public`
+
+Anonymous. No JWT. Tenant is bound from `{schoolCode}` (`DEMO` in the demo). Unpublished or unknown schools return 404. Rate limit: 60 GETs and 5 POSTs per IP per minute (`429 error.rate_limited`).
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/{schoolCode}` | Brochure: school, copy (locale query `en`/`hi`/`ur`), notices, events, classes |
+| POST | `/{schoolCode}/enquiries` | Submit admission enquiry |
+
+Enquiry body: `{ "parentName", "phone", "email?", "classId?", "className?", "message?" }`. Status starts `NEW`.
+
+### 3.15 Website admin — `/api/website`, `/api/enquiries`
+
+| Method | Path | Permission | Purpose |
+|---|---|---|---|
+| GET | `/website` | `PUBLIC_SITE_MANAGE` | Editor payload |
+| PUT | `/website` | `PUBLIC_SITE_MANAGE` | Save published flag, hero, principal, locale copies |
+| GET | `/enquiries` | `ENQUIRY_READ` or `ENQUIRY_MANAGE` | Inbox (`status`, `page`, `size`) |
+| PUT | `/enquiries/{id}` | `ENQUIRY_MANAGE` | Update status `NEW`/`CONTACTED`/`CLOSED` and notes |
+
 Request example:
 
 ```json
@@ -430,6 +450,7 @@ For every JSON endpoint:
 - **403** — authenticated but missing permission or inactive
 - **404** — unknown id
 - **409** — unique constraint
+- **429** — public rate limit
 - **500** — unhandled
 
 Public login additionally returns **401** `auth.bad_credentials` and **403** inactive/TC.

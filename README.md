@@ -156,6 +156,7 @@ Password for every seeded account: `Admin@123`.
 - Exams, admit cards, report cards, marksheets (publish lock)
 - Certificates (generate, request, class-teacher review, admin approve)
 - Employee leave (staff-only types, policies, apply/approve, balances, Excel)
+- Public school landing and admission enquiry inbox
 - Dashboards, in-app notifications
 - Light/dark Material M3 UI; en / hi / ur
 

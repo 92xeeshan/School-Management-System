@@ -15,6 +15,8 @@ Sidebar items are permission-gated. Staff leave sits under Payroll:
 | Fees        | `/fees`      | Fee structures, assignments, payments, receipts|
 | Payroll     | `/payroll`   | Expenses, payroll, payslips                    |
 | Leave       | `/leave`     | Mine, approvals, setup, reports (staff only)   |
+| Public site | `/website`   | Landing copy for visitors (admin)              |
+| Enquiries   | `/enquiries` | Admission enquiry inbox (admin)                |
 | Notices     | `/notices`   | Create, publish and read notices               |
 
 Every page can show the menu icons only when the user's role is granted the
@@ -25,8 +27,9 @@ shows an error.
 
 ## 1. Login (common to all roles)
 
-1. Open the app at `http://localhost:4200`. You are redirected to `/login`
-   if you are not signed in (`AuthGuard`).
+1. Open the app at `http://localhost:4200`. Visitors see the public school
+   page at `/`. Staff open `/login` if they are not signed in (`AuthGuard`
+   still wraps the Material shell).
 2. The login screen shows the app name, username and password fields, and a
    language pill switcher (English / Hindi / Urdu).
 3. Enter your username and password.

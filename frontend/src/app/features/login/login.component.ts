@@ -38,6 +38,7 @@ import { LOCALE_META, SUPPORTED_LOCALES } from '../../i18n/i18n.config';
             @if (submitting) { {{ 'common.loading' | translate }} } @else { {{ 'login.submit' | translate }} }
           </button>
           <a class="forgot-link" routerLink="/forgot-password">{{ 'login.forgotPassword' | translate }}</a>
+          <a class="forgot-link" routerLink="/">{{ 'login.publicSite' | translate }}</a>
         </form>
 
         <div class="lang-switcher">

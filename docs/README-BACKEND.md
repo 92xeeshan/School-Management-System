@@ -168,6 +168,8 @@ Seeded by Flyway. Password for every account is `Admin@123`:
 | `/api/fees`                       | Fees APIs                       |
 | `/api/notices`                    | Notices APIs                    |
 | `/api/leave`                      | Employee leave (staff only)     |
+| `/api/public/{code}`              | Public landing and enquiry      |
+| `/api/website` `/api/enquiries`   | Public site editor and inbox    |
 | `/api/schools`                    | Schools (super admin)           |
 | `/api/users`                      | Users (admin)                   |
 

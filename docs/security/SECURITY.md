@@ -42,6 +42,8 @@ APIs check **permission codes**. UI nav uses the same codes (`hasAnyPermission`)
 | `CERTIFICATE_MANAGE`, `CERTIFICATE_APPROVE` | yes | yes | no | no | no |
 | `LEAVE_READ`, `LEAVE_APPLY` | yes | yes | yes | no | no |
 | `LEAVE_MANAGE`, `LEAVE_APPROVE` | yes | yes | no | no | no |
+| `PUBLIC_SITE_MANAGE` | yes | yes | no | no | no |
+| `ENQUIRY_READ`, `ENQUIRY_MANAGE` | yes | yes | no | no | no |
 
 SUPER_ADMIN also bypasses RLS (`school_id` NULL). ADMIN is tenant-scoped with the same school-level permissions except school platform APIs.
 
@@ -50,6 +52,8 @@ Class-teacher extra rules are **in services** (student profile edit, certificate
 Nav mismatch: Certificates sidenav requires `CERTIFICATE_GENERATE` or `CERTIFICATE_APPROVE`, while the route also allows `CERTIFICATE_READ`. Students/parents use **Downloads → Certificates**.
 
 Leave sidenav requires any of `LEAVE_READ` / `LEAVE_APPLY` / `LEAVE_APPROVE` / `LEAVE_MANAGE`. Students and parents have none of these, so the item is hidden. Apply/approve also require a `teacher_profile` or `non_teaching_staff` row (`leave.not_staff`). Self-approve is blocked in the service.
+
+Public site `/` is anonymous. `/api/public/**` is permitAll. Public GETs bind tenant from `school.code` then `TenantBinder.bind(schoolId)`. Website and Enquiries sidenav items require `PUBLIC_SITE_MANAGE` and `ENQUIRY_READ`/`ENQUIRY_MANAGE` (ADMIN / SUPER_ADMIN only).
 
 ---
 
@@ -69,6 +73,7 @@ Leave sidenav requires any of `LEAVE_READ` / `LEAVE_APPLY` / `LEAVE_APPROVE` / `
 | Uploads | 10 MB file / 20 MB request |
 | Swagger | Public in current `SecurityConfig` — disable or protect in real production |
 | Actuator | `health` public; `info` authenticated; no heapdump/env exposure |
+| Public APIs | `/api/public/**` permitAll; tenant from `school.code`; 60 GET / 5 POST per IP per minute |
 
 Key management: rotate `JWT_SECRET` by deploying a new secret (invalidates access tokens; refresh still works until expiry unless you also revoke `refresh_token` rows).
 

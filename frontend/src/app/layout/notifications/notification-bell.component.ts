@@ -201,6 +201,8 @@ export class NotificationBellComponent implements OnInit {
         return '\u{1F4B3}';
       case 'ASSIGNMENT':
         return '\u{1F4C4}';
+      case 'ENQUIRY':
+        return '\u{1F4E8}';
       default:
         return '\u{1F514}';
     }
