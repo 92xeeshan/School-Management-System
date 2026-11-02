@@ -19,6 +19,7 @@ flowchart LR
     Dash --> Fees["Fees"]
     Dash --> Exam["Exams and results"]
     Dash --> Cert["Certificates"]
+    Dash --> Leave["Employee leave"]
     Dash --> Comm["Notices calendar notifications"]
 ```
 
@@ -34,6 +35,7 @@ flowchart LR
 | E8 Communication | Notices, calendar, in-app bell |
 | E9 Assessment | Schedules, marks, admit cards, report cards, marksheet approval |
 | E10 Certificates | Request, review, approve, download TC/bonafide |
+| E11 Employee leave | Types, policies, apply, approve, balances, reports (staff only) |
 
 ---
 
@@ -142,6 +144,18 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 | US-94 | As an admin, I want to approve or reject requests so that issuance is controlled | Must |
 | US-95 | As an admin, I want TC issuance to deactivate the student login so that transferred students cannot sign in | Must |
 
+### E11 Employee leave
+
+| ID | Story | MoSCoW |
+|---|---|---|
+| US-100 | As a teacher or admin with a staff profile, I want to apply for leave so that absences are recorded | Must |
+| US-101 | As a staff member, I want to see my balances and history so that I know remaining days | Must |
+| US-102 | As an admin, I want to approve or reject leave so that the office controls absences | Must |
+| US-103 | As an admin, I want leave types and policies assigned to teaching/non-teaching staff so that quotas are consistent | Must |
+| US-104 | As an admin, I want balance reports and Excel export so that HR can reconcile leave | Should |
+| US-105 | As a student or parent, I want no leave menu so that employee HR data stays internal | Must |
+| US-106 | As an admin, I want multi-level approval, half-days, carry-forward, and substitute teachers | Won't (this phase) |
+
 ---
 
 ## 3. Prioritization Matrix (MoSCoW)
@@ -153,6 +167,7 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 | Attendance, fees, notices | Holiday PDF, widget customize | Award showcase API (entity exists, no controller) | SMS/email |
 | Exams, admit/report/marksheet workflows | Grading schemes UI | Super-admin rich UI | GraphQL / WebSockets |
 | Certificates request/approve | Urdu RTL | Syllabus content | Kubernetes-required deploy |
+| Employee leave apply/approve | Leave Excel reports | Super-admin rich UI | Half-day / carry-forward leave |
 | Dashboard + notifications | MinIO attachments | Re-evaluation | HIPAA program |
 | en/hi/ur | Docker Compose pack | Re-evaluation | GitHub Pages site |
 
@@ -163,7 +178,7 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 ### Included in current product (treat as v1.0 scope)
 
 - Docker Compose: PostgreSQL 15, MinIO, backend 8080, frontend nginx 4200
-- Flyway through **V28** (certificate requests)
+- Flyway through **V37** (employee leave; earlier versions include certificates, exams, inventory)
 - Angular Material M3 shell
 - Modules listed in Must-Have and Should-Have above
 - Live OpenAPI at `/v3/api-docs` and Swagger UI `/swagger-ui.html`
@@ -177,6 +192,7 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 - CI/CD, staging/production cloud, APM dashboards
 - Point-in-time backup automation and documented HA
 - GitHub Pages publishing of this `/docs` tree (markdown in repo only)
+- Leave half-days, carry-forward, multi-level approval, substitute teachers
 
 ### Release numbering
 

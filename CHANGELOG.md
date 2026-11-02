@@ -11,6 +11,7 @@ The backend artifact version is `0.1.0-SNAPSHOT` (`backend/pom.xml`). Dates use 
 
 ### Added
 
+- Employee leave for teaching and non-teaching staff (Flyway V37): types, policies, apply/approve/cancel, balances, ledger, Excel reports. UI `/leave`. Permissions `LEAVE_READ`, `LEAVE_APPLY`, `LEAVE_MANAGE`, `LEAVE_APPROVE`. Students and parents have no access.
 - Optional `NG_APP_BACKEND_URL` for split frontend/backend hosting. Empty value keeps relative `/api` (local proxy / nginx).
 - Documentation suite under `docs/` (product, architecture, API, devops, security, QA, user guides).
 - Root `CONTRIBUTING.md`.

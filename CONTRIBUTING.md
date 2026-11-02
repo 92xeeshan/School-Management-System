@@ -10,7 +10,7 @@
 │   │   ├── application.yml           Default config
 │   │   ├── application-dev.yml
 │   │   ├── application-prod.yml
-│   │   ├── db/migration/             Flyway V1–V28
+│   │   ├── db/migration/             Flyway V1–V37
 │   │   └── i18n/                     API messages en/hi/ur
 │   └── src/test/java/com/schoolms/   Service unit tests
 ├── frontend/                Angular 19 SPA
@@ -28,14 +28,14 @@
 └── .env.example
 ```
 
-Place new backend code in the matching `com.schoolms.<domain>` package. Place new Angular screens under `frontend/src/app/features/<domain>/`. Do not add a `PRINCIPAL` role; map “principal” actions to `ADMIN` permissions such as `CERTIFICATE_APPROVE`.
+Place new backend code in the matching `com.schoolms.<domain>` package. Place new Angular screens under `frontend/src/app/features/<domain>/`. Do not add a `PRINCIPAL` role; map “principal” actions to `ADMIN` permissions such as `CERTIFICATE_APPROVE` and `LEAVE_APPROVE`.
 
 ## 2. Coding Standards and Style Guide
 
 ### Backend
 
 - Java 21, Spring Boot 3.5. Controllers stay thin; business rules live in `*Service`.
-- Schema changes: add the next Flyway version (`V29__...sql`). Never enable Hibernate `ddl-auto`.
+- Schema changes: add the next Flyway version (`V38__...sql`). Never enable Hibernate `ddl-auto`.
 - Tenant tables need `school_id` and an RLS policy (copy the `tenant_isolation` pattern from V4).
 - Authorize with `@PreAuthorize("hasAuthority('CODE')")` using permission codes, not `hasRole`.
 - Return `ApiResponse` for JSON; throw `BusinessException` / `ResourceNotFoundException` / `AuthException`.

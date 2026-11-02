@@ -20,9 +20,11 @@ Status column is for execution records (leave blank until run).
 | PR-09 Calendar / dashboard / notifications | TC-080, TC-081, TC-082 |
 | PR-10 Examinations | TC-090, TC-091, TC-092, TC-093, TC-094 |
 | PR-11 Certificates | TC-100, TC-101, TC-102, TC-103, TC-104 |
-| PR-12 Presentation | TC-110, TC-111 |
-| NFR-03 Security | TC-003, TC-120, TC-121 |
+| PR-12 Employee leave | TC-130, TC-131, TC-132, TC-133, TC-134, TC-135 |
+| PR-13 Presentation | TC-110, TC-111 |
+| NFR-03 Security | TC-003, TC-120, TC-121, TC-135 |
 | BR-03 RLS | TC-010 |
+| BR-17 Leave | TC-130, TC-132, TC-135 |
 
 ---
 
@@ -246,14 +248,48 @@ Status column is for execution records (leave blank until run).
 - **Expected:** Parameterized query; no extra rows; 200 or empty
 - **Pass/Fail:**
 
+### Employee leave
+
+#### TC-130 Teacher apply
+- **Requirement:** PR-12
+- **Preconditions:** Demo `teacher` has policy + CL balance (V37 seed)
+- **Steps:** POST `/api/leave/requests` with a weekday range, type CL, reason
+- **Expected:** 200 PENDING; `days` excludes Sat/Sun/holidays; pending balance increases
+- **Pass/Fail:**
+
+#### TC-131 Overlap
+- **Steps:** Apply again for overlapping dates while first request is PENDING
+- **Expected:** 400 `leave.overlap`
+- **Pass/Fail:**
+
+#### TC-132 Admin approve
+- **Steps:** As `admin`, POST `/api/leave/requests/{id}/approve`
+- **Expected:** APPROVED; used increases; pending decreases
+- **Pass/Fail:**
+
+#### TC-133 Self-approve blocked
+- **Steps:** As admin with a staff profile, approve own pending request
+- **Expected:** 400 `leave.self_approve`
+- **Pass/Fail:**
+
+#### TC-134 Cancel after start
+- **Steps:** Approve a request whose `fromDate` is today or past; POST cancel
+- **Expected:** 400 `leave.cancel_started`
+- **Pass/Fail:**
+
+#### TC-135 Student denied
+- **Steps:** As `student`, GET `/api/leave/balances/mine`
+- **Expected:** 403; Leave nav item not shown
+- **Pass/Fail:**
+
 ---
 
 ## 3. Coverage Boundaries
 
 | Kind | Examples in this suite |
 |---|---|
-| Positive | TC-001, TC-020, TC-050, TC-060, TC-094, TC-100 |
-| Negative / authz | TC-003, TC-023, TC-061, TC-093, TC-102, TC-120 |
+| Positive | TC-001, TC-020, TC-050, TC-060, TC-094, TC-100, TC-130, TC-132 |
+| Negative / authz | TC-003, TC-023, TC-061, TC-093, TC-102, TC-120, TC-133, TC-135 |
 | Validation / unique | TC-021, TC-030, TC-041, TC-101 |
 | Security input | TC-121 |
 | Publish locks | TC-092, TC-094 |

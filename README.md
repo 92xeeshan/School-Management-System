@@ -1,6 +1,6 @@
 # School Management System
 
-Multi-tenant school operations platform: students, staff, academics, attendance, fees, exams, certificates, notices, and calendar.
+Multi-tenant school operations platform: students, staff, academics, attendance, fees, exams, certificates, employee leave, notices, and calendar.
 
 **Stack:** Spring Boot 3.5 / Java 21 / PostgreSQL 15 / Spring Security JWT / Caffeine / MinIO / JasperReports / Angular 19 + Material M3 + ngx-translate / Flyway / Docker Compose.
 
@@ -155,6 +155,7 @@ Password for every seeded account: `Admin@123`.
 - Attendance, fees, notices, calendar
 - Exams, admit cards, report cards, marksheets (publish lock)
 - Certificates (generate, request, class-teacher review, admin approve)
+- Employee leave (staff-only types, policies, apply/approve, balances, Excel)
 - Dashboards, in-app notifications
 - Light/dark Material M3 UI; en / hi / ur
 

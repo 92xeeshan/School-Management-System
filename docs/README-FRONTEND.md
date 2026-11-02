@@ -120,10 +120,10 @@ seed data. Password for all accounts is `Admin@123`:
 
 | Username     | Role    | What you can do                                  |
 |--------------|---------|--------------------------------------------------|
-| `admin`      | Admin   | Full school management                           |
-| `teacher`    | Teacher | Mark/read attendance, view timetable             |
-| `parent`     | Parent  | View child attendance and fees                   |
-| `student`    | Student | View own timetable, attendance, notices          |
+| `admin`      | Admin   | Full school management including leave setup/approve |
+| `teacher`    | Teacher | Mark/read attendance, view timetable, apply for leave |
+| `parent`     | Parent  | View child attendance and fees (no Leave menu)   |
+| `student`    | Student | View own timetable, attendance, notices (no Leave) |
 | `superadmin` | Super Admin | Platform-level (schools/users) access      |
 
 ---
