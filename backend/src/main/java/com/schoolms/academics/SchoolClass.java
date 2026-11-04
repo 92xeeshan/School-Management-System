@@ -25,4 +25,7 @@ public class SchoolClass extends BaseEntity {
 
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
+
+    @Column(name = "stream_enabled", nullable = false)
+    private boolean streamEnabled = false;
 }

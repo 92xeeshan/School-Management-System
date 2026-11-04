@@ -60,9 +60,10 @@ public class StudentController {
             @RequestParam(required = false) UUID sectionId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) String direction) {
+            @RequestParam(required = false) String direction,
+            @RequestParam(required = false) Boolean profilePending) {
         StudentDirectoryFilter filter = new StudentDirectoryFilter(
-                academicYearId, classId, sectionId, status, query, sort, direction);
+                academicYearId, classId, sectionId, status, query, sort, direction, profilePending);
         Page<StudentListItemDto> result = studentService.list(page, Math.min(size, 100), filter);
         return ApiResponse.ok(PagedResponse.from(result));
     }
@@ -78,9 +79,10 @@ public class StudentController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String direction,
+            @RequestParam(required = false) Boolean profilePending,
             @RequestParam(defaultValue = "csv") String format) {
         StudentDirectoryFilter filter = new StudentDirectoryFilter(
-                academicYearId, classId, sectionId, status, query, sort, direction);
+                academicYearId, classId, sectionId, status, query, sort, direction, profilePending);
         boolean pdf = "pdf".equalsIgnoreCase(format);
         byte[] body = pdf ? studentService.exportPdf(filter) : studentService.exportCsv(filter);
         String filename = "students." + (pdf ? "pdf" : "csv");

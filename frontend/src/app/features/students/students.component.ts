@@ -23,6 +23,7 @@ interface Student {
   phone: string;
   guardianName: string;
   status: string;
+  profilePending: boolean;
 }
 
 type DirectorySortKey = 'admissionNo' | 'name' | 'rollNumber' | 'admissionDate';
@@ -51,6 +52,7 @@ interface BackendStudentListItem {
   className: string;
   sectionName: string;
   rollNumber: number;
+  profilePending: boolean;
 }
 
 interface ClassOption {
@@ -136,7 +138,7 @@ interface StudentReportCard {
     <div class="page">
       <app-page-header [title]="'students.title' | translate" [subtitle]="'students.subtitle' | translate">
         @if (canCreate) {
-          <button class="btn btn-primary" (click)="openAddModal()">{{ 'students.addStudent' | translate }}</button>
+          <button class="btn btn-primary" (click)="openAdmission()">{{ 'students.addStudent' | translate }}</button>
         }
       </app-page-header>
 
@@ -179,6 +181,14 @@ interface StudentReportCard {
                 @for (status of statuses; track status) {
                   <option [value]="status">{{ ('students.statuses.' + status) | translate }}</option>
                 }
+              </select>
+            </label>
+            <label class="filter-field">
+              <span>{{ 'students.filters.profile' | translate }}</span>
+              <select [value]="selectedPending" (change)="onPendingChange($any($event.target).value)">
+                <option value="">{{ 'students.filters.allProfiles' | translate }}</option>
+                <option value="true">{{ 'students.filters.pendingOnly' | translate }}</option>
+                <option value="false">{{ 'students.filters.completeOnly' | translate }}</option>
               </select>
             </label>
             <label class="filter-field search-field">
@@ -232,7 +242,12 @@ interface StudentReportCard {
                   <td>{{ student.section }}</td>
                   <td>{{ student.rollNumber }}</td>
                   <td>{{ student.admissionDate }}</td>
-                  <td><span class="badge status-pill" [class.badge-success]="student.status === 'ACTIVE'" [class.badge-muted]="student.status !== 'ACTIVE'">{{ student.status }}</span></td>
+                  <td>
+                    <span class="badge status-pill" [class.badge-success]="student.status === 'ACTIVE'" [class.badge-muted]="student.status !== 'ACTIVE'">{{ student.status }}</span>
+                    @if (student.profilePending) {
+                      <span class="badge status-pill badge-muted">{{ 'students.filters.pendingOnly' | translate }}</span>
+                    }
+                  </td>
                   @if (showActions) {
                   <td>
                     <div class="row-actions">
@@ -249,9 +264,9 @@ interface StudentReportCard {
                       }
                       @if (canUpdate) {
                         <button class="icon-btn" type="button"
-                                [attr.title]="'common.edit' | translate"
-                                [attr.aria-label]="'common.edit' | translate"
-                                (click)="openEditModal(student); $event.stopPropagation()">
+                                [attr.title]="(student.profilePending ? 'students.admission.continue' : 'common.edit') | translate"
+                                [attr.aria-label]="(student.profilePending ? 'students.admission.continue' : 'common.edit') | translate"
+                                (click)="openEdit(student); $event.stopPropagation()">
                           <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M4 20h4.5L19 9.5 14.5 5 4 15.5V20z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
                             <path d="M13.2 6.3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -645,6 +660,7 @@ export class StudentsComponent implements OnInit {
   selectedClassId = '';
   selectedSectionId = '';
   selectedStatus = '';
+  selectedPending = '';
   sortKey: DirectorySortKey = 'admissionNo';
   sortDirection: 'asc' | 'desc' = 'asc';
   readonly statuses = ['ACTIVE', 'INACTIVE', 'ALUMNI', 'TRANSFERRED'];
@@ -722,6 +738,7 @@ export class StudentsComponent implements OnInit {
       this.selectedClassId !== '' ||
       this.selectedSectionId !== '' ||
       this.selectedStatus !== '' ||
+      this.selectedPending !== '' ||
       this.selectedYearId !== currentYear
     );
   }
@@ -760,6 +777,9 @@ export class StudentsComponent implements OnInit {
     if (this.selectedStatus) {
       params['status'] = this.selectedStatus;
     }
+    if (this.selectedPending) {
+      params['profilePending'] = this.selectedPending;
+    }
     return params;
   }
 
@@ -784,6 +804,11 @@ export class StudentsComponent implements OnInit {
     this.applyFilters();
   }
 
+  onPendingChange(value: string): void {
+    this.selectedPending = value;
+    this.applyFilters();
+  }
+
   onSearchInput(value: string): void {
     this.query = value;
     if (this.searchTimer) {
@@ -804,6 +829,7 @@ export class StudentsComponent implements OnInit {
     this.selectedClassId = '';
     this.selectedSectionId = '';
     this.selectedStatus = '';
+    this.selectedPending = '';
     this.sortKey = 'admissionNo';
     this.sortDirection = 'asc';
     this.pageIndex = 0;
@@ -873,7 +899,19 @@ export class StudentsComponent implements OnInit {
   }
 
   openProfile(student: Student): void {
+    if (student.profilePending && this.canUpdate) {
+      this.router.navigate(['/students', student.id, 'admission']);
+      return;
+    }
     this.router.navigate(['/students', student.id]);
+  }
+
+  openAdmission(): void {
+    this.router.navigate(['/students/new']);
+  }
+
+  openEdit(student: Student): void {
+    this.router.navigate(['/students', student.id, 'admission']);
   }
 
   openReportCard(student: Student): void {
@@ -1139,6 +1177,7 @@ export class StudentsComponent implements OnInit {
           phone: '',
           guardianName: '',
           status: item.student.status ?? '',
+          profilePending: item.profilePending === true,
         }));
         this.totalElements = page?.totalElements ?? 0;
         this.totalPages = page?.totalPages ?? 0;

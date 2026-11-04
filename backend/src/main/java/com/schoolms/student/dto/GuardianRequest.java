@@ -12,6 +12,8 @@ public record GuardianRequest(
         @Size(max = 120) String email,
         @Size(max = 30) String phone,
         @Size(max = 100) String occupation,
+        @Size(max = 120) String qualification,
+        @Size(max = 500) String address,
         UUID userId
 ) {
 }

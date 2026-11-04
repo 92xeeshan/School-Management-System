@@ -16,6 +16,14 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
 
     boolean existsBySchoolIdAndAdmissionNo(UUID schoolId, String admissionNo);
 
+    boolean existsBySchoolIdAndAadhaarNo(UUID schoolId, String aadhaarNo);
+
+    boolean existsBySchoolIdAndAadhaarNoAndIdNot(UUID schoolId, String aadhaarNo, UUID id);
+
+    boolean existsBySchoolIdAndApaarId(UUID schoolId, String apaarId);
+
+    boolean existsBySchoolIdAndApaarIdAndIdNot(UUID schoolId, String apaarId, UUID id);
+
     @Query("""
             select s.admissionNo from Student s
             where s.schoolId = :schoolId and s.admissionNo like concat(:prefix, '%')
@@ -43,7 +51,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
             select new com.schoolms.student.dto.StudentDirectoryRow(
                 s.id, s.admissionNo, s.firstName, s.lastName, s.gender, s.status, s.admissionDate,
                 e.id, e.academicYearId, e.rollNumber,
-                sec.id, sec.name, c.id, c.name)
+                sec.id, sec.name, c.id, c.name, s.profilePending)
             from Student s
             left join StudentEnrollment e on e.studentId = s.id and e.schoolId = s.schoolId
                  and e.academicYearId = :academicYearId
@@ -53,6 +61,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
               and (:classId is null or c.id = :classId)
               and (:sectionId is null or sec.id = :sectionId)
               and (:status is null or s.status = :status)
+              and (:profilePending is null or s.profilePending = :profilePending)
               and (:query is null
                    or lower(s.firstName) like :queryLike
                    or lower(s.lastName) like :queryLike
@@ -69,6 +78,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
               and (:classId is null or c.id = :classId)
               and (:sectionId is null or sec.id = :sectionId)
               and (:status is null or s.status = :status)
+              and (:profilePending is null or s.profilePending = :profilePending)
               and (:query is null
                    or lower(s.firstName) like :queryLike
                    or lower(s.lastName) like :queryLike
@@ -82,6 +92,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
                                               @Param("status") StudentStatus status,
                                               @Param("query") String query,
                                               @Param("queryLike") String queryLike,
+                                              @Param("profilePending") Boolean profilePending,
                                               Pageable pageable);
 
     List<Student> findBySchoolIdAndIdIn(UUID schoolId, List<UUID> ids);

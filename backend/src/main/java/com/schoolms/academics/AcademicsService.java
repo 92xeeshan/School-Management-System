@@ -93,7 +93,7 @@ public class AcademicsService {
                     .toList();
             List<SubjectDto> subjects = subjectsByClass.getOrDefault(schoolClass.getId(), List.of());
             return new ClassDto(schoolClass.getId(), schoolClass.getName(), schoolClass.getCode(),
-                    schoolClass.getSortOrder(), sections, subjects);
+                    schoolClass.getSortOrder(), schoolClass.isStreamEnabled(), sections, subjects);
         }).toList();
     }
 
@@ -118,6 +118,9 @@ public class AcademicsService {
             schoolClass.setName(className);
             schoolClass.setCode(request.code() == null || request.code().isBlank() ? className : request.code().trim());
             schoolClass.setSortOrder(request.sortOrder() == null ? 0 : request.sortOrder());
+            if (request.streamEnabled() != null) {
+                schoolClass.setStreamEnabled(request.streamEnabled());
+            }
             schoolClass = classRepository.saveAndFlush(schoolClass);
         }
 
@@ -151,6 +154,9 @@ public class AcademicsService {
         schoolClass.setName(className);
         if (request.code() != null && !request.code().isBlank()) {
             schoolClass.setCode(request.code().trim());
+        }
+        if (request.streamEnabled() != null) {
+            schoolClass.setStreamEnabled(request.streamEnabled());
         }
         classRepository.saveAndFlush(schoolClass);
 
@@ -414,7 +420,7 @@ public class AcademicsService {
                 .toList();
         List<SubjectDto> subjects = subjectsForClass(schoolId, schoolClass.getId());
         return new ClassDto(schoolClass.getId(), schoolClass.getName(), schoolClass.getCode(),
-                schoolClass.getSortOrder(), sections, subjects);
+                schoolClass.getSortOrder(), schoolClass.isStreamEnabled(), sections, subjects);
     }
 
     private SectionDto toSectionDto(Section section, String className,

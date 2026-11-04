@@ -24,6 +24,7 @@ public record StudentDirectoryRow(
         UUID sectionId,
         String sectionName,
         UUID classId,
-        String className
+        String className,
+        boolean profilePending
 ) {
 }

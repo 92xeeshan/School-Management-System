@@ -48,4 +48,7 @@ public interface StudentEnrollmentRepository extends JpaRepository<StudentEnroll
     Integer findMaxRollNumber(@Param("sectionId") UUID sectionId, @Param("academicYearId") UUID academicYearId);
 
     boolean existsByStudentIdAndAcademicYearId(UUID studentId, UUID academicYearId);
+
+    boolean existsBySectionIdAndAcademicYearIdAndRollNumberAndStatusAndStudentIdNot(
+            UUID sectionId, UUID academicYearId, Integer rollNumber, String status, UUID studentId);
 }

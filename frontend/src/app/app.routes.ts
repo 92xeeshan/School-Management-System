@@ -57,6 +57,20 @@ export const routes: Routes = [
         data: { permissions: ['STUDENT_READ'] },
       },
       {
+        path: 'students/new',
+        loadComponent: () =>
+          import('./features/students/admission-wizard.component').then((m) => m.AdmissionWizardComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['STUDENT_CREATE'] },
+      },
+      {
+        path: 'students/:id/admission',
+        loadComponent: () =>
+          import('./features/students/admission-wizard.component').then((m) => m.AdmissionWizardComponent),
+        canActivate: [PermissionGuard],
+        data: { permissions: ['STUDENT_READ'] },
+      },
+      {
         path: 'students/:id',
         loadComponent: () =>
           import('./features/students/student-profile.component').then((m) => m.StudentProfileComponent),
@@ -75,6 +89,11 @@ export const routes: Routes = [
             path: 'classes',
             loadComponent: () =>
               import('./features/academics/academics.component').then((m) => m.AcademicsComponent),
+          },
+          {
+            path: 'masters',
+            loadComponent: () =>
+              import('./features/academics/masters.component').then((m) => m.AcademicsMastersComponent),
           },
           {
             path: 'subjects',

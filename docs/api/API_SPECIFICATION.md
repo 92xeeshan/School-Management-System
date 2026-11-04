@@ -172,6 +172,20 @@ Requires Bearer. 200 `{ "success": true, "message": "auth.logout_success" }`.
 | DELETE | `/api/students/{id}/guardians/{guardianId}` | `GUARDIAN_UPDATE` | Unlink |
 | PATCH | `/api/students/{id}/deactivate` | `STUDENT_DELETE` | |
 | POST | `/api/students/import` | `STUDENT_IMPORT` | CSV multipart |
+| POST | `/api/students/admission` | `STUDENT_CREATE` | Wizard step 1 create |
+| GET | `/api/students/{id}/admission` | `STUDENT_READ` | Load wizard |
+| PUT | `/api/students/{id}/steps/{1-6}` | `STUDENT_UPDATE` | Save wizard step |
+| POST | `/api/students/{id}/photo` | `STUDENT_UPDATE` | JPG/PNG ≤2MB |
+| POST | `/api/students/{id}/documents` | `STUDENT_UPDATE` | PDF/JPG/PNG ≤5MB |
+| DELETE | `/api/students/{id}/documents/{docId}` | `STUDENT_UPDATE` | |
+| GET | `/api/students/siblings` | `STUDENT_READ` | Sibling search |
+| GET | `/api/classes/{id}/subjects` | `STUDENT_READ` | Class subjects (optional `streamId`) |
+| GET/POST | `/api/streams` | `CLASS_READ` / `CLASS_CREATE` | |
+| PUT | `/api/streams/{id}` | `CLASS_UPDATE` | |
+| GET/POST | `/api/lookups/{kind}` | `CLASS_READ` / `CLASS_CREATE` | RELIGION, CATEGORY, HOUSE, MEDIUM, MOTHER_TONGUE |
+| PUT | `/api/lookups/{id}` | `CLASS_UPDATE` | |
+
+`GET /api/students` accepts `profilePending` (boolean). Aadhaar/APAAR unique per school. Aadhaar is masked unless ADMIN/SUPER_ADMIN.
 
 Guardians collection: `GET/POST /api/guardians`, `PATCH /api/guardians/{id}` (`GUARDIAN_READ/CREATE/UPDATE`).
 

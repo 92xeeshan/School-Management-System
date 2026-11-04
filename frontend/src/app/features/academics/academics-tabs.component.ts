@@ -57,6 +57,7 @@ interface AcademicsTab {
 export class AcademicsTabsComponent {
   readonly tabs: AcademicsTab[] = [
     { path: 'classes', labelKey: 'academics.tabs.classes' },
+    { path: 'masters', labelKey: 'academics.tabs.masters' },
     { path: 'subjects', labelKey: 'academics.tabs.subjects' },
     { path: 'timetable', labelKey: 'academics.tabs.timetable' },
     { path: 'syllabus', labelKey: 'academics.tabs.syllabus' },

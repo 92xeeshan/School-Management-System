@@ -40,6 +40,10 @@ public class Guardian extends BaseEntity {
 
     private String occupation;
 
+    private String qualification;
+
+    private String address;
+
     public String getDisplayName() {
         return lastName == null || lastName.isBlank()
                 ? firstName

@@ -91,7 +91,7 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public Page<StudentListItemDto> list(int page, int size, String query) {
-        return list(page, size, new StudentDirectoryFilter(null, null, null, null, query, null, null));
+        return list(page, size, new StudentDirectoryFilter(null, null, null, null, query, null, null, null));
     }
 
     @Transactional(readOnly = true)
@@ -105,7 +105,8 @@ public class StudentService {
         Pageable pageable = PageRequest.of(page, size, directorySort(criteria.sort(), criteria.direction()));
         Page<StudentDirectoryRow> rows = studentRepository.searchDirectory(
                 schoolId, academicYearId, criteria.classId(), criteria.sectionId(),
-                parseStatus(criteria.status()), query, likePattern(query), pageable);
+                parseStatus(criteria.status()), query, likePattern(query),
+                criteria.profilePending(), pageable);
         return rows.map(this::toListItem);
     }
 
@@ -120,7 +121,8 @@ public class StudentService {
         Pageable pageable = Pageable.unpaged(directorySort(criteria.sort(), criteria.direction()));
         return studentRepository.searchDirectory(
                         schoolId, academicYearId, criteria.classId(), criteria.sectionId(),
-                        parseStatus(criteria.status()), query, likePattern(query), pageable)
+                        parseStatus(criteria.status()), query, likePattern(query),
+                        criteria.profilePending(), pageable)
                 .map(this::toListItem)
                 .getContent();
     }
@@ -129,7 +131,7 @@ public class StudentService {
         StudentDto summary = StudentDto.summary(row.id(), row.admissionNo(), row.firstName(),
                 row.lastName(), row.admissionDate(), row.gender(), row.status());
         return new StudentListItemDto(summary, row.enrollmentId(), row.academicYearId(),
-                row.className(), row.sectionName(), row.rollNumber());
+                row.className(), row.sectionName(), row.rollNumber(), row.profilePending());
     }
 
     private static String normalizeQuery(String query) {
@@ -424,6 +426,8 @@ public class StudentService {
         guardian.setEmail(request.email());
         guardian.setPhone(request.phone());
         guardian.setOccupation(request.occupation());
+        guardian.setQualification(request.qualification());
+        guardian.setAddress(request.address());
         ProvisionedAccount account = null;
         if (request.userId() == null) {
             account = credentialAccountService.provision(schoolId, "PARENT",
@@ -613,7 +617,7 @@ public class StudentService {
             }
         }
         return new StudentListItemDto(StudentDto.from(student), enrollmentId, academicYearId,
-                className, sectionName, rollNumber);
+                className, sectionName, rollNumber, student.isProfilePending());
     }
 
     private UUID currentYearId(UUID schoolId) {

@@ -13,6 +13,8 @@ public record GuardianDto(
         String email,
         String phone,
         String occupation,
+        String qualification,
+        String address,
         UUID userId,
         String username,
         String temporaryPassword
@@ -26,6 +28,7 @@ public record GuardianDto(
                 guardian.getId(), guardian.getFirstName(), guardian.getLastName(),
                 guardian.getDisplayName(), guardian.getRelationship().name(),
                 guardian.getEmail(), guardian.getPhone(), guardian.getOccupation(),
+                guardian.getQualification(), guardian.getAddress(),
                 guardian.getUserId(), username, temporaryPassword);
     }
 }

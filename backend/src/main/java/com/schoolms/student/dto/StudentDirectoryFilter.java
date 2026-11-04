@@ -14,9 +14,10 @@ public record StudentDirectoryFilter(
         String status,
         String query,
         String sort,
-        String direction
+        String direction,
+        Boolean profilePending
 ) {
     public static StudentDirectoryFilter empty() {
-        return new StudentDirectoryFilter(null, null, null, null, null, null, null);
+        return new StudentDirectoryFilter(null, null, null, null, null, null, null, null);
     }
 }

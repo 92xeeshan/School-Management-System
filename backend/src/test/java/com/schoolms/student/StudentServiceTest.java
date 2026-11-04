@@ -477,13 +477,13 @@ class StudentServiceTest {
         when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
         StudentDirectoryRow row = new StudentDirectoryRow(UUID.randomUUID(), "ADM100", "Meera", "Sharma",
                 Gender.FEMALE, StudentStatus.ACTIVE, LocalDate.of(2025, 4, 1),
-                UUID.randomUUID(), yearId, 7, sectionId, "A", classId, "Class 5");
+                UUID.randomUUID(), yearId, 7, sectionId, "A", classId, "Class 5", false);
         when(studentRepository.searchDirectory(eq(schoolId), eq(yearId), eq(classId), eq(sectionId),
-                eq(StudentStatus.INACTIVE), eq("Meera"), eq("%meera%"), any(Pageable.class)))
+                eq(StudentStatus.INACTIVE), eq("Meera"), eq("%meera%"), isNull(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(row)));
 
         Page<StudentListItemDto> page = studentService.list(0, 25,
-                new StudentDirectoryFilter(null, classId, sectionId, "inactive", "Meera", "name", "asc"));
+                new StudentDirectoryFilter(null, classId, sectionId, "inactive", "Meera", "name", "asc", null));
 
         assertEquals(1, page.getTotalElements());
         StudentListItemDto item = page.getContent().get(0);
@@ -499,12 +499,12 @@ class StudentServiceTest {
         UUID yearId = UUID.randomUUID();
         when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
         when(studentRepository.searchDirectory(eq(schoolId), eq(yearId), isNull(), isNull(),
-                isNull(), isNull(), isNull(), any(Pageable.class))).thenReturn(Page.empty());
+                isNull(), isNull(), isNull(), isNull(), any(Pageable.class))).thenReturn(Page.empty());
 
         studentService.list(0, 10, StudentDirectoryFilter.empty());
 
         verify(studentRepository).searchDirectory(eq(schoolId), eq(yearId), isNull(), isNull(),
-                isNull(), isNull(), isNull(), any(Pageable.class));
+                isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
     }
 
     @Test
@@ -512,13 +512,13 @@ class StudentServiceTest {
         UUID yearId = UUID.randomUUID();
         when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
         when(studentRepository.searchDirectory(eq(schoolId), eq(yearId), isNull(), isNull(),
-                isNull(), isNull(), isNull(), any(Pageable.class))).thenReturn(Page.empty());
+                isNull(), isNull(), isNull(), isNull(), any(Pageable.class))).thenReturn(Page.empty());
 
         studentService.list(0, 10,
-                new StudentDirectoryFilter(null, null, null, "SUSPENDED", null, null, null));
+                new StudentDirectoryFilter(null, null, null, "SUSPENDED", null, null, null, null));
 
         verify(studentRepository).searchDirectory(eq(schoolId), eq(yearId), isNull(), isNull(),
-                isNull(), isNull(), isNull(), any(Pageable.class));
+                isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
     }
 
     @Test
@@ -527,8 +527,8 @@ class StudentServiceTest {
         when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
         StudentDirectoryRow row = new StudentDirectoryRow(UUID.randomUUID(), "ADM100", "Meera", "Sharma",
                 Gender.FEMALE, StudentStatus.ACTIVE, LocalDate.of(2025, 4, 1),
-                UUID.randomUUID(), yearId, 7, UUID.randomUUID(), "A", UUID.randomUUID(), "Class 5");
-        when(studentRepository.searchDirectory(any(), any(), any(), any(), any(), any(), any(), any()))
+                UUID.randomUUID(), yearId, 7, UUID.randomUUID(), "A", UUID.randomUUID(), "Class 5", false);
+        when(studentRepository.searchDirectory(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(row)));
 
         String csv = new String(studentService.exportCsv(StudentDirectoryFilter.empty()), StandardCharsets.UTF_8);
@@ -544,8 +544,8 @@ class StudentServiceTest {
         when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
         StudentDirectoryRow row = new StudentDirectoryRow(UUID.randomUUID(), "ADM100", "Meera", "Sharma",
                 Gender.FEMALE, StudentStatus.ACTIVE, LocalDate.of(2025, 4, 1),
-                UUID.randomUUID(), yearId, 7, UUID.randomUUID(), "A", UUID.randomUUID(), "Class 5");
-        when(studentRepository.searchDirectory(any(), any(), any(), any(), any(), any(), any(), any()))
+                UUID.randomUUID(), yearId, 7, UUID.randomUUID(), "A", UUID.randomUUID(), "Class 5", false);
+        when(studentRepository.searchDirectory(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(row)));
         School school = new School();
         school.setName("Demo School");
@@ -562,7 +562,7 @@ class StudentServiceTest {
     void exportPdfRejectsEmptyResult() {
         UUID yearId = UUID.randomUUID();
         when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year(yearId)));
-        when(studentRepository.searchDirectory(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(studentRepository.searchDirectory(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Page.empty());
 
         assertThrows(BusinessException.class, () -> studentService.exportPdf(StudentDirectoryFilter.empty()));
