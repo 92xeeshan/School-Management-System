@@ -51,17 +51,37 @@ export const routes: Routes = [
       },
       {
         path: 'students',
-        loadComponent: () =>
-          import('./features/students/students.component').then((m) => m.StudentsComponent),
-        canActivate: [PermissionGuard],
-        data: { permissions: ['STUDENT_READ'] },
-      },
-      {
-        path: 'students/:id',
-        loadComponent: () =>
-          import('./features/students/student-profile.component').then((m) => m.StudentProfileComponent),
-        canActivate: [PermissionGuard],
-        data: { permissions: ['STUDENT_READ'] },
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import('./features/students/students.component').then((m) => m.StudentsComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['STUDENT_READ'] },
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./features/students/admission-wizard.component').then((m) => m.AdmissionWizardComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['STUDENT_CREATE'] },
+          },
+          {
+            path: ':id/admission',
+            loadComponent: () =>
+              import('./features/students/admission-wizard.component').then((m) => m.AdmissionWizardComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['STUDENT_READ'] },
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/students/student-profile.component').then((m) => m.StudentProfileComponent),
+            canActivate: [PermissionGuard],
+            data: { permissions: ['STUDENT_READ'] },
+          },
+        ],
       },
       {
         path: 'academics',
@@ -75,6 +95,11 @@ export const routes: Routes = [
             path: 'classes',
             loadComponent: () =>
               import('./features/academics/academics.component').then((m) => m.AcademicsComponent),
+          },
+          {
+            path: 'masters',
+            loadComponent: () =>
+              import('./features/academics/masters.component').then((m) => m.AcademicsMastersComponent),
           },
           {
             path: 'subjects',

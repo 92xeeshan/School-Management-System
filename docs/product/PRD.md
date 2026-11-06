@@ -66,13 +66,15 @@ See `docs/security/SECURITY.md` for the full RBAC matrix.
 
 ### PR-03 Students and guardians
 
-- Paginated student list, search, section filter.
-- Create / update / deactivate; unique `(school_id, admission_no)`.
+- Paginated student list, search, section filter, incomplete-admission filter (`profilePending`).
+- Staff 6-step admission wizard (`/students/new`, `/students/:id/admission`): personal, family, contact, academic, previous school/documents, other.
+- Create / update / deactivate; unique `(school_id, admission_no)`. Admission no. is auto `ADM`+year+seq.
+- Aadhaar and APAAR unique per school when set. Aadhaar masked unless ADMIN/SUPER_ADMIN.
 - Profile view/edit with class-teacher vs admin rules.
-- Guardians: list, create, link, unlink.
-- Enroll student in class/section for an academic year.
+- Guardians: list, create, link, unlink. Siblings share a guardian.
+- Enroll student in class/section for an academic year. Streams (Islamic Studies, Science, Arts) when the class has `stream_enabled`.
 - CSV import (`STUDENT_IMPORT`).
-- UI: `/students`, `/students/:id`.
+- UI: `/students`, `/students/new`, `/students/:id/admission`, `/students/:id`.
 
 ### PR-04 Staff
 

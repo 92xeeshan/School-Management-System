@@ -8,6 +8,7 @@ public record StudentListItemDto(
         UUID academicYearId,
         String className,
         String sectionName,
-        Integer rollNumber
+        Integer rollNumber,
+        boolean profilePending
 ) {
 }

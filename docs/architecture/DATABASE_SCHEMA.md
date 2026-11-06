@@ -126,7 +126,7 @@ Index: `idx_refresh_token_user (user_id)`. No `school_id`.
 
 #### `student`
 
-UNIQUE `(school_id, admission_no)`. Optional `user_id`. Status `ACTIVE` / `INACTIVE` / `ALUMNI` / `TRANSFERRED`. Index `idx_student_school_name (school_id, last_name)`. V10 adds phone, emergency contact, addresses, previous school.
+UNIQUE `(school_id, admission_no)`. Optional `user_id`. Status `ACTIVE` / `INACTIVE` / `ALUMNI` / `TRANSFERRED`. Index `idx_student_school_name (school_id, last_name)`. V10 adds phone, emergency contact, addresses, previous school. V39 adds middle name, religion/category/house/medium/mother-tongue lookup FKs, Aadhaar, APAAR, stream, transport/hostel flags, medical notes, remarks, `profile_pending`. Unique `(school_id, aadhaar_no)` and `(school_id, apaar_id)` when set.
 
 #### `guardian`
 
@@ -145,10 +145,17 @@ UNIQUE `(student_id, academic_year_id)`. FK section + academic year. Status `ACT
 | Table | Unique / keys | Notes |
 |---|---|---|
 | `academic_year` | `(school_id, name)` | `is_current` |
-| `school_class` | `(school_id, name)` | `sort_order` |
+| `school_class` | `(school_id, name)` | `sort_order`; V39 `stream_enabled` |
 | `section` | `(class_id, name)` | `capacity`, V11 `room` |
 | `subject` | `(school_id, name)` | CORE/ELECTIVE; V12 weekly_periods, practical, status |
-| `class_subject` | `(class_id, subject_id)` | V12 optional `teacher_id` |
+| `class_subject` | `(class_id, subject_id)` | V12 optional `teacher_id`; V39 `stream_id`, `compulsory` |
+| `stream` | `(school_id, name)` | V39 Islamic Studies / Science / Arts |
+| `school_lookup` | `(school_id, kind, name)` | V39 RELIGION, CATEGORY, HOUSE, MEDIUM, MOTHER_TONGUE |
+| `student_step_status` | `(student_id, step_no)` | V39 wizard steps 1–6 |
+| `student_address` | `(student_id, address_type)` | V39 CURRENT / PERMANENT |
+| `student_previous_school` | `(student_id)` | V39 |
+| `student_document` | FK student | V39 MinIO `student-docs` |
+| `student_subject` | `(student_id, subject_id, academic_year_id)` | V39 electives; exams stay class-level |
 | `teacher_profile` | `(school_id, employee_no)` | Optional `user_id`; V18 HR fields |
 | `teacher_subject` | `(school_id, teacher_id, subject_id)` | |
 | `teacher_section` | `(school_id, teacher_id, section_id, academic_year_id)` | `is_class_teacher` |

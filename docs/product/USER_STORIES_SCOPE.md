@@ -69,6 +69,7 @@ Format: *As a [Role], I want [Action] so that [Benefit]*. IDs align with PRD (`P
 | ID | Story | MoSCoW |
 |---|---|---|
 | US-20 | As an admin, I want to add a student with admission number so that enrollment is unique | Must |
+| US-20a | As staff, I want a 6-step admission wizard so that student, family, contact, academic, previous-school and other details can be captured without flattening SIS tables | Must |
 | US-21 | As an admin, I want to edit/deactivate students so that leavers are not active | Must |
 | US-22 | As an admin, I want guardians linked to students so that parents can log in later | Must |
 | US-23 | As an admin, I want CSV import so that I can onboard a class quickly | Should |

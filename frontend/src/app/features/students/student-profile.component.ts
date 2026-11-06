@@ -84,8 +84,11 @@ interface SectionOption {
         @if (canResetPassword && !editing) {
           <button class="btn" type="button" (click)="openReset()">{{ 'users.resetPassword' | translate }}</button>
         }
-        @if (profile?.canEdit && !editing) {
-          <button class="btn btn-primary" type="button" (click)="startEdit()">{{ 'common.edit' | translate }}</button>
+        @if (profile; as current) {
+          @if (current.canEdit && !editing) {
+            <a class="btn" [routerLink]="['/students', current.id, 'admission']">{{ 'students.admission.continue' | translate }}</a>
+            <button class="btn btn-primary" type="button" (click)="startEdit()">{{ 'common.edit' | translate }}</button>
+          }
         }
       </app-page-header>
 

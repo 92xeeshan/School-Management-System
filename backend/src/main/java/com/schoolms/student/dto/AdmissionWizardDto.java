@@ -1,0 +1,68 @@
+package com.schoolms.student.dto;
+
+import com.schoolms.common.enums.Gender;
+import com.schoolms.common.enums.StudentStatus;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+public record AdmissionWizardDto(
+        UUID id,
+        String admissionNo,
+        String firstName,
+        String middleName,
+        String lastName,
+        String displayName,
+        LocalDate dateOfBirth,
+        Gender gender,
+        String bloodGroup,
+        UUID religionId,
+        UUID categoryId,
+        String nationality,
+        UUID motherTongueId,
+        String aadhaarNo,
+        String apaarId,
+        String photoUrl,
+        LocalDate admissionDate,
+        StudentStatus status,
+        UUID classId,
+        String className,
+        boolean streamEnabled,
+        UUID sectionId,
+        String sectionName,
+        Integer rollNumber,
+        UUID academicYearId,
+        String academicYearName,
+        UUID houseId,
+        UUID mediumId,
+        UUID streamId,
+        List<UUID> subjectIds,
+        UUID secondLanguageId,
+        UUID thirdLanguageId,
+        FamilyMemberDto father,
+        FamilyMemberDto mother,
+        FamilyMemberDto guardian,
+        boolean guardianDifferent,
+        String emergencyName,
+        String emergencyRelation,
+        String emergencyPhone,
+        String primaryContact,
+        AddressDto currentAddress,
+        AddressDto permanentAddress,
+        boolean sameAsCurrent,
+        String phone,
+        String email,
+        PreviousSchoolDto previousSchool,
+        boolean transportRequired,
+        boolean hostelRequired,
+        String medicalNotes,
+        String remarks,
+        List<StudentDocumentDto> documents,
+        List<SiblingDto> siblings,
+        List<StepStatusDto> steps,
+        boolean profilePending,
+        String username,
+        String temporaryPassword
+) {
+}

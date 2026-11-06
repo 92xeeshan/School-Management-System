@@ -14,6 +14,7 @@ public record ClassUpdateRequest(
         @Positive(message = "{validation.positive}") Integer capacity,
         String room,
         List<UUID> subjectIds,
-        UUID classTeacherId
+        UUID classTeacherId,
+        Boolean streamEnabled
 ) {
 }

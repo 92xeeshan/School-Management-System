@@ -85,7 +85,7 @@ class AcademicsServiceTest {
         when(academicYearRepository.findBySchoolIdAndCurrentTrue(TestSecurity.SCHOOL_ID))
                 .thenReturn(java.util.Optional.empty());
 
-        var dto = academicsService.createClass(new ClassRequest("Class 7", "C7", 7, null, null, null, null, null));
+        var dto = academicsService.createClass(new ClassRequest("Class 7", "C7", 7, null, null, null, null, null, null));
 
         assertEquals("Class 7", dto.name());
         assertEquals(7, dto.sortOrder());
@@ -165,7 +165,7 @@ class AcademicsServiceTest {
                 TestSecurity.SCHOOL_ID, yearId, "ACTIVE")).thenReturn(java.util.List.of());
 
         var dto = academicsService.createClass(new ClassRequest(
-                "Class 8", "C8", 8, "A", 40, "R-12", java.util.List.of(subjectId), teacherId));
+                "Class 8", "C8", 8, "A", 40, "R-12", java.util.List.of(subjectId), teacherId, null));
 
         assertEquals("Class 8", dto.name());
         assertEquals(1, dto.sections().size());
@@ -187,7 +187,7 @@ class AcademicsServiceTest {
         when(sectionRepository.existsByClassIdAndName(existing.getId(), "A")).thenReturn(true);
 
         assertThrows(BusinessException.class,
-                () -> academicsService.createClass(new ClassRequest("Class 5", "C5", 5, "A", 40, null, null, null)));
+                () -> academicsService.createClass(new ClassRequest("Class 5", "C5", 5, "A", 40, null, null, null, null)));
         verify(sectionRepository, never()).save(any());
     }
 
@@ -232,7 +232,7 @@ class AcademicsServiceTest {
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> academicsService.updateClass(classId, new ClassUpdateRequest(
-                        "Class 9", "C9", null, null, null, null, null, null)));
+                        "Class 9", "C9", null, null, null, null, null, null, null)));
         assertEquals("class.name_exists", ex.getCode());
     }
 
@@ -266,7 +266,7 @@ class AcademicsServiceTest {
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> academicsService.updateClass(classId, new ClassUpdateRequest(
-                        "Class 8", "C8", sectionId, "A", 10, "R-1", null, null)));
+                        "Class 8", "C8", sectionId, "A", 10, "R-1", null, null, null)));
         assertEquals("section.capacity_below_enrollment", ex.getCode());
     }
 
@@ -314,7 +314,7 @@ class AcademicsServiceTest {
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> academicsService.updateClass(classId, new ClassUpdateRequest(
-                        "Class 8", "C8", sectionId, "A", 40, "R-1", null, teacherId)));
+                        "Class 8", "C8", sectionId, "A", 40, "R-1", null, teacherId, null)));
         assertEquals("section.teacher_conflict", ex.getCode());
     }
 
@@ -392,7 +392,7 @@ class AcademicsServiceTest {
                 TestSecurity.SCHOOL_ID, yearId, "ACTIVE")).thenReturn(java.util.List.of());
 
         var dto = academicsService.updateClass(classId, new ClassUpdateRequest(
-                "Class 8A", "C8A", sectionId, "B", 35, "Lab-2", java.util.List.of(subjectId), teacherId));
+                "Class 8A", "C8A", sectionId, "B", 35, "Lab-2", java.util.List.of(subjectId), teacherId, null));
 
         assertEquals("Class 8A", dto.name());
         assertEquals("B", dto.sections().get(0).name());

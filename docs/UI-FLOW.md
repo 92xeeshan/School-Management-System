@@ -79,12 +79,16 @@ The Admin runs the school day to day. This is the richest workflow.
    pending fees, recent notices.
 3. **Students** (`/students`)
    1. The list shows all students with admission number, name, class/section.
-   2. Click **Add Student** – fill personal details (name, DOB, gender,
-      blood group), guardian details and enrollment details (class,
-      section, roll number). Saving creates the student profile, the
-      guardian record and the enrollment in one call.
+      Filter by session, class, section, status, or incomplete admission
+      (`profilePending`).
+   2. Click **Add Student** (`/students/new`) – staff 6-step admission wizard
+      (personal, family, contact, academic, previous school/documents, other).
+      Step 1 creates the student, auto admission no. (`ADM`+year+seq), STUDENT
+      login, and enrollment. Remaining steps can be completed later; pending
+      profiles stay flagged until steps 2–6 are done. Resume at
+      `/students/:id/admission`.
    3. Click a student row to view/edit the profile, change enrollment, or
-      assign guardians.
+      assign guardians. Incomplete rows open the wizard when the user can update.
    4. Bulk CSV import is available (`STUDENT_IMPORT`).
 4. **Academics** (`/academics`)
    1. **Classes** – add/edit classes (`CLASS_CREATE` / `CLASS_UPDATE`).

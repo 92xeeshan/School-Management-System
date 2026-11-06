@@ -10,6 +10,7 @@ interface SchoolClass {
   id: string;
   name: string;
   code: string;
+  streamEnabled: boolean;
   sections: SchoolSection[];
   subjects: BackendSubject[];
 }
@@ -29,6 +30,7 @@ interface ClassRow {
   classId: string;
   className: string;
   classCode: string;
+  streamEnabled: boolean;
   sectionId: string;
   sectionName: string;
   capacity: number | null;
@@ -43,6 +45,7 @@ interface BackendClass {
   id: string;
   name: string;
   code: string;
+  streamEnabled?: boolean;
   sections?: BackendSection[];
   subjects?: BackendSubject[];
 }
@@ -110,6 +113,7 @@ interface BackendTeacher {
             <thead>
               <tr>
                 <th>{{ 'academics.className' | translate }}</th>
+                <th>{{ 'academics.streamEnabled' | translate }}</th>
                 <th>{{ 'academics.sections' | translate }}</th>
                 <th>{{ 'academics.classTeacher' | translate }}</th>
                 <th>{{ 'academics.subjects' | translate }}</th>
@@ -124,6 +128,7 @@ interface BackendTeacher {
               @for (row of classRows; track row.rowId) {
                 <tr>
                   <td class="strong">{{ row.className }} <span class="muted code">{{ row.classCode }}</span></td>
+                  <td>{{ row.streamEnabled ? ('common.yes' | translate) : ('common.no' | translate) }}</td>
                   <td>
                     @if (row.sectionName) {
                       <span class="section-chip">{{ row.sectionName }}</span>
@@ -210,6 +215,12 @@ interface BackendTeacher {
                     <option [value]="teacher.id">{{ teacherLabel(teacher) }}</option>
                   }
                 </select>
+              </div>
+              <div class="field span-2">
+                <label class="check-item">
+                  <input type="checkbox" formControlName="streamEnabled" />
+                  <span>{{ 'academics.streamEnabled' | translate }}</span>
+                </label>
               </div>
               <div class="field span-2">
                 <label>{{ 'academics.subjects' | translate }} *</label>
@@ -330,6 +341,7 @@ export class AcademicsComponent implements OnInit {
     capacity: new FormControl(40),
     room: new FormControl(''),
     classTeacherId: new FormControl('', Validators.required),
+    streamEnabled: new FormControl(false),
   });
   selectedSubjectIds: string[] = [];
 
@@ -352,6 +364,7 @@ export class AcademicsComponent implements OnInit {
           classId: klass.id,
           className: klass.name,
           classCode: klass.code,
+          streamEnabled: klass.streamEnabled,
           sectionId: '',
           sectionName: '',
           capacity: null,
@@ -369,6 +382,7 @@ export class AcademicsComponent implements OnInit {
           classId: klass.id,
           className: klass.name,
           classCode: klass.code,
+          streamEnabled: klass.streamEnabled,
           sectionId: section.id,
           sectionName: section.name,
           capacity: section.capacity,
@@ -433,7 +447,7 @@ export class AcademicsComponent implements OnInit {
     this.successMessage = '';
     this.pageError = '';
     this.selectedSubjectIds = [];
-    this.form.reset({ name: '', code: '', sectionName: '', capacity: 40, room: '', classTeacherId: '' });
+    this.form.reset({ name: '', code: '', sectionName: '', capacity: 40, room: '', classTeacherId: '', streamEnabled: false });
     this.loadLookups();
     this.cdr.markForCheck();
   }
@@ -453,6 +467,7 @@ export class AcademicsComponent implements OnInit {
       capacity: row.capacity ?? 40,
       room: row.room,
       classTeacherId: row.classTeacherId,
+      streamEnabled: row.streamEnabled,
     });
     this.loadLookups();
     this.cdr.markForCheck();
@@ -532,6 +547,7 @@ export class AcademicsComponent implements OnInit {
         room: this.form.value.room || null,
         subjectIds: this.selectedSubjectIds,
         classTeacherId: this.form.value.classTeacherId,
+        streamEnabled: !!this.form.value.streamEnabled,
       };
       this.http.put<ApiResponse<unknown>>(`/api/classes/${this.editingRow.classId}`, body).subscribe({
         next: () => this.afterSave('academics.updateSuccess'),
@@ -548,6 +564,7 @@ export class AcademicsComponent implements OnInit {
       room: this.form.value.room || null,
       subjectIds: this.selectedSubjectIds,
       classTeacherId: this.form.value.classTeacherId,
+      streamEnabled: !!this.form.value.streamEnabled,
     };
     this.http.post<ApiResponse<unknown>>('/api/classes', body).subscribe({
       next: () => this.afterSave('academics.createSuccess'),
@@ -579,6 +596,7 @@ export class AcademicsComponent implements OnInit {
           id: klass.id,
           name: klass.name,
           code: klass.code,
+          streamEnabled: klass.streamEnabled === true,
           sections: (klass.sections ?? []).map((section) => ({
             id: section.id,
             name: section.name,

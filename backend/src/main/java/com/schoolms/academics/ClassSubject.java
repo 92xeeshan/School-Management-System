@@ -31,6 +31,12 @@ public class ClassSubject {
     @Column(name = "teacher_id")
     private UUID teacherId;
 
+    @Column(name = "stream_id")
+    private UUID streamId;
+
+    @Column(nullable = false)
+    private boolean compulsory = true;
+
     @PrePersist
     void onCreate() {
         if (id == null) {

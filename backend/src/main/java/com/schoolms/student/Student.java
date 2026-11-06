@@ -32,6 +32,9 @@ public class Student extends BaseEntity {
     @Column(name = "first_name", nullable = false)
     private String firstName;
 
+    @Column(name = "middle_name")
+    private String middleName;
+
     @Column(name = "last_name")
     private String lastName;
 
@@ -69,13 +72,66 @@ public class Student extends BaseEntity {
     @Column(name = "previous_school", length = 200)
     private String previousSchool;
 
+    @Column(name = "aadhaar_no", length = 12)
+    private String aadhaarNo;
+
+    @Column(name = "apaar_id", length = 12)
+    private String apaarId;
+
+    @Column(name = "category_id")
+    private UUID categoryId;
+
+    @Column(name = "religion_id")
+    private UUID religionId;
+
+    @Column(name = "mother_tongue_id")
+    private UUID motherTongueId;
+
+    @Column(name = "house_id")
+    private UUID houseId;
+
+    @Column(name = "medium_id")
+    private UUID mediumId;
+
+    @Column(name = "stream_id")
+    private UUID streamId;
+
+    @Column(length = 120)
+    private String email;
+
+    @Column(name = "medical_notes", length = 1000)
+    private String medicalNotes;
+
+    @Column(name = "transport_required", nullable = false)
+    private boolean transportRequired;
+
+    @Column(name = "hostel_required", nullable = false)
+    private boolean hostelRequired;
+
+    @Column(length = 1000)
+    private String remarks;
+
+    @Column(name = "emergency_name", length = 120)
+    private String emergencyName;
+
+    @Column(name = "emergency_relation", length = 40)
+    private String emergencyRelation;
+
+    @Column(name = "profile_pending", nullable = false)
+    private boolean profilePending = true;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StudentStatus status = StudentStatus.ACTIVE;
 
     public String getDisplayName() {
-        return lastName == null || lastName.isBlank()
-                ? firstName
-                : firstName + " " + lastName;
+        StringBuilder name = new StringBuilder(firstName);
+        if (middleName != null && !middleName.isBlank()) {
+            name.append(' ').append(middleName);
+        }
+        if (lastName != null && !lastName.isBlank()) {
+            name.append(' ').append(lastName);
+        }
+        return name.toString();
     }
 }

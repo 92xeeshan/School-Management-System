@@ -10,11 +10,13 @@ public record ClassDto(
         String name,
         String code,
         Integer sortOrder,
+        boolean streamEnabled,
         List<SectionDto> sections,
         List<SubjectDto> subjects
 ) {
     public static ClassDto from(SchoolClass schoolClass) {
         return new ClassDto(schoolClass.getId(), schoolClass.getName(),
-                schoolClass.getCode(), schoolClass.getSortOrder(), List.of(), List.of());
+                schoolClass.getCode(), schoolClass.getSortOrder(), schoolClass.isStreamEnabled(),
+                List.of(), List.of());
     }
 }
