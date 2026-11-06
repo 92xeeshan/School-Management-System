@@ -1,14 +1,13 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { finalize } from 'rxjs';
 import { ApiError, ApiResponse, PagedResponse } from '../../core/models/api.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { PageHeaderComponent } from '../../layout/page-header/page-header.component';
 import { EmptyStateComponent } from '../../layout/empty-state/empty-state.component';
 import { CredentialHandoverComponent, IssuedCredentials } from '../../layout/credential-handover/credential-handover.component';
+import { AdmissionWizardComponent } from './admission-wizard.component';
 
 interface Student {
   id: string;
@@ -27,17 +26,6 @@ interface Student {
 }
 
 type DirectorySortKey = 'admissionNo' | 'name' | 'rollNumber' | 'admissionDate';
-
-interface BackendStudent {
-  id: string;
-  admissionNo: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string | null;
-  gender: string;
-  admissionDate: string | null;
-  status: string;
-}
 
 interface BackendStudentListItem {
   student: {
@@ -133,12 +121,12 @@ interface StudentReportCard {
 
 @Component({
   selector: 'app-students',
-  imports: [TranslateModule, ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent, CredentialHandoverComponent],
+  imports: [TranslateModule, PageHeaderComponent, EmptyStateComponent, CredentialHandoverComponent, AdmissionWizardComponent],
   template: `
     <div class="page">
       <app-page-header [title]="'students.title' | translate" [subtitle]="'students.subtitle' | translate">
         @if (canCreate) {
-          <button class="btn btn-primary" (click)="openAdmission()">{{ 'students.addStudent' | translate }}</button>
+          <button class="btn btn-primary" type="button" (click)="openAdmission()">{{ 'students.addStudent' | translate }}</button>
         }
       </app-page-header>
 
@@ -311,66 +299,13 @@ interface StudentReportCard {
       </div>
     </div>
 
-    @if (showModal) {
-      <div class="modal-backdrop" (click)="closeModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
-          <h2>{{ editingId ? ('students.editStudent' | translate) : ('students.addStudent' | translate) }}</h2>
-          <form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <div class="form-grid">
-              <div class="field">
-                <label>{{ 'students.studentId' | translate }}{{ editingId ? ' *' : '' }}</label>
-                <input type="text" formControlName="admissionNo" [placeholder]="editingId ? '' : ('students.admissionNoHint' | translate)" />
-              </div>
-              <div class="field">
-                <label>{{ 'students.name' | translate }} *</label>
-                <input type="text" formControlName="firstName" />
-              </div>
-              <div class="field">
-                <label>{{ 'students.name' | translate }} (last)</label>
-                <input type="text" formControlName="lastName" />
-              </div>
-              <div class="field">
-                <label>DOB</label>
-                <input type="date" formControlName="dateOfBirth" />
-              </div>
-              <div class="field">
-                <label>{{ 'students.gender' | translate }}</label>
-                <select formControlName="gender">
-                  <option value="MALE">MALE</option>
-                  <option value="FEMALE">FEMALE</option>
-                  <option value="OTHER">OTHER</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>{{ 'students.enrollmentDate' | translate }}</label>
-                <input type="date" formControlName="admissionDate" />
-              </div>
-              <div class="field">
-                <label>Class</label>
-                <select formControlName="classId" (change)="onClassSelect()">
-                  <option value="" disabled selected>—</option>
-                  @for (klass of classes; track klass.id) {
-                    <option [value]="klass.id">{{ klass.name }}</option>
-                  }
-                </select>
-              </div>
-              <div class="field">
-                <label>{{ 'students.section' | translate }}</label>
-                <select formControlName="sectionId">
-                  <option value="" disabled selected>—</option>
-                  @for (section of sectionsForClass; track section.id) {
-                    <option [value]="section.id">{{ section.name }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="btn" type="button" (click)="closeModal(true)">{{ 'common.cancel' | translate }}</button>
-              <button class="btn btn-primary" type="submit" [disabled]="form.invalid || saving">
-                {{ saving ? ('common.loading' | translate) : ('common.save' | translate) }}
-              </button>
-            </div>
-          </form>
+    @if (showAdmission) {
+      <div class="modal-backdrop" (click)="closeAdmission()">
+        <div class="modal admission-modal" (click)="$event.stopPropagation()">
+          <app-admission-wizard
+            [embedded]="true"
+            [studentId]="admissionStudentId"
+            (closed)="onAdmissionClosed($event)" />
         </div>
       </div>
     }
@@ -589,6 +524,9 @@ interface StudentReportCard {
     .modal {
       padding: 24px; width: 560px; max-width: 100%;
     }
+    .admission-modal {
+      width: 960px; max-width: 100%; padding: 20px 24px 28px;
+    }
     .modal h2 { margin: 0 0 18px; font-size: 1.2rem; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .field { display: flex; flex-direction: column; gap: 6px; }
@@ -653,7 +591,7 @@ export class StudentsComponent implements OnInit {
   totalElements = 0;
   totalPages = 0;
   pageIndex = 0;
-  pageSize = 25;
+  pageSize = 10;
   readonly pageSizeOptions = [10, 25, 50, 100];
   query = '';
   selectedYearId = '';
@@ -666,9 +604,8 @@ export class StudentsComponent implements OnInit {
   readonly statuses = ['ACTIVE', 'INACTIVE', 'ALUMNI', 'TRANSFERRED'];
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  showModal = false;
-  saving = false;
-  editingId: string | null = null;
+  showAdmission = false;
+  admissionStudentId: string | null = null;
   pendingDelete: Student | null = null;
   deletingId: string | null = null;
   issuedCredentials: IssuedCredentials | null = null;
@@ -680,17 +617,6 @@ export class StudentsComponent implements OnInit {
   classes: ClassOption[] = [];
   sections: SectionOption[] = [];
   academicYears: AcademicYear[] = [];
-
-  readonly form = new FormGroup({
-    admissionNo: new FormControl(''),
-    firstName: new FormControl('', Validators.required),
-    lastName: new FormControl(''),
-    dateOfBirth: new FormControl(''),
-    gender: new FormControl('MALE'),
-    admissionDate: new FormControl(new Date().toISOString().slice(0, 10)),
-    classId: new FormControl(''),
-    sectionId: new FormControl(''),
-  });
 
   constructor(
     private http: HttpClient,
@@ -717,11 +643,6 @@ export class StudentsComponent implements OnInit {
 
   get showActions(): boolean {
     return this.canUpdate || this.canDelete || this.canViewReportCard;
-  }
-
-  get sectionsForClass(): SectionOption[] {
-    const classId = this.form.value.classId;
-    return this.sections.filter((s) => s.classId === classId);
   }
 
   get availableSections(): SectionOption[] {
@@ -855,7 +776,8 @@ export class StudentsComponent implements OnInit {
   }
 
   onPageSizeChange(size: number): void {
-    this.pageSize = size;
+    const next = this.pageSizeOptions.includes(size) ? size : 10;
+    this.pageSize = next;
     this.pageIndex = 0;
     this.load();
   }
@@ -900,18 +822,33 @@ export class StudentsComponent implements OnInit {
 
   openProfile(student: Student): void {
     if (student.profilePending && this.canUpdate) {
-      this.router.navigate(['/students', student.id, 'admission']);
+      this.openAdmission(student.id);
       return;
     }
     this.router.navigate(['/students', student.id]);
   }
 
-  openAdmission(): void {
-    this.router.navigate(['/students/new']);
+  openAdmission(studentId: string | null = null): void {
+    this.admissionStudentId = studentId;
+    this.showAdmission = true;
+    this.cdr.markForCheck();
+  }
+
+  closeAdmission(): void {
+    this.showAdmission = false;
+    this.admissionStudentId = null;
+    this.cdr.markForCheck();
+  }
+
+  onAdmissionClosed(saved: boolean): void {
+    this.closeAdmission();
+    if (saved) {
+      this.load();
+    }
   }
 
   openEdit(student: Student): void {
-    this.router.navigate(['/students', student.id, 'admission']);
+    this.openAdmission(student.id);
   }
 
   openReportCard(student: Student): void {
@@ -990,59 +927,6 @@ export class StudentsComponent implements OnInit {
     return (value || '—').replace(/_/g, ' ');
   }
 
-  openAddModal(): void {
-    this.editingId = null;
-    this.showModal = true;
-    this.saving = false;
-    this.form.reset({ gender: 'MALE', admissionDate: new Date().toISOString().slice(0, 10), classId: '', sectionId: '' });
-    this.cdr.markForCheck();
-  }
-
-  openEditModal(student: Student): void {
-    this.editingId = student.id;
-    this.saving = false;
-    this.showModal = true;
-    this.form.reset({
-      admissionNo: student.admissionNo,
-      firstName: student.firstName,
-      lastName: student.lastName,
-      dateOfBirth: '',
-      gender: student.gender || 'MALE',
-      admissionDate: '',
-      classId: this.classIdForName(student.className),
-      sectionId: this.sectionIdFor(student.className, student.section),
-    });
-    this.cdr.markForCheck();
-    this.http.get<ApiResponse<BackendStudent>>(`/api/students/${student.id}`).subscribe({
-      next: (res) => {
-        if (this.editingId !== student.id) {
-          return;
-        }
-        const data = res.data;
-        this.form.patchValue({
-          admissionNo: data.admissionNo ?? student.admissionNo,
-          firstName: data.firstName ?? student.firstName,
-          lastName: data.lastName ?? student.lastName,
-          dateOfBirth: data.dateOfBirth ?? '',
-          gender: data.gender ?? student.gender ?? 'MALE',
-          admissionDate: data.admissionDate ?? '',
-        });
-        this.cdr.markForCheck();
-      },
-      error: () => undefined,
-    });
-  }
-
-  closeModal(force = false): void {
-    if (this.saving && !force) {
-      return;
-    }
-    this.saving = false;
-    this.showModal = false;
-    this.editingId = null;
-    this.cdr.markForCheck();
-  }
-
   askDelete(student: Student): void {
     this.pendingDelete = student;
     this.cdr.markForCheck();
@@ -1078,85 +962,6 @@ export class StudentsComponent implements OnInit {
     });
   }
 
-  onClassSelect(): void {
-    this.form.patchValue({ sectionId: '' });
-  }
-
-  onSubmit(): void {
-    if (this.form.invalid) {
-      return;
-    }
-    this.saving = true;
-    this.cdr.markForCheck();
-    const { admissionNo, firstName, lastName, dateOfBirth, gender, admissionDate } = this.form.value;
-    const body = {
-      admissionNo: (admissionNo ?? '').trim() || null,
-      firstName,
-      lastName: lastName || null,
-      dateOfBirth: dateOfBirth || null,
-      gender,
-      admissionDate: admissionDate || null,
-    };
-    if (this.editingId) {
-      const studentId = this.editingId;
-      this.http.put<ApiResponse<unknown>>(`/api/students/${studentId}`, body).subscribe({
-        next: () => this.enroll(studentId),
-        error: () => {
-          this.saving = false;
-          this.cdr.markForCheck();
-          alert('Could not update student. Please try again.');
-        },
-      });
-      return;
-    }
-    this.http.post<ApiResponse<{ id: string; username?: string; temporaryPassword?: string }>>('/api/students', body).subscribe({
-      next: (res) => {
-        if (res.data?.username && res.data.temporaryPassword) {
-          this.issuedCredentials = { username: res.data.username, temporaryPassword: res.data.temporaryPassword };
-        }
-        this.enroll(res.data.id);
-      },
-      error: () => {
-        this.saving = false;
-        this.cdr.markForCheck();
-        alert('Could not save student. Please try again.');
-      },
-    });
-  }
-
-  private classIdForName(className: string): string {
-    return this.classes.find((c) => c.name === className)?.id ?? '';
-  }
-
-  private sectionIdFor(className: string, sectionName: string): string {
-    const classId = this.classIdForName(className);
-    return this.sections.find((s) => s.classId === classId && s.name === sectionName)?.id ?? '';
-  }
-
-  private enroll(studentId: string): void {
-    const classId = this.form.value.classId;
-    const sectionId = this.form.value.sectionId;
-    const academicYearId = this.academicYears.find((y) => y.current)?.id ?? this.academicYears[0]?.id;
-    const finish = (): void => {
-      this.saving = false;
-      this.showModal = false;
-      this.editingId = null;
-      this.load();
-      this.cdr.markForCheck();
-    };
-    if (!classId || !sectionId || !academicYearId) {
-      finish();
-      return;
-    }
-    this.http
-      .post<ApiResponse<unknown>>(`/api/students/${studentId}/enroll`, { classId, sectionId, academicYearId })
-      .pipe(finalize(finish))
-      .subscribe({
-        next: () => undefined,
-        error: () => alert('Could not update class or section. Please try again.'),
-      });
-  }
-
   private load(): void {
     this.loading = true;
     this.cdr.markForCheck();
@@ -1164,7 +969,9 @@ export class StudentsComponent implements OnInit {
       next: (res) => {
         const page = res.data;
         const items = page?.content ?? [];
-        this.students = items.map((item) => ({
+        this.pageIndex = page?.page ?? this.pageIndex;
+        this.pageSize = page?.size && this.pageSizeOptions.includes(page.size) ? page.size : this.pageSize;
+        this.students = items.slice(0, this.pageSize).map((item) => ({
           id: item.student.id,
           admissionNo: item.student.admissionNo ?? '',
           firstName: item.student.firstName ?? '',

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -168,12 +168,22 @@ const DOC_TYPES = [
   selector: 'app-admission-wizard',
   imports: [TranslateModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, CredentialHandoverComponent],
   template: `
-    <div class="page">
-      <app-page-header
-        [title]="wizard?.displayName || ('students.admission.title' | translate)"
-        [subtitle]="'students.admission.subtitle' | translate">
-        <a class="back" routerLink="/students">{{ 'common.back' | translate }}</a>
-      </app-page-header>
+    <div [class.page]="!embedded" [class.wizard-embed]="embedded">
+      @if (embedded) {
+        <div class="embed-head">
+          <div>
+            <h1>{{ wizard?.displayName || ('students.admission.title' | translate) }}</h1>
+            <p class="muted">{{ 'students.admission.subtitle' | translate }}</p>
+          </div>
+          <button class="btn" type="button" (click)="close()">{{ 'common.close' | translate }}</button>
+        </div>
+      } @else {
+        <app-page-header
+          [title]="wizard?.displayName || ('students.admission.title' | translate)"
+          [subtitle]="'students.admission.subtitle' | translate">
+          <a class="back" routerLink="/students">{{ 'common.back' | translate }}</a>
+        </app-page-header>
+      }
 
       <app-credential-handover [credentials]="issuedCredentials" (closed)="issuedCredentials = null" />
 
@@ -205,7 +215,8 @@ const DOC_TYPES = [
               <div class="form-grid">
                 <div class="field">
                   <label>{{ 'students.studentId' | translate }}</label>
-                  <input type="text" [value]="wizard?.admissionNo || ('students.admission.autoAdmission' | translate)" readonly />
+                  <input type="text" [value]="wizard?.admissionNo || ('students.admission.autoAdmission' | translate)" disabled />
+                  <span class="hint">{{ 'students.admission.autoAdmissionHint' | translate }}</span>
                 </div>
                 <div class="field">
                   <label>{{ 'students.firstName' | translate }} *</label>
@@ -435,7 +446,8 @@ const DOC_TYPES = [
                 </div>
                 <div class="field">
                   <label>{{ 'students.rollNumber' | translate }}</label>
-                  <input type="number" formControlName="rollNumber" min="1" />
+                  <input type="text" [value]="wizard?.rollNumber ?? ('students.admission.autoRoll' | translate)" disabled />
+                  <span class="hint">{{ 'students.admission.autoRollHint' | translate }}</span>
                 </div>
                 <div class="field">
                   <label>{{ 'students.admission.house' | translate }}</label>
@@ -595,6 +607,13 @@ const DOC_TYPES = [
     </div>
   `,
   styles: `
+    .wizard-embed { padding: 8px 4px 4px; }
+    .embed-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+    .embed-head h1 { margin: 0 0 4px; font-size: 1.25rem; }
+    .embed-head .muted { margin: 0; }
+    input:disabled, select:disabled {
+      background: var(--color-bg); color: var(--color-muted); cursor: not-allowed;
+    }
     .back { margin-right: 8px; }
     .banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
     .banner.error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
@@ -654,6 +673,10 @@ const DOC_TYPES = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdmissionWizardComponent implements OnInit {
+  @Input() embedded = false;
+  @Input() studentId: string | null = null;
+  @Output() closed = new EventEmitter<boolean>();
+
   readonly stepDefs = [
     { no: 1, key: 'students.admission.step1' },
     { no: 2, key: 'students.admission.step2' },
@@ -665,7 +688,6 @@ export class AdmissionWizardComponent implements OnInit {
   readonly bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   readonly docTypes = DOC_TYPES;
 
-  studentId: string | null = null;
   wizard: AdmissionWizard | null = null;
   currentStep = 1;
   loading = false;
@@ -730,7 +752,7 @@ export class AdmissionWizardComponent implements OnInit {
   readonly step4 = new FormGroup({
     academicYearId: new FormControl('', Validators.required),
     admissionDate: new FormControl(''),
-    rollNumber: new FormControl<number | null>(null),
+    rollNumber: new FormControl<number | null>({ value: null, disabled: true }),
     houseId: new FormControl(''),
     mediumId: new FormControl(''),
     streamId: new FormControl(''),
@@ -787,11 +809,20 @@ export class AdmissionWizardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    this.studentId = id && id !== 'new' ? id : null;
+    if (!this.embedded) {
+      const id = this.route.snapshot.paramMap.get('id');
+      this.studentId = id && id !== 'new' ? id : null;
+    }
     this.loadMeta();
     if (this.studentId) {
       this.loadWizard(this.studentId);
+    }
+  }
+
+  close(saved = false): void {
+    this.closed.emit(saved);
+    if (!this.embedded) {
+      void this.router.navigate(['/students']);
     }
   }
 
@@ -873,7 +904,9 @@ export class AdmissionWizardComponent implements OnInit {
         this.studentId = res.data.id;
         this.currentStep = 2;
         this.successMessage = 'students.admission.stepSaved';
-        void this.router.navigate(['/students', res.data.id, 'admission'], { replaceUrl: true });
+        if (!this.embedded) {
+          void this.router.navigate(['/students', res.data.id, 'admission'], { replaceUrl: true });
+        }
         this.cdr.markForCheck();
       },
       error: (err) => this.onError(err),
@@ -913,7 +946,7 @@ export class AdmissionWizardComponent implements OnInit {
     this.putStep(4, {
       academicYearId: v.academicYearId,
       admissionDate: v.admissionDate || null,
-      rollNumber: v.rollNumber || null,
+      rollNumber: null,
       houseId: v.houseId || null,
       mediumId: v.mediumId || null,
       streamId: v.streamId || null,
@@ -1079,7 +1112,11 @@ export class AdmissionWizardComponent implements OnInit {
         this.applyWizard(res.data);
         this.successMessage = 'students.admission.stepSaved';
         if (next === 0) {
-          void this.router.navigate(['/students', this.studentId]);
+          if (this.embedded) {
+            this.close(true);
+          } else {
+            void this.router.navigate(['/students', this.studentId]);
+          }
         } else {
           this.currentStep = next;
           if (next === 4) {

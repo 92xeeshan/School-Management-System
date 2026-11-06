@@ -37,7 +37,7 @@ export interface IssuedCredentials {
     }
   `,
   styles: `
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 200; }
     .modal { width: 420px; max-width: 94vw; background: var(--color-surface); border-radius: 12px; padding: 24px; }
     h2 { margin: 0 0 8px; font-size: 1.15rem; }
     .hint, .once { color: var(--color-muted); font-size: .9rem; margin: 0 0 16px; }

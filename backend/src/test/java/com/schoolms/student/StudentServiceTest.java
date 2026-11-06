@@ -503,8 +503,11 @@ class StudentServiceTest {
 
         studentService.list(0, 10, StudentDirectoryFilter.empty());
 
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(studentRepository).searchDirectory(eq(schoolId), eq(yearId), isNull(), isNull(),
-                isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
+                isNull(), isNull(), isNull(), isNull(), pageableCaptor.capture());
+        assertEquals(10, pageableCaptor.getValue().getPageSize());
+        assertEquals(0, pageableCaptor.getValue().getPageNumber());
     }
 
     @Test

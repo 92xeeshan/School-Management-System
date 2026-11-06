@@ -53,7 +53,7 @@ public class StudentController {
     @GetMapping
     public ApiResponse<PagedResponse<StudentListItemDto>> list(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String query,
             @RequestParam(required = false) UUID academicYearId,
             @RequestParam(required = false) UUID classId,
@@ -64,7 +64,7 @@ public class StudentController {
             @RequestParam(required = false) Boolean profilePending) {
         StudentDirectoryFilter filter = new StudentDirectoryFilter(
                 academicYearId, classId, sectionId, status, query, sort, direction, profilePending);
-        Page<StudentListItemDto> result = studentService.list(page, Math.min(size, 100), filter);
+        Page<StudentListItemDto> result = studentService.list(page, Math.min(Math.max(size, 1), 100), filter);
         return ApiResponse.ok(PagedResponse.from(result));
     }
 
@@ -104,7 +104,7 @@ public class StudentController {
 
     @Operation(summary = "Get a student")
     @PreAuthorize("hasAuthority('STUDENT_READ')")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}}")
     public ApiResponse<StudentDto> get(@PathVariable UUID id) {
         return ApiResponse.ok(studentService.get(id));
     }
@@ -148,7 +148,7 @@ public class StudentController {
 
     @Operation(summary = "Update a student")
     @PreAuthorize("hasAuthority('STUDENT_UPDATE')")
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}}")
     public ApiResponse<StudentDto> update(@PathVariable UUID id, @Valid @RequestBody StudentRequest request) {
         return ApiResponse.ok(studentService.update(id, request));
     }

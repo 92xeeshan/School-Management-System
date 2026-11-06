@@ -18,8 +18,11 @@ import com.schoolms.common.RecordIdGenerator;
 import com.schoolms.common.enums.AdmissionStepStatus;
 import com.schoolms.common.exception.BusinessException;
 import com.schoolms.file.MinioService;
+import com.schoolms.common.enums.GuardianRelationship;
 import com.schoolms.student.dto.AdmissionStep1Request;
+import com.schoolms.student.dto.AdmissionStep2Request;
 import com.schoolms.student.dto.AdmissionWizardDto;
+import com.schoolms.student.dto.FamilyMemberDto;
 import com.schoolms.user.dto.ProvisionedAccount;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -149,6 +152,41 @@ class AdmissionServiceTest {
                         LocalDate.of(2014, 5, 10), "MALE", null, null, null, "IN", null,
                         "123456789012", null)));
         assertEquals("student.aadhaar_exists", ex.getCode());
+    }
+
+    @Test
+    void saveStep2PersistsGuardianFirstNameBeforeInsert() {
+        UUID studentId = UUID.randomUUID();
+        Student student = new Student();
+        student.setId(studentId);
+        student.setSchoolId(schoolId);
+        student.setAdmissionNo("ADM2026001");
+        student.setFirstName("Aarav");
+        when(studentRepository.findByIdAndSchoolId(studentId, schoolId)).thenReturn(Optional.of(student));
+        when(studentGuardianRepository.findWithGuardians(schoolId, studentId)).thenReturn(List.of());
+        when(guardianRepository.save(any(Guardian.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(studentGuardianRepository.save(any(StudentGuardian.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(studentGuardianRepository.findByStudentIdAndSchoolId(studentId, schoolId)).thenReturn(List.of());
+        when(studentRepository.save(any(Student.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(stepStatusRepository.findByStudentIdAndStepNo(studentId, 2)).thenReturn(Optional.empty());
+        when(stepStatusRepository.save(any(StudentStepStatus.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(stepStatusRepository.findByStudentIdAndSchoolIdOrderByStepNoAsc(studentId, schoolId)).thenReturn(pendingSteps());
+        when(enrollmentRepository.findByStudentIdAndAcademicYearId(any(), any())).thenReturn(Optional.empty());
+        when(academicYearRepository.findBySchoolIdAndCurrentTrue(schoolId)).thenReturn(Optional.of(year()));
+        when(addressRepository.findByStudentIdAndSchoolId(any(), any())).thenReturn(List.of());
+        when(previousSchoolRepository.findByStudentIdAndSchoolId(any(), any())).thenReturn(Optional.empty());
+        when(documentRepository.findByStudentIdAndSchoolIdOrderByCreatedAtDesc(any(), any())).thenReturn(List.of());
+        when(studentGuardianRepository.findSiblingStudentIds(any(), any())).thenReturn(List.of());
+
+        FamilyMemberDto father = new FamilyMemberDto(null, "Ramesh", "Kumar", "Farmer", "9876543210",
+                null, null, null, null, false);
+        admissionService.saveStep(studentId, 2, new AdmissionStep2Request(
+                father, null, null, false, null, null, null, "FATHER"));
+
+        ArgumentCaptor<Guardian> captor = ArgumentCaptor.forClass(Guardian.class);
+        verify(guardianRepository).save(captor.capture());
+        assertEquals("Ramesh", captor.getValue().getFirstName());
+        assertEquals(GuardianRelationship.FATHER, captor.getValue().getRelationship());
     }
 
     private void stubClassSectionYear() {

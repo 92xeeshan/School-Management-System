@@ -474,20 +474,9 @@ public class AdmissionService {
                 .filter(sg -> sg.getRelationship() == relationship)
                 .findFirst()
                 .orElse(null);
-        Guardian guardian;
-        if (link == null) {
-            guardian = new Guardian();
-            guardian.setSchoolId(schoolId);
-            guardian.setRelationship(relationship);
-            guardian = guardianRepository.save(guardian);
-            link = new StudentGuardian();
-            link.setSchoolId(schoolId);
-            link.setStudent(student);
-            link.setGuardian(guardian);
-            link.setRelationship(relationship);
-        } else {
-            guardian = link.getGuardian();
-        }
+        Guardian guardian = link == null ? new Guardian() : link.getGuardian();
+        guardian.setSchoolId(schoolId);
+        guardian.setRelationship(relationship);
         guardian.setFirstName(dto.firstName().trim());
         guardian.setLastName(blankToNull(dto.lastName()));
         guardian.setOccupation(blankToNull(dto.occupation()));
@@ -495,8 +484,13 @@ public class AdmissionService {
         guardian.setEmail(blankToNull(dto.email()));
         guardian.setQualification(blankToNull(dto.qualification()));
         guardian.setAddress(blankToNull(dto.address()));
-        guardian.setRelationship(relationship);
-        guardianRepository.save(guardian);
+        guardian = guardianRepository.save(guardian);
+        if (link == null) {
+            link = new StudentGuardian();
+            link.setSchoolId(schoolId);
+            link.setStudent(student);
+            link.setRelationship(relationship);
+        }
         link.setGuardian(guardian);
         studentGuardianRepository.save(link);
     }
